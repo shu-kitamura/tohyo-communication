@@ -249,7 +249,7 @@ export default function VoteSessionPage() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={(entry) => `${entry.name}: ${entry.votes}`}
+                        label={({ name, value }) => `${name}: ${value}`}
                         outerRadius={120}
                         fill="#8884d8"
                         dataKey="votes"
