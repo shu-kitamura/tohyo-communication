@@ -1,65 +1,184 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { CreateSessionRequest, CreateSessionResponse, VoteType } from '@/lib/types';
 
 export default function Home() {
+  const router = useRouter();
+  const [question, setQuestion] = useState('');
+  const [voteType, setVoteType] = useState<VoteType>('single');
+  const [choices, setChoices] = useState(['', '']);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleAddChoice = () => {
+    if (choices.length < 10) {
+      setChoices([...choices, '']);
+    }
+  };
+
+  const handleRemoveChoice = (index: number) => {
+    if (choices.length > 2) {
+      setChoices(choices.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleChoiceChange = (index: number, value: string) => {
+    const newChoices = [...choices];
+    newChoices[index] = value;
+    setChoices(newChoices);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (!question.trim()) {
+      setError('質問を入力してください');
+      return;
+    }
+
+    const validChoices = choices.filter((c) => c.trim());
+    if (validChoices.length < 2) {
+      setError('選択肢は2つ以上必要です');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const body: CreateSessionRequest = {
+        question,
+        voteType,
+        choices: validChoices.map((text) => ({ text })),
+      };
+
+      const res = await fetch('/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data: CreateSessionResponse = await res.json();
+
+      if (!res.ok) {
+        setError((data as { error?: string }).error || '投票セッションの作成に失敗しました');
+        return;
+      }
+
+      // Redirect to organizer view
+      router.push(`/vote/${data.sessionId}?view=organizer`);
+    } catch {
+      setError('投票セッションの作成に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
+        <h1 className="text-3xl font-bold mb-8 text-center">投票セッション作成</h1>
+
+        <form onSubmit={handleSubmit}>
+          {/* Question Input */}
+          <div className="mb-6">
+            <label htmlFor="question" className="block text-sm font-medium mb-2">
+              質問を入力してください
+            </label>
+            <textarea
+              id="question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={3}
+              placeholder="例：今日の昼食は何がいいですか？"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          {/* Vote Type Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2">投票形式</label>
+            <div className="flex gap-4">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="voteType"
+                  value="single"
+                  checked={voteType === 'single'}
+                  onChange={(e) => setVoteType(e.target.value as VoteType)}
+                  className="w-4 h-4 mr-2"
+                />
+                <span>単一選択</span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="voteType"
+                  value="multiple"
+                  checked={voteType === 'multiple'}
+                  onChange={(e) => setVoteType(e.target.value as VoteType)}
+                  className="w-4 h-4 mr-2"
+                />
+                <span>複数選択</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Choices Input */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2">選択肢</label>
+            <div className="space-y-2">
+              {choices.map((choice, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={choice}
+                    onChange={(e) => handleChoiceChange(index, e.target.value)}
+                    className="flex-1 border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={`選択肢 ${index + 1}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveChoice(index)}
+                    disabled={choices.length <= 2}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAddChoice}
+              disabled={choices.length >= 10}
+              className="mt-2 text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              + 選択肢を追加
+            </button>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            {loading ? '作成中...' : '投票を作成'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
