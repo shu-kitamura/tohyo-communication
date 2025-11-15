@@ -38,7 +38,7 @@ export default function VoteSessionPage() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const res = await fetch(`/vote/${sessionId}`);
+        const res = await fetch(`/api/vote/${sessionId}`);
         const data: GetSessionResponse = await res.json();
 
         if (!res.ok) {
@@ -64,7 +64,7 @@ export default function VoteSessionPage() {
   useEffect(() => {
     if (!isOrganizer) return;
 
-    const eventSource = new EventSource(`/vote/${sessionId}/stream`);
+    const eventSource = new EventSource(`/api/vote/${sessionId}/stream`);
 
     eventSource.onmessage = (event) => {
       try {
@@ -102,7 +102,7 @@ export default function VoteSessionPage() {
 
     try {
       const body: SubmitVoteRequest = { choiceIds: selectedChoices };
-      const res = await fetch(`/vote/${sessionId}`, {
+      const res = await fetch(`/api/vote/${sessionId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -140,7 +140,7 @@ export default function VoteSessionPage() {
     if (!confirm('投票を終了しますか？')) return;
 
     try {
-      await fetch(`/vote/${sessionId}/close`, { method: 'POST' });
+      await fetch(`/api/vote/${sessionId}/close`, { method: 'POST' });
       setMessage('投票を終了しました');
       window.location.reload();
     } catch {
@@ -151,7 +151,7 @@ export default function VoteSessionPage() {
   // Export data
   const handleExport = async (format: 'json' | 'csv') => {
     try {
-      const res = await fetch(`/vote/${sessionId}/export?format=${format}`);
+      const res = await fetch(`/api/vote/${sessionId}/export?format=${format}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

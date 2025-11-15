@@ -55,7 +55,7 @@ export default function Home() {
         choices: validChoices.map((text) => ({ text })),
       };
 
-      const res = await fetch('/vote', {
+      const res = await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
