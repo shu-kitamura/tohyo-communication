@@ -4,15 +4,16 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreateSessionRequest, CreateSessionResponse, VoteType } from '@/lib/types';
 
-import { Plus, X } from "lucide-react"
+import { AlertCircleIcon, Plus, X } from "lucide-react"
 
+import {
+  Alert,
+  AlertTitle,
+} from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardAction,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -147,6 +148,14 @@ export default function Home() {
                 </Button>
               </div>
             </div>
+
+            {error && 
+              <Alert variant="destructive">
+                <AlertCircleIcon />
+                <AlertTitle>{error}</AlertTitle>
+              </Alert>
+            }
+
             <Button type="submit" disabled={loading}>
               {loading ? '作成中...' : '作成'}
             </Button>
