@@ -102,7 +102,7 @@ export default function Home() {
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-            <div className="grid gap-2">
+            <div className="grid gap-2" id="question">
               <Label htmlFor="question">投票タイトル</Label>
               <Input
                 id="question"
@@ -113,7 +113,8 @@ export default function Home() {
                 required
               />
             </div>
-            <div className="grid gap-2">
+
+            <div className="grid gap-2" id="vote-type">
               <Label>投票形式</Label>
               <RadioGroup defaultValue="single" className="flex" onValueChange={(value) => setVoteType(value as VoteType)}>
                 <div className="flex items-center space-x-2">
@@ -126,8 +127,9 @@ export default function Home() {
                 </div>
               </RadioGroup>
             </div>
-            <div className="space-y-2">
-              <Label>選択肢</Label>                
+
+            <div className="space-y-2" id="choices">
+              <Label>選択肢</Label>
               {choices.map((choice, index) => (
                 <div key={index} className="flex gap-2">
                 <Input
