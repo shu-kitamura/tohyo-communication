@@ -1,6 +1,6 @@
 'use client';
 
-import { Download } from 'lucide-react';
+import { Copy, Download } from 'lucide-react';
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -40,6 +40,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Label } from '@/components/ui/label';
+import {
+  Tooltip as TooltipUI,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Toaster, toast } from "sonner"
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
@@ -287,10 +293,9 @@ export default function VoteSessionPage() {
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
-                      <YAxis />
+                      <YAxis dataKey="votes" />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="votes" fill="#3B82F6" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -336,12 +341,26 @@ export default function VoteSessionPage() {
             </div>
 
             {/* QR Code Sidebar */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex flex-col items-center bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-bold mb-4">投票用QRコード</h2>
               <div className="flex justify-center mb-4">
                 <QRCodeSVG value={voteUrl} size={200} />
               </div>
-              <p className="text-xs text-gray-600 break-all">{voteUrl}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-gray-600 break-all">{voteUrl}</p>
+                <Toaster />
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" onClick={() => {
+                      navigator.clipboard.writeText(voteUrl)
+                      toast.success("URLをコピーしました")
+                    }}>
+                      <Copy />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>URLをコピー</TooltipContent>
+                </TooltipUI>
+              </div>
             </div>
           </div>
         </div>
