@@ -1,6 +1,6 @@
 'use client';
 
-import { Download, Hand } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -34,6 +34,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Label } from '@/components/ui/label';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
@@ -155,8 +160,6 @@ export default function VoteSessionPage() {
 
   // Close session
   const handleCloseSession = async () => {
-    if (!confirm('投票を終了しますか？')) return;
-
     try {
       await fetch(`/api/vote/${sessionId}/close`, { method: 'POST' });
       setMessage('投票を終了しました');
@@ -250,9 +253,25 @@ export default function VoteSessionPage() {
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button onClick={handleCloseSession} className="bg-red-600 hover:bg-red-700 text-white rounded">
-                <Label>投票を終了</Label>
-              </Button>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="destructive" className="hover:bg-red-700">
+                    <Label>投票を終了</Label>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <Label>投票を終了しますか？</Label>
+                  <div className="flex justify-start gap-2 mt-4">
+                    <Button variant="destructive" className="hover:bg-red-700" onClick={handleCloseSession}>
+                      <Label>はい</Label>
+                    </Button>
+                    <Button variant="outline" className="bg-white hover:bg-gray-200">
+                      <Label>いいえ</Label>
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
