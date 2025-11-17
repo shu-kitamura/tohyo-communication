@@ -1,5 +1,7 @@
 'use client';
 
+import { Download, Hand } from 'lucide-react';
+
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -23,6 +25,16 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Label } from '@/components/ui/label';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
@@ -208,20 +220,39 @@ export default function VoteSessionPage() {
               className="w-[400px]"
             >
               <TabsList>
-                <TabsTrigger value="bar">棒グラフ</TabsTrigger>
-                <TabsTrigger value="pie">円グラフ</TabsTrigger>
+                <TabsTrigger value="bar">
+                  <Label>棒グラフ</Label>
+                </TabsTrigger>
+                <TabsTrigger value="pie">
+                  <Label>円グラフ</Label>
+                </TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="flex gap-2">
-              <button onClick={() => handleExport('csv')} className="px-4 py-2 bg-green-600 text-white rounded">
-                CSV
-              </button>
-              <button onClick={() => handleExport('json')} className="px-4 py-2 bg-green-600 text-white rounded">
-                JSON
-              </button>
-              <button onClick={handleCloseSession} className="px-4 py-2 bg-red-600 text-white rounded">
-                投票を終了
-              </button>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" aria-label="Open menu" size="default">
+                    <Download /><Label>ダウンロード</Label>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40" align="end">
+                  <DropdownMenuLabel>データ形式</DropdownMenuLabel>
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onSelect={() => handleExport('csv')}>
+                      CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleExport('json')}>
+                      JSON
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleExport('json')}>
+                      画像
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button onClick={handleCloseSession} className="bg-red-600 hover:bg-red-700 text-white rounded">
+                <Label>投票を終了</Label>
+              </Button>
             </div>
           </div>
 
