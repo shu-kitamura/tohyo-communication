@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
