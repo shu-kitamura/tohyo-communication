@@ -18,6 +18,12 @@ import {
 } from 'recharts';
 import { Choice, GetSessionResponse, SubmitVoteRequest } from '@/lib/types';
 
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
 export default function VoteSessionPage() {
@@ -196,20 +202,16 @@ export default function VoteSessionPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header Controls */}
           <div className="bg-white rounded-lg shadow p-4 mb-4 flex flex-wrap gap-2 items-center justify-between">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setChartType('bar')}
-                className={`px-4 py-2 rounded ${chartType === 'bar' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              >
-                棒グラフ
-              </button>
-              <button
-                onClick={() => setChartType('pie')}
-                className={`px-4 py-2 rounded ${chartType === 'pie' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              >
-                円グラフ
-              </button>
-            </div>
+            <Tabs
+              value={chartType}
+              onValueChange={(value) => setChartType(value as 'bar' | 'pie')}
+              className="w-[400px]"
+            >
+              <TabsList>
+                <TabsTrigger value="bar">棒グラフ</TabsTrigger>
+                <TabsTrigger value="pie">円グラフ</TabsTrigger>
+              </TabsList>
+            </Tabs>
             <div className="flex gap-2">
               <button onClick={() => handleExport('csv')} className="px-4 py-2 bg-green-600 text-white rounded">
                 CSV
