@@ -7,14 +7,14 @@ import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   BarChart,
+  Bar,
   PieChart,
   Pie,
   Cell,
   XAxis,
-  YAxis,
   CartesianGrid,
-  Tooltip,
   Legend,
+  LabelList,
   ResponsiveContainer,
 } from 'recharts';
 import { Choice, GetSessionResponse, SubmitVoteRequest } from '@/lib/types';
@@ -40,11 +40,20 @@ import {
 } from "@/components/ui/popover"
 import { Label } from '@/components/ui/label';
 import {
-  Tooltip as TooltipUI,
+  Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Toaster, toast } from "sonner"
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
+
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
@@ -220,7 +229,7 @@ export default function VoteSessionPage() {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-7xl mx-auto">
-          {/* Header Controls */}
+          {/* Menu Area */}
           <div className="bg-white rounded-lg shadow p-4 mb-4 flex flex-wrap gap-2 items-center justify-between">
             <Tabs
               value={chartType}
@@ -280,21 +289,39 @@ export default function VoteSessionPage() {
             </div>
           </div>
 
+          {/* Chart Area */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            {/* Main Chart Area */}
-            <div className="lg:col-span-3 bg-white rounded-lg shadow p-6">
-              <h1 className="text-2xl font-bold mb-2">{session.question}</h1>
-              <p className="text-gray-600 mb-4">総投票数: {totalVotes}票</p>
-
-              <div className="h-96">
+            <Card className="w-full lg:col-span-3">
+              <CardHeader>
+                <CardTitle className="text-2xl">{session.question}</CardTitle>
+                <CardDescription>総投票数: {totalVotes}票</CardDescription>
+              </CardHeader>
+              <CardContent className="h-96">
                 {chartType === 'bar' ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
+                    <BarChart data={chartData} margin={{top: 20}}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis dataKey="votes" />
-                      <Tooltip />
-                      <Legend />
+                      <XAxis
+                        dataKey="name"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                      />
+                      <Bar
+                        dataKey="votes"
+                        fill="#5382daff"
+                        radius={10}
+                        maxBarSize={100}
+                        className="m-10"
+                        isAnimationActive={false}
+                      >
+                        <LabelList
+                          position="top"
+                          offset={12}
+                          fontSize={12}
+                          fill='#000000'
+                        />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -314,53 +341,37 @@ export default function VoteSessionPage() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Results Summary */}
-              <div className="mt-6">
-                {choices.map((choice) => {
-                  const percentage = totalVotes > 0 ? Math.round((choice.voteCount / totalVotes) * 100) : 0;
-                  return (
-                    <div key={choice.choiceId} className="mb-2">
-                      <div className="flex justify-between">
-                        <span>{choice.text}</span>
-                        <span>
-                          {choice.voteCount}票 ({percentage}%)
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* QR Code Sidebar */}
-            <div className="flex flex-col items-center bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-bold mb-4">投票用QRコード</h2>
-              <div className="flex justify-center mb-4">
-                <QRCodeSVG value={voteUrl} size={200} />
-              </div>
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-gray-600 break-all">{voteUrl}</p>
-                <Toaster />
-                <TooltipUI>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" onClick={() => {
-                      navigator.clipboard.writeText(voteUrl)
-                      toast.success("URLをコピーしました")
-                    }}>
-                      <Copy />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>URLをコピー</TooltipContent>
-                </TooltipUI>
-              </div>
-            </div>
+            {/* QR Code Area */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-center">投票用QRコード</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center space-y-4">
+                  <QRCodeSVG value={voteUrl} size={200} />
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-gray-600 break-all">{voteUrl}</p>
+                    <Toaster />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" onClick={() => {
+                          navigator.clipboard.writeText(voteUrl)
+                          toast.success("URLをコピーしました")
+                        }}>
+                          <Copy />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>URLをコピー</TooltipContent>
+                    </Tooltip>
+                  </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
