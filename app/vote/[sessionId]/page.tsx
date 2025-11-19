@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Download } from 'lucide-react';
+import { AlertCircleIcon, Copy, Download } from 'lucide-react';
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -53,6 +53,10 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card"
+
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from "@/components/ui/checkbox"
 
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
@@ -406,43 +410,49 @@ export default function VoteSessionPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold mb-2">{session.question}</h1>
-        {session.voteType === 'multiple' && (
-          <p className="text-sm text-gray-600 mb-4">(複数選択可)</p>
-        )}
+      <Card className="shadow-lg p-8 max-w-md w-full">
+        <CardHeader>
+          <CardTitle className="text-2xl">{session.question}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+            {session.voteType === 'single' ? 
+              <RadioGroup onValueChange={(value) => handleChoiceChange(value)}>
+                {session.choices.map((choice) => (
+                  <div key={choice.choiceId} className="flex items-center space-x-2 mr-6">
+                    <RadioGroupItem value={choice.choiceId} id={choice.choiceId} />
+                    <Label htmlFor={choice.choiceId} className="text-xl">{choice.text}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+              : 
+              <div className="space-y-2">
+                {session.choices.map((choice) => (
+                  <div key={choice.choiceId} className="flex items-center space-x-2 mr-6">
+                    <Checkbox
+                      value={choice.choiceId}
+                      id={choice.choiceId}
+                      checked={selectedChoices.includes(choice.choiceId)}
+                      onCheckedChange={() => handleChoiceChange(choice.choiceId)}
+                    />
+                    <Label htmlFor={choice.choiceId} className="text-xl">{choice.text}</Label>
+                  </div>
+                ))}
+              </div>
+          }
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-3 mb-6">
-            {session.choices.map((choice) => (
-              <label
-                key={choice.choiceId}
-                className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
-              >
-                <input
-                  type={session.voteType === 'single' ? 'radio' : 'checkbox'}
-                  name="vote"
-                  value={choice.choiceId}
-                  checked={selectedChoices.includes(choice.choiceId)}
-                  onChange={() => handleChoiceChange(choice.choiceId)}
-                  className="w-5 h-5 mr-3"
-                />
-                <span className="text-lg">{choice.text}</span>
-              </label>
-            ))}
-          </div>
-
-          {error && <p className="text-red-600 mb-4">{error}</p>}
-
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-medium hover:bg-blue-700 disabled:bg-gray-300"
-            disabled={selectedChoices.length === 0}
-          >
-            投票する
-          </button>
-        </form>
-      </div>
+            {error && 
+              <Alert variant="destructive">
+                <AlertCircleIcon />
+                <AlertTitle>{error}</AlertTitle>
+              </Alert>
+            }
+            <Button type="submit">
+              <Label>投票する</Label>
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
