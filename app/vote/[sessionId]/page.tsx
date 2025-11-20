@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircleIcon, Copy, Download } from 'lucide-react';
+import { AlertCircleIcon, CircleCheck, CircleX, Copy, Download } from 'lucide-react';
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -385,25 +385,15 @@ export default function VoteSessionPage() {
   // Voter view
   if (message || !session.canVote) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <div className="text-5xl mb-4">
-            {message.includes('完了') ? '✓' : message.includes('終了') ? '✕' : 'ⓘ'}
-          </div>
-          <h2 className="text-2xl font-bold mb-2">{message}</h2>
-          {selectedChoices.length > 0 && (
-            <div className="mt-4">
-              <p className="text-gray-600">あなたの投票:</p>
-              {session.choices
-                .filter((c) => selectedChoices.includes(c.choiceId))
-                .map((c) => (
-                  <p key={c.choiceId} className="font-medium">
-                    ・{c.text}
-                  </p>
-                ))}
-            </div>
-          )}
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <Card className="shadow-lg p-8 max-w-md w-full">
+          <CardContent className="flex flex-col items-center">
+            {message.includes('完了') ? <CircleCheck size={48} />
+              : message.includes('終了') ? <CircleX size={48} />
+              : <AlertCircleIcon size={48} />}
+            <p className="text-2xl font-bold mb-2">{message}</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -421,7 +411,7 @@ export default function VoteSessionPage() {
                 {session.choices.map((choice) => (
                   <div key={choice.choiceId} className="flex items-center space-x-2 mr-6">
                     <RadioGroupItem value={choice.choiceId} id={choice.choiceId} />
-                    <Label htmlFor={choice.choiceId} className="text-xl">{choice.text}</Label>
+                    <p className="text-xl">{choice.text}</p>
                   </div>
                 ))}
               </RadioGroup>
@@ -435,7 +425,7 @@ export default function VoteSessionPage() {
                       checked={selectedChoices.includes(choice.choiceId)}
                       onCheckedChange={() => handleChoiceChange(choice.choiceId)}
                     />
-                    <Label htmlFor={choice.choiceId} className="text-xl">{choice.text}</Label>
+                    <p className="text-xl">{choice.text}</p>
                   </div>
                 ))}
               </div>
