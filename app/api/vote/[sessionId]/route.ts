@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { v4 as uuidv4 } from 'uuid';
-import { store } from '@/lib/store';
 import { GetSessionResponse, SubmitVoteRequest, SubmitVoteResponse } from '@/lib/types';
+import { createStorageAdapter } from '@/lib/storage-adapter';
+import { getCloudflareEnv } from '@/lib/get-cloudflare-env';
 
 const VOTER_TOKEN_COOKIE = 'voter_token';
 
@@ -13,7 +14,9 @@ export async function GET(
 ) {
   try {
     const { sessionId } = await params;
-    const session = store.getSession(sessionId);
+    const env = getCloudflareEnv(request);
+    const storage = createStorageAdapter(env || undefined);
+    const session = await storage.getSession(sessionId);
 
     if (!session) {
       return NextResponse.json(
@@ -24,7 +27,7 @@ export async function GET(
 
     const cookieStore = await cookies();
     const voterToken = cookieStore.get(VOTER_TOKEN_COOKIE)?.value || '';
-    const hasVoted = store.hasVoted(sessionId, voterToken);
+    const hasVoted = await storage.hasVoted(sessionId, voterToken);
 
     if (session.status === 'closed') {
       const response: GetSessionResponse = {
@@ -80,7 +83,9 @@ export async function POST(
     const { sessionId } = await params;
     const body: SubmitVoteRequest = await request.json();
 
-    const session = store.getSession(sessionId);
+    const env = getCloudflareEnv(request);
+    const storage = createStorageAdapter(env || undefined);
+    const session = await storage.getSession(sessionId);
 
     if (!session) {
       return NextResponse.json(
@@ -100,7 +105,7 @@ export async function POST(
     const cookieStore = await cookies();
     let voterToken = cookieStore.get(VOTER_TOKEN_COOKIE)?.value || '';
 
-    if (voterToken && store.hasVoted(sessionId, voterToken)) {
+    if (voterToken && await storage.hasVoted(sessionId, voterToken)) {
       return NextResponse.json(
         { error: '既に投票済みです' },
         { status: 409 }
@@ -145,18 +150,7 @@ export async function POST(
       votedAt: new Date(),
     };
 
-    store.addVote(vote);
-
-    // Update vote counts
-    const updatedChoices = session.choices.map((choice) => {
-      if (body.choiceIds.includes(choice.choiceId)) {
-        return { ...choice, voteCount: choice.voteCount + 1 };
-      }
-      return choice;
-    });
-
-    const updatedSession = { ...session, choices: updatedChoices };
-    store.updateSession(sessionId, updatedSession);
+    await storage.addVote(vote);
 
     const votedAt = new Date();
     const response: SubmitVoteResponse = {

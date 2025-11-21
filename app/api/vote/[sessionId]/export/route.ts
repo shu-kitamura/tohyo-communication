@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
 import { ExportJsonResponse } from '@/lib/types';
+import { createStorageAdapter } from '@/lib/storage-adapter';
+import { getCloudflareEnv } from '@/lib/get-cloudflare-env';
 
 // GET /vote/:sessionId/export - Export results
 export async function GET(
@@ -9,7 +10,9 @@ export async function GET(
 ) {
   try {
     const { sessionId } = await params;
-    const session = store.getSession(sessionId);
+    const env = getCloudflareEnv(request);
+    const storage = createStorageAdapter(env || undefined);
+    const session = await storage.getSession(sessionId);
 
     if (!session) {
       return NextResponse.json(

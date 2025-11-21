@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
+import { createStorageAdapter } from '@/lib/storage-adapter';
+import { getCloudflareEnv } from '@/lib/get-cloudflare-env';
 
 // POST /vote/:sessionId/close - Close voting session
 export async function POST(
@@ -8,7 +9,9 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await params;
-    const session = store.getSession(sessionId);
+    const env = getCloudflareEnv(request);
+    const storage = createStorageAdapter(env || undefined);
+    const session = await storage.getSession(sessionId);
 
     if (!session) {
       return NextResponse.json(
@@ -17,14 +20,7 @@ export async function POST(
       );
     }
 
-    const closedAt = new Date();
-    const updatedSession = {
-      ...session,
-      status: 'closed' as const,
-      closedAt,
-    };
-
-    store.updateSession(sessionId, updatedSession);
+    const closedAt = await storage.closeSession(sessionId);
 
     return NextResponse.json({
       sessionId,

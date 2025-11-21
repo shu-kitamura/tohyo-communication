@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { store } from '@/lib/store';
 import { CreateSessionRequest, CreateSessionResponse, Choice } from '@/lib/types';
+import { createStorageAdapter } from '@/lib/storage-adapter';
+import { getCloudflareEnv } from '@/lib/get-cloudflare-env';
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,7 +54,10 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
     };
 
-    store.createSession(session);
+    // Use storage adapter (Durable Objects in production, in-memory in dev)
+    const env = getCloudflareEnv(request);
+    const storage = createStorageAdapter(env || undefined);
+    await storage.createSession(session);
 
     const baseUrl = request.nextUrl.origin;
     const response: CreateSessionResponse = {

@@ -9,5 +9,20 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "VOTING_SESSION",
+        "class_name": "VotingSession",
+        "script_name": "tohyo-communication"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["VotingSession"]
+    }
+  ]
 }

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { store } from '@/lib/store';
+import { createStorageAdapter } from '@/lib/storage-adapter';
+import { getCloudflareEnv } from '@/lib/get-cloudflare-env';
 
 // GET /vote/:sessionId/stream - SSE for real-time updates
 export async function GET(
@@ -7,7 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
   const { sessionId } = await params;
-  const session = store.getSession(sessionId);
+  const env = getCloudflareEnv(request);
+  const storage = createStorageAdapter(env || undefined);
+  const session = await storage.getSession(sessionId);
 
   if (!session) {
     return new Response(
@@ -40,8 +43,8 @@ export async function GET(
       );
 
       // Poll for updates every second
-      const interval = setInterval(() => {
-        const currentSession = store.getSession(sessionId);
+      const interval = setInterval(async () => {
+        const currentSession = await storage.getSession(sessionId);
 
         if (!currentSession) {
           controller.close();
