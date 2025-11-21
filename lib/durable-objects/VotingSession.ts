@@ -28,7 +28,7 @@ export class VotingSession {
       }
 
       if (method === 'GET' && path === '/session') {
-        return await this.handleGetSession(request);
+        return await this.handleGetSession();
       }
 
       if (method === 'POST' && path === '/vote') {
@@ -84,7 +84,7 @@ export class VotingSession {
     });
   }
 
-  private async handleGetSession(request: Request): Promise<Response> {
+  private async handleGetSession(): Promise<Response> {
     if (!this.session) {
       return new Response(
         JSON.stringify({ error: 'Session not found' }),

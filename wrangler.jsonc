@@ -17,5 +17,11 @@
         "class_name": "VotingSession"
       }
     ]
-  }
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["VotingSession"]
+    }
+  ]
 }
