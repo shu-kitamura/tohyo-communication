@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
   "name": "tohyo-communication",
   "compatibility_date": "2025-03-25",
   "compatibility_flags": [
