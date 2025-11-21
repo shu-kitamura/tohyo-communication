@@ -16,11 +16,6 @@ export function getCloudflareEnv(request: NextRequest): CloudflareEnv | null {
     return cloudflareContext.env;
   }
 
-  // Check if running in Cloudflare Workers environment
-  if (typeof process !== 'undefined' && (process as any).env?.VOTING_SESSION) {
-    return (process as any).env as CloudflareEnv;
-  }
-
   return null;
 }
 

@@ -18,9 +18,10 @@ if (!fs.existsSync(workerPath)) {
 let workerContent = fs.readFileSync(workerPath, 'utf-8');
 
 // Add Durable Object import and export
+// The path is relative to .open-next/worker.js
 const durableObjectCode = `
-// Durable Object class import
-import { VotingSession } from '../durable-objects';
+// Durable Object class import - relative to .open-next/worker.js
+import { VotingSession } from '../lib/durable-objects/VotingSession';
 
 // Export Durable Object for Cloudflare Workers
 export { VotingSession };
@@ -37,4 +38,3 @@ if (!workerContent.includes('export { VotingSession }')) {
 }
 
 console.log('✅ Post-build processing complete');
-

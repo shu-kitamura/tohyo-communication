@@ -140,14 +140,3 @@ export async function getVotes(
 
   return await response.json();
 }
-
-/**
- * Update a session (used for closing)
- */
-export async function updateSession(
-  sessionId: string,
-  session: Session,
-  env: DurableObjectBindings
-): Promise<void> {
-  await closeSession(sessionId, env);
-}

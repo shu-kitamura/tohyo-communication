@@ -9,7 +9,6 @@ export interface StorageAdapter {
   getSession(sessionId: string): Promise<Session | null>;
   updateSession(sessionId: string, session: Session): Promise<void>;
   closeSession(sessionId: string): Promise<Date>;
-  deleteSession(sessionId: string): Promise<void>;
   addVote(vote: Vote): Promise<void>;
   hasVoted(sessionId: string, voterToken: string): Promise<boolean>;
   getVotes(sessionId: string): Promise<Vote[]>;
@@ -43,12 +42,22 @@ class InMemoryStorageAdapter implements StorageAdapter {
     return closedAt;
   }
 
-  async deleteSession(sessionId: string): Promise<void> {
-    store.deleteSession(sessionId);
-  }
-
   async addVote(vote: Vote): Promise<void> {
     store.addVote(vote);
+    
+    // Update vote counts in session
+    const session = store.getSession(vote.sessionId);
+    if (session) {
+      const updatedChoices = session.choices.map((choice) => {
+        if (vote.choiceIds.includes(choice.choiceId)) {
+          return { ...choice, voteCount: choice.voteCount + 1 };
+        }
+        return choice;
+      });
+      
+      const updatedSession = { ...session, choices: updatedChoices };
+      store.updateSession(vote.sessionId, updatedSession);
+    }
   }
 
   async hasVoted(sessionId: string, voterToken: string): Promise<boolean> {
@@ -72,19 +81,16 @@ class DurableObjectStorageAdapter implements StorageAdapter {
   }
 
   async updateSession(sessionId: string, session: Session): Promise<void> {
-    // For Durable Objects, updates happen through specific operations
-    // This is handled by the DO itself when votes are submitted or session is closed
-    await doHelpers.updateSession(sessionId, session, this.env);
+    // For Durable Objects, use the specialized closeSession method
+    if (session.status === 'closed') {
+      await doHelpers.closeSession(sessionId, this.env);
+    }
+    // Note: Other session updates (like vote counts) happen automatically 
+    // through the submitVote operation in the Durable Object
   }
 
   async closeSession(sessionId: string): Promise<Date> {
     return await doHelpers.closeSession(sessionId, this.env);
-  }
-
-  async deleteSession(sessionId: string): Promise<void> {
-    // Durable Objects persist data; deletion is not typically needed
-    // Sessions are managed by their lifecycle (creation, voting, closing)
-    throw new Error('Session deletion not supported with Durable Objects');
   }
 
   async addVote(vote: Vote): Promise<void> {
