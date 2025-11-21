@@ -14,9 +14,23 @@ npm run dev
 
 Everything works exactly as before.
 
-## For Deployment (Cloudflare Workers)
+## For Deployment
 
-### First Time Setup
+### Option 1: Cloudflare Pages (Recommended)
+
+1. **Configure Build Settings in Cloudflare Pages Dashboard**:
+   - Build command: `npm run pages:build`
+   - Build output directory: `.open-next`
+
+2. **Push your code** to the connected repository
+
+Cloudflare Pages will automatically build and deploy.
+
+📚 See [docs/CLOUDFLARE_PAGES_DEPLOYMENT.md](docs/CLOUDFLARE_PAGES_DEPLOYMENT.md) for detailed instructions.
+
+### Option 2: Manual Deployment with Wrangler
+
+#### First Time Setup
 
 1. **Install dependencies** (if not already done):
    ```bash
@@ -28,7 +42,7 @@ Everything works exactly as before.
    npx wrangler login
    ```
 
-### Deploy
+#### Deploy
 
 Simply run:
 ```bash
@@ -37,7 +51,7 @@ npm run deploy
 
 This will:
 1. Build your app with OpenNext Cloudflare
-2. Configure Durable Objects
+2. Inject Durable Object exports
 3. Deploy to Cloudflare Workers
 
 ### Preview Locally with Durable Objects
