@@ -9,10 +9,10 @@
 **主な特徴：**
 - 認証不要で手軽に利用可能
 - QRコードによる簡単アクセス
-- リアルタイムな結果表示（SSEまたはWebSocket）
+- リアルタイムな結果表示（SSEまたはWebSocket、Durable Objects から配信）
 - 一人一票の投票制限
 - 単一選択/複数選択の両対応
-- データは永続化せず、セッション終了で消去
+- Cloudflare Durable Objects にセッション単位で永続化（24時間または終了で削除）
 - 結果のエクスポート機能（CSV/JSON/画像）
 - 複数の投票セッションを同時開催可能
 
@@ -44,7 +44,7 @@
 1. 開催者：投票の質問文と選択肢（A, B, C, D等）を入力
 2. 開催者：投票形式（単一選択/複数選択）を選択
 3. 開催者 → サーバ：投票セッション作成リクエスト
-4. サーバ：セッションIDを生成し、投票データをメモリに保存
+4. サーバ：セッションIDを生成し、対応する Durable Object にセッションデータを永続化
 5. サーバ → 開催者：セッションID、投票用URL、QRコード情報を返却
 6. 開催者：QRコードと結果表示グラフを画面に表示
 
@@ -53,9 +53,9 @@
 2. 参加者：投票画面にアクセス（投票用URL）
 3. 参加者：選択肢から投票
 4. 参加者 → サーバ：投票リクエスト
-5. サーバ：一人一票チェック（Cookie/SessionStorage等で重複確認）
-6. サーバ：投票データを記録
-7. サーバ → 開催者：リアルタイムで投票結果を更新通知（SSE/WebSocket）
+5. サーバ：Durable Object で一人一票チェック（Cookie の voter_token とストレージを突き合わせ）
+6. サーバ：Durable Object に投票データを記録し集計
+7. サーバ → 開催者：Durable Object からリアルタイムで投票結果をSSE/WebSocket配信
 8. 開催者：グラフがリアルタイムで更新される
 
 #### 3.2.3 結果表示・エクスポートフロー
@@ -67,9 +67,9 @@
 
 #### 3.2.4 投票終了フロー
 1. 開催者 → サーバ：投票終了リクエスト
-2. サーバ：該当セッションを投票受付終了状態に変更
+2. サーバ：該当セッションの Durable Object で投票受付終了状態に変更
 3. 参加者が投票画面にアクセス → 「投票は終了しました」を表示
-4. 開催者：ブラウザを閉じる → サーバのメモリから削除（またはタイムアウトで自動削除）
+4. セッション作成から24時間または終了後に Durable Object ストレージから自動削除
 
 ### 3.3 例外フロー
 - 参加者が既に投票済みの場合 → 「既に投票済みです」を表示
@@ -138,9 +138,9 @@
 
 #### 4.3.1 投票制御
 - **一人一票制御**
-  - Cookie方式による重複投票防止
+  - Cookie方式による重複投票防止（`voter_token` を HttpOnly Cookie に保存）
   - 投票時にランダムなトークン（voter_token）を生成しCookieに保存
-  - 再アクセス時にCookieの有無で投票済みを判定
+  - サーバ側は Durable Object 内で voter_token の存在をシリアライズ判定（再アクセス時にストレージ照合）
   
 #### 4.3.2 リアルタイム通信
 - **投票データの即時反映**
@@ -149,14 +149,14 @@
   
 #### 4.3.3 データ管理
 - **セッションデータ管理**
-  - メモリ内での投票データ保持
-  - セッション終了時のデータ削除
-  - タイムアウトによる自動削除（オプション）
+  - Cloudflare Durable Objects の per-session ストレージで永続化
+  - セッション終了時、または作成から24時間で削除（DO アラーム/TTL などでクリーンアップ）
+  - ワーカーの再起動や別インスタンスでも一貫した状態を再構築可能
   
 #### 4.3.4 同時セッション対応
 - **複数セッション管理**
   - 複数の投票セッションの同時開催
-  - セッションIDによる識別と分離
+  - セッションIDを Durable Object のキーとしてシャーディングし、各セッションが独立したインスタンスで直列処理される
 
 ## 5. データモデル
 
@@ -239,9 +239,9 @@
 
 ### 5.4 データの保持場所
 
-- **サーバメモリ内**に全データを保持
-- データベースは使用しない
-- セッション終了時またはタイムアウトでメモリから削除
+- **Cloudflare Durable Objects** の per-session ストレージに保持
+- セッションIDごとに独立したオブジェクトで一貫性を担保
+- セッション終了時、または作成から24時間でストレージから削除（クリーンアップ実装を予定）
 
 ## 6. API仕様
 
@@ -275,6 +275,7 @@
 **備考：**
 - QRコードはクライアント側（JavaScript）で `voteUrl` から生成
 - `choices` にはテキストのみ指定、IDはサーバ側で自動採番
+- 内部的にはセッションIDをキーに Durable Object を生成し、ストレージへ永続化する
 
 ---
 
@@ -291,6 +292,9 @@
   "closedAt": "2025-11-09T11:00:00Z"
 }
 ```
+
+**備考：**
+- 対象セッションの Durable Object でステータスを `closed` に更新し、以降の投票を拒否する
 
 ---
 
@@ -359,6 +363,7 @@ data: {"message": "投票が終了しました"}
 **備考：**
 - WebSocketの代替としてSSEを使用（サーバ→クライアントの一方向通信のため）
 - 必要に応じてWebSocketに変更可能
+- SSEの送信元は該当セッションの Durable Object（投票受付・終了と整合する単一ソース）
 
 ---
 
@@ -955,7 +960,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 - フロントエンドとバックエンドが同一オリジンで動作
 
 #### 8.2.6 データ保護
-- **メモリ内データ**：永続化しないため、機密性は低い
+- **Durable Object ストレージ**：セッション単位で保持（低機密データ想定）
 - **環境変数管理**：APIキーや設定値は環境変数で管理（必要に応じて）
 - **ログ出力**：個人情報（IPアドレス等）はログに記録しない
 
@@ -966,7 +971,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 **現時点では詳細な可用性要件は定めない。**
 
 - イベント開催中の安定稼働を目指す
-- メモリベースのため、サーバ再起動時にデータ消失は許容する
+- Durable Object による永続化のため、サーバ再起動を跨いで状態を保持する前提
 
 ---
 
@@ -992,17 +997,17 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 
 #### 8.5.2 監視
 - **現時点では不要**
-- 将来的にはAzureの基本的な監視機能を活用可能
+- 将来的には Cloudflare Dashboard/Logs を活用可能
 
 #### 8.5.3 デプロイ・ホスティング
-- **優先**：Azure（Azure App Service または Azure Static Web Apps）
-- **代替案**：規模によってはGitHub Pages（静的サイト）+ 別途APIサーバ
-- **CI/CD**：GitHub Actionsを使った自動デプロイを検討
+- **優先**：Cloudflare Workers + Durable Objects（OpenNext を使用）
+- **設定**：`wrangler.toml`/`wrangler.jsonc` で DO バインドとビルド設定を管理
+- **CI/CD**：GitHub Actions から `opennextjs-cloudflare deploy` または `wrangler deploy` を実行
 
 #### 8.5.4 セッションのライフサイクル管理
-- **タイムアウト設定**：セッション作成から24時間経過後、自動削除（メモリ解放）
-- **手動終了**：開催者が「投票終了」ボタンを押した場合、即座に投票受付終了
-- **メモリ管理**：定期的に期限切れセッションをクリーンアップ
+- **タイムアウト設定**：セッション作成から24時間経過後、自動削除（Durable Object のストレージクリーンアップ/アラームで実施）
+- **手動終了**：開催者が「投票終了」ボタンを押した場合、Durable Object で即座に投票受付終了
+- **再起動耐性**：ワーカーの再配置・再起動時も DO ストレージから復元
 
 ---
 
@@ -1069,10 +1074,11 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 #### 9.2.1 API
 - **Next.js App Router - Route Handlers**：APIエンドポイント実装
 - **Node.js**：実行環境
+- **Cloudflare Durable Objects 呼び出し**：APIハンドラからセッションIDをキーに DO を呼び出し、状態管理を委譲
 
 #### 9.2.2 データストア
-- **インメモリストア**：Map/Set を使用した揮発性データ管理
-- データベース不使用（メモリ内で完結）
+- **Cloudflare Durable Objects**：セッションIDをキーにした per-session ストレージ
+- 永続性と直列処理を DO が担保し、ワーカーの再起動を跨いでも保持
 
 #### 9.2.3 リアルタイム通信
 - **Server-Sent Events (SSE)**：標準Web APIを使用したサーバ→クライアントの一方向通信
@@ -1093,6 +1099,6 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 
 ### 9.4 ホスティング・デプロイ
 
-- **本番環境**：Azure（Azure App Service または Azure Static Web Apps）
-- **開発環境**：ローカル（localhost:3000）
-- **CI/CD**：GitHub Actions（検討中）
+- **本番環境**：Cloudflare Workers（Durable Objects をバインド）
+- **開発環境**：ローカル（localhost:3000）+ `opennextjs-cloudflare preview` / Wrangler プレビュー
+- **CI/CD**：GitHub Actions（`opennextjs-cloudflare build/deploy` や `wrangler deploy` を実行）
