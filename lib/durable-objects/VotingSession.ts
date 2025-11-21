@@ -1,5 +1,6 @@
 // Durable Object for managing voting session state
 import { Session, Vote } from '../types';
+import type { DurableObjectState } from '../durable-object-helpers';
 
 export class VotingSession {
   private state: DurableObjectState;

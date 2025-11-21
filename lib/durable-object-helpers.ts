@@ -1,6 +1,39 @@
 // Helper functions to interact with Durable Objects
 import { Session, Vote } from './types';
 
+// Cloudflare Durable Objects type definitions
+// These types are available in the Cloudflare Workers runtime but not during build
+export interface DurableObjectNamespace {
+  idFromName(name: string): DurableObjectId;
+  idFromString(id: string): DurableObjectId;
+  get(id: DurableObjectId): DurableObjectStub;
+}
+
+export interface DurableObjectId {
+  toString(): string;
+  equals(other: DurableObjectId): boolean;
+}
+
+export interface DurableObjectStub {
+  fetch(input: RequestInfo, init?: RequestInit): Promise<Response>;
+}
+
+export interface DurableObjectStorage {
+  get<T = unknown>(key: string): Promise<T | undefined>;
+  get<T = unknown>(keys: string[]): Promise<Map<string, T>>;
+  put<T = unknown>(key: string, value: T): Promise<void>;
+  put<T = unknown>(entries: Record<string, T>): Promise<void>;
+  delete(key: string): Promise<boolean>;
+  delete(keys: string[]): Promise<number>;
+  list<T = unknown>(): Promise<Map<string, T>>;
+}
+
+export interface DurableObjectState {
+  storage: DurableObjectStorage;
+  id: DurableObjectId;
+  waitUntil(promise: Promise<unknown>): void;
+}
+
 export interface DurableObjectBindings {
   VOTING_SESSION: DurableObjectNamespace;
 }
