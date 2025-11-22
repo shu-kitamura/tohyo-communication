@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 // POST /vote/:sessionId/close - Close voting session
 export async function POST(
@@ -8,28 +8,33 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await params;
-    const session = store.getSession(sessionId);
+    const { env } = await getCloudflareContext();
+    const id = env.VOTE_SESSION.idFromName(sessionId);
+    const stub = env.VOTE_SESSION.get(id);
 
-    if (!session) {
-      return NextResponse.json(
-        { error: 'セッションが見つかりません' },
-        { status: 404 }
-      );
+    const doRes = await stub.fetch("http://do/close", {
+        method: "POST"
+    });
+
+    if (!doRes.ok) {
+        if (doRes.status === 404) {
+            return NextResponse.json(
+                { error: 'セッションが見つかりません' },
+                { status: 404 }
+            );
+        }
+        return NextResponse.json(
+            { error: 'サーバーエラーが発生しました' },
+            { status: 500 }
+        );
     }
 
-    const closedAt = new Date();
-    const updatedSession = {
-      ...session,
-      status: 'closed' as const,
-      closedAt,
-    };
-
-    store.updateSession(sessionId, updatedSession);
+    const data = await doRes.json() as { closedAt: string };
 
     return NextResponse.json({
       sessionId,
       status: 'closed',
-      closedAt: closedAt.toISOString(),
+      closedAt: data.closedAt,
     });
   } catch (error) {
     console.error('Error closing session:', error);

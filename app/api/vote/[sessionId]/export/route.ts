@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
-import { ExportJsonResponse } from '@/lib/types';
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { ExportJsonResponse, Session } from '@/lib/types';
 
 // GET /vote/:sessionId/export - Export results
 export async function GET(
@@ -9,14 +9,26 @@ export async function GET(
 ) {
   try {
     const { sessionId } = await params;
-    const session = store.getSession(sessionId);
+    const { env } = await getCloudflareContext();
+    const id = env.VOTE_SESSION.idFromName(sessionId);
+    const stub = env.VOTE_SESSION.get(id);
 
-    if (!session) {
-      return NextResponse.json(
-        { error: 'セッションが見つかりません' },
-        { status: 404 }
-      );
+    const doRes = await stub.fetch("http://do/export");
+    
+    if (!doRes.ok) {
+        if (doRes.status === 404) {
+            return NextResponse.json(
+                { error: 'セッションが見つかりません' },
+                { status: 404 }
+            );
+        }
+        return NextResponse.json(
+            { error: 'サーバーエラーが発生しました' },
+            { status: 500 }
+        );
     }
+
+    const session = await doRes.json() as Session;
 
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format');

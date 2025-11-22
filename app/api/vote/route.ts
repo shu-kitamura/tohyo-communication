@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { store } from '@/lib/store';
-import { CreateSessionRequest, CreateSessionResponse, Choice } from '@/lib/types';
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { CreateSessionRequest, CreateSessionResponse, Session } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,30 +36,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create session
+    // Create session via Durable Object
     const sessionId = uuidv4();
-    const choices: Choice[] = body.choices.map((choice, index) => ({
-      choiceId: String(index + 1),
-      text: choice.text.trim(),
-      voteCount: 0,
-    }));
+    const { env } = await getCloudflareContext();
+    const id = env.VOTE_SESSION.idFromName(sessionId);
+    const stub = env.VOTE_SESSION.get(id);
 
-    const session = {
-      sessionId,
-      question: body.question.trim(),
-      voteType: body.voteType,
-      choices,
-      status: 'active' as const,
-      createdAt: new Date(),
-    };
+    const initResponse = await stub.fetch("http://do/init", {
+      method: "POST",
+      body: JSON.stringify({ ...body, sessionId }),
+      headers: { "Content-Type": "application/json" }
+    });
 
-    store.createSession(session);
+    if (!initResponse.ok) {
+      throw new Error("Failed to initialize session in Durable Object");
+    }
+
+    const session = await initResponse.json() as Session;
 
     const baseUrl = request.nextUrl.origin;
     const response: CreateSessionResponse = {
       sessionId,
       voteUrl: `${baseUrl}/vote/${sessionId}`,
-      createdAt: session.createdAt.toISOString(),
+      createdAt: session.createdAt as unknown as string,
     };
 
     return NextResponse.json(response, { status: 201 });

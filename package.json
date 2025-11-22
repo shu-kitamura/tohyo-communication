@@ -35,6 +35,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251121.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
