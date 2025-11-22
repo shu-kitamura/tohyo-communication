@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "投票コミュニケーション - リアルタイム投票アプリ",
+  title: "TOHYO通信 ~Vote Communication~",
   description: "プレゼンテーションやイベントで使用するリアルタイム投票Webアプリケーション",
 };
 
