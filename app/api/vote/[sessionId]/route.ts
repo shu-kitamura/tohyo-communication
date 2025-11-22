@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { v4 as uuidv4 } from 'uuid';
-import { store } from '@/lib/store';
-import { GetSessionResponse, SubmitVoteRequest, SubmitVoteResponse } from '@/lib/types';
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { SubmitVoteRequest, SubmitVoteResponse } from '@/lib/types';
 
 const VOTER_TOKEN_COOKIE = 'voter_token';
 
@@ -13,55 +13,36 @@ export async function GET(
 ) {
   try {
     const { sessionId } = await params;
-    const session = store.getSession(sessionId);
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'セッションが見つかりません' },
-        { status: 404 }
-      );
-    }
+    const { env } = await getCloudflareContext();
+    const id = env.VOTE_SESSION.idFromName(sessionId);
+    const stub = env.VOTE_SESSION.get(id);
 
     const cookieStore = await cookies();
     const voterToken = cookieStore.get(VOTER_TOKEN_COOKIE)?.value || '';
-    const hasVoted = store.hasVoted(sessionId, voterToken);
-
-    if (session.status === 'closed') {
-      const response: GetSessionResponse = {
-        sessionId: session.sessionId,
-        question: session.question,
-        voteType: session.voteType,
-        choices: session.choices.map(({ choiceId, text }) => ({ choiceId, text })),
-        status: session.status,
-        canVote: false,
-        message: '投票は終了しました',
-      };
-      return NextResponse.json(response);
+    
+    const url = new URL("http://do/");
+    if (voterToken) {
+        url.searchParams.set("voterToken", voterToken);
     }
 
-    if (hasVoted) {
-      const response: GetSessionResponse = {
-        sessionId: session.sessionId,
-        question: session.question,
-        voteType: session.voteType,
-        choices: session.choices.map(({ choiceId, text }) => ({ choiceId, text })),
-        status: session.status,
-        canVote: false,
-        message: '既に投票済みです',
-      };
-      return NextResponse.json(response);
+    const doRes = await stub.fetch(url.toString());
+    
+    if (!doRes.ok) {
+        if (doRes.status === 404) {
+            return NextResponse.json(
+                { error: 'セッションが見つかりません' },
+                { status: 404 }
+            );
+        }
+        return NextResponse.json(
+            { error: 'サーバーエラーが発生しました' },
+            { status: 500 }
+        );
     }
 
-    const response: GetSessionResponse = {
-      sessionId: session.sessionId,
-      question: session.question,
-      voteType: session.voteType,
-      choices: session.choices.map(({ choiceId, text }) => ({ choiceId, text })),
-      status: session.status,
-      canVote: true,
-    };
+    const data = await doRes.json();
+    return NextResponse.json(data);
 
-    return NextResponse.json(response);
   } catch (error) {
     console.error('Error getting session:', error);
     return NextResponse.json(
@@ -79,89 +60,34 @@ export async function POST(
   try {
     const { sessionId } = await params;
     const body: SubmitVoteRequest = await request.json();
-
-    const session = store.getSession(sessionId);
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'セッションが見つかりません' },
-        { status: 404 }
-      );
-    }
-
-    if (session.status === 'closed') {
-      return NextResponse.json(
-        { error: '投票は終了しました' },
-        { status: 403 }
-      );
-    }
+    const { env } = await getCloudflareContext();
+    const id = env.VOTE_SESSION.idFromName(sessionId);
+    const stub = env.VOTE_SESSION.get(id);
 
     // Check if already voted
     const cookieStore = await cookies();
     let voterToken = cookieStore.get(VOTER_TOKEN_COOKIE)?.value || '';
-
-    if (voterToken && store.hasVoted(sessionId, voterToken)) {
-      return NextResponse.json(
-        { error: '既に投票済みです' },
-        { status: 409 }
-      );
-    }
-
-    // Validation
-    if (!body.choiceIds || body.choiceIds.length === 0) {
-      return NextResponse.json(
-        { error: '選択肢を選んでください' },
-        { status: 400 }
-      );
-    }
-
-    if (session.voteType === 'single' && body.choiceIds.length > 1) {
-      return NextResponse.json(
-        { error: '単一選択の投票では1つだけ選択してください' },
-        { status: 400 }
-      );
-    }
-
-    // Check if all choice IDs are valid
-    const validChoiceIds = session.choices.map((c) => c.choiceId);
-    const invalidChoices = body.choiceIds.filter((id) => !validChoiceIds.includes(id));
-    if (invalidChoices.length > 0) {
-      return NextResponse.json(
-        { error: '無効な選択肢が含まれています' },
-        { status: 400 }
-      );
-    }
 
     // Generate voter token if not exists
     if (!voterToken) {
       voterToken = `voter_${uuidv4()}`;
     }
 
-    // Record vote
-    const vote = {
-      voterToken,
-      sessionId,
-      choiceIds: body.choiceIds,
-      votedAt: new Date(),
-    };
-
-    store.addVote(vote);
-
-    // Update vote counts
-    const updatedChoices = session.choices.map((choice) => {
-      if (body.choiceIds.includes(choice.choiceId)) {
-        return { ...choice, voteCount: choice.voteCount + 1 };
-      }
-      return choice;
+    const doRes = await stub.fetch("http://do/vote", {
+        method: "POST",
+        body: JSON.stringify({ ...body, voterToken }),
+        headers: { "Content-Type": "application/json" }
     });
 
-    const updatedSession = { ...session, choices: updatedChoices };
-    store.updateSession(sessionId, updatedSession);
+    const data = await doRes.json() as { message: string };
 
-    const votedAt = new Date();
+    if (!doRes.ok) {
+        return NextResponse.json(data, { status: doRes.status });
+    }
+
     const response: SubmitVoteResponse = {
-      message: '投票が完了しました',
-      votedAt: votedAt.toISOString(),
+      message: data.message,
+      votedAt: new Date().toISOString(),
     };
 
     const res = NextResponse.json(response, { status: 201 });

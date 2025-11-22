@@ -17,7 +17,7 @@ import {
   LabelList,
   ResponsiveContainer,
 } from 'recharts';
-import { Choice, GetSessionResponse, SubmitVoteRequest } from '@/lib/types';
+import { Choice, GetSessionResponse, SubmitVoteRequest, SubmitVoteResponse } from '@/lib/types';
 
 import {
   Tabs,
@@ -149,7 +149,7 @@ export default function VoteSessionPage() {
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
+      const data = await res.json() as SubmitVoteResponse & { error?: string };
 
       if (!res.ok) {
         setError(data.error || '投票に失敗しました');
