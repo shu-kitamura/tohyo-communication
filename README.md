@@ -1,4 +1,4 @@
-# TOHYO通信 ~Vote Communication~
+# TOHYO通信 \~Vote Communication\~
 
 サーバーレス・リアルタイム投票アプリケーション。  
 https://vote.shu-kita.net にて公開しています。
