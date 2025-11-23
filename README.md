@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TOHYO通信 ~Vote Communication~
 
-## Getting Started
+サーバーレス・リアルタイム投票アプリケーション。  
+https://vote.shu-kita.net にて公開しています。
 
-First, run the development server:
+## 概要
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+イベントやワークショップで、参加者の意見をリアルタイムに収集・可視化するためのWebアプリケーションです。  
+既存の投票ツールにおける「リアルタイム性の欠如」や「視認性の低さ」を解決するために開発しました。  
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**特徴:**
+- **ログイン不要**: QRコードを読み取るだけで即座に参加可能。
+- **リアルタイム更新**: 投票結果は主催者・参加者の画面に瞬時に反映。
+- **サーバーレス**: Cloudflare エッジネットワーク上で動作し、低遅延かつスケーラブル。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Demo
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+<!-- ここにデモ動画やスクリーンショットを追加予定 -->
+<!-- ![Demo GIF](./docs/demo.gif) -->
 
-## Learn More
+## アーキテクチャ
 
-To learn more about Next.js, take a look at the following resources:
+本プロジェクトでは、**「ステートフルなサーバーレス」** を実現するために以下のアーキテクチャを採用しています。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 1. Cloudflare Durable Objects による状態管理
+通常、リアルタイム投票アプリにはデータベースとWebサーバーが必要ですが、本アプリでは **Cloudflare Durable Objects** を採用することで、これらを単一のコンポーネントで完結させています。
+- **整合性**: セッション（投票ルーム）ごとに独立した Durable Object が立ち上がり、投票データの整合性を担保します。
+- **低遅延**: エッジロケーションで動作するため、ユーザーに近い場所で処理が行われます。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Server-Sent Events (SSE) によるリアルタイム配信
+双方向通信が必要なチャットアプリとは異なり、投票アプリは「サーバーからクライアントへの一方向の更新通知」が主です。そのため、WebSocket ではなく **Server-Sent Events (SSE)** を採用しました。
+- **軽量**: HTTPベースであるため、ファイアウォールやプロキシとの親和性が高く、実装もシンプルです。
+- **効率的**: 投票が行われたタイミングでのみイベントを配信し、無駄な通信を抑制しています。
 
-## Deploy on Vercel
+## 技術スタック
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Frontend Framework**: Next.js 15.5.6 (App Router)
+- **UI Library**: React 19.2.0
+- **Styling**: Tailwind CSS 4.x
+- **Language**: TypeScript 5.x
+- **Infrastructure**: Cloudflare Workers / Durable Objects
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 機能一覧
+
+### 開催者向け
+- **投票セッション作成**: 質問と選択肢（単一/複数選択）を設定して即座に開始。
+- **QRコード生成**: 参加者用のアクセスQRコードを自動生成。
+- **リアルタイムグラフ**: 棒グラフ・円グラフでのリアルタイム結果表示。
+- **データエクスポート**: 投票結果を CSV / JSON 形式でダウンロード。
+
+### 参加者向け
+- **簡単アクセス**: QRコードスキャンで参加（アプリインストール不要）。
+- **リアルタイム結果閲覧**: 投票後、自分の端末でもリアルタイムに結果を確認可能。
+
+### システム
+- **重複投票防止**: Cookie (`voter_token`) を使用した簡易的な重複チェック。
+
+## 今後の展望
+
+- **重複投票対策の強化**: IPアドレスベースのレートリミットや、より堅牢な重複投票防止策の導入。現状はプライベートモードなどで再投票できる。
+- **自動クリーンアップ**: 一定期間経過した投票セッションの削除。
+- **UI/UX改善**: グラフアニメーションの強化や、ダークモード対応。
+- **テスト拡充**: E2Eテストの導入による品質担保。
