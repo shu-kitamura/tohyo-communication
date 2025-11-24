@@ -9,12 +9,13 @@
 **主な特徴：**
 - 認証不要で手軽に利用可能
 - QRコードによる簡単アクセス
-- リアルタイムな結果表示（SSEまたはWebSocket、Durable Objects から配信）
+- リアルタイムな結果表示（SSEを使用、Durable Objects から配信）
 - 一人一票の投票制限
 - 単一選択/複数選択の両対応
-- Cloudflare Durable Objects にセッション単位で永続化（24時間または終了で削除）
-- 結果のエクスポート機能（CSV/JSON/画像）
+- Cloudflare Durable Objects にセッション単位で永続化
+- 結果のエクスポート機能（CSV/JSON）
 - 複数の投票セッションを同時開催可能
+- 投票者も結果閲覧が可能（投票完了後または終了後）
 
 ## 2. 目的・背景
 
@@ -35,7 +36,7 @@
 
 ### 3.1 アクター
 - **開催者**：投票セッションを作成・管理し、結果を確認する
-- **参加者**：QRコードから投票画面にアクセスして投票する
+- **参加者**：QRコードから投票画面にアクセスして投票する。投票後は結果を閲覧できる。
 - **サーバ**：投票データの管理とリアルタイム通信を担う
 
 ### 3.2 基本フロー
@@ -55,25 +56,31 @@
 4. 参加者 → サーバ：投票リクエスト
 5. サーバ：Durable Object で一人一票チェック（Cookie の voter_token とストレージを突き合わせ）
 6. サーバ：Durable Object に投票データを記録し集計
-7. サーバ → 開催者：Durable Object からリアルタイムで投票結果をSSE/WebSocket配信
+7. サーバ → 開催者：Durable Object からリアルタイムで投票結果をSSE配信
 8. 開催者：グラフがリアルタイムで更新される
 
 #### 3.2.3 結果表示・エクスポートフロー
 1. 開催者：グラフ表示形式を切り替え（棒グラフ ⇔ 円グラフ）
-2. 開催者：エクスポート形式を選択（CSV/JSON/画像）
+2. 開催者：エクスポート形式を選択（CSV/JSON）
 3. 開催者 → サーバ：エクスポート要求
 4. サーバ → 開催者：指定形式のデータを返却
 5. 開催者：データをダウンロード
 
-#### 3.2.4 投票終了フロー
+#### 3.2.4 投票者による結果閲覧フロー
+1. 参加者：投票完了画面または終了画面で「結果を見る」ボタンをクリック
+2. 参加者：結果表示画面（グラフ）に遷移
+3. サーバ → 参加者：Durable Object からリアルタイムで投票結果をSSE配信（結果表示中のみ接続）
+4. 参加者：グラフがリアルタイムで更新される
+
+#### 3.2.5 投票終了フロー
 1. 開催者 → サーバ：投票終了リクエスト
 2. サーバ：該当セッションの Durable Object で投票受付終了状態に変更
 3. 参加者が投票画面にアクセス → 「投票は終了しました」を表示
 4. セッション作成から24時間または終了後に Durable Object ストレージから自動削除
 
 ### 3.3 例外フロー
-- 参加者が既に投票済みの場合 → 「既に投票済みです」を表示
-- 投票が終了している場合 → 「投票は終了しました」を表示
+- 参加者が既に投票済みの場合 → 「既に投票済みです」を表示（結果閲覧へ誘導）
+- 投票が終了している場合 → 「投票は終了しました」を表示（結果閲覧へ誘導）
 - 存在しないセッションIDでアクセス → 404エラー表示
 
 ## 4. 機能要件
@@ -113,9 +120,6 @@
   
 - **JSON出力**
   - 投票データのJSON形式出力
-  
-- **画像出力**
-  - グラフの画像（PNG/JPEG）出力
 
 ### 4.2 参加者向け機能
 
@@ -134,6 +138,11 @@
   - 既に投票済みの場合のメッセージ表示
   - 投票終了の場合のメッセージ表示
 
+#### 4.2.2 結果閲覧機能
+- **結果グラフ表示**
+  - 投票完了後または終了後にグラフを閲覧可能
+  - リアルタイム更新（閲覧中のみSSE接続）
+
 ### 4.3 システム機能
 
 #### 4.3.1 投票制御
@@ -144,8 +153,9 @@
   
 #### 4.3.2 リアルタイム通信
 - **投票データの即時反映**
-  - SSEまたはWebSocketによるリアルタイム通信
+  - SSE (Server-Sent Events) によるリアルタイム通信
   - 投票があった際の開催者画面への即時通知
+  - 投票者が結果閲覧中の即時通知
   
 #### 4.3.3 データ管理
 - **セッションデータ管理**
@@ -248,7 +258,7 @@
 ### 6.1 開催者向けAPI
 
 #### 6.1.1 投票セッション作成
-**エンドポイント：** `POST /vote`
+**エンドポイント：** `POST /api/vote`
 
 **リクエスト：**
 ```json
@@ -280,7 +290,7 @@
 ---
 
 #### 6.1.2 投票終了
-**エンドポイント：** `POST /vote/:sessionId/close`
+**エンドポイント：** `POST /api/vote/:sessionId/close`
 
 **リクエスト：** なし
 
@@ -299,17 +309,14 @@
 ---
 
 #### 6.1.3 結果エクスポート
-**エンドポイント：** `GET /vote/:sessionId/export`
+**エンドポイント：** `GET /api/vote/:sessionId/export`
 
 **クエリパラメータ：**
-- `format`: `csv` | `json` | `image` (必須)
-- `chart`: `bar` | `pie` (formatがimageの場合のみ必須)
+- `format`: `csv` | `json` (必須)
 
 **例：**
-- CSV: `GET /vote/:sessionId/export?format=csv`
-- JSON: `GET /vote/:sessionId/export?format=json`
-- 棒グラフ画像: `GET /vote/:sessionId/export?format=image&chart=bar`
-- 円グラフ画像: `GET /vote/:sessionId/export?format=image&chart=pie`
+- CSV: `GET /api/vote/:sessionId/export?format=csv`
+- JSON: `GET /api/vote/:sessionId/export?format=json`
 
 **レスポンス（CSV）：** `200 OK`
 ```csv
@@ -335,26 +342,20 @@
 }
 ```
 
-**レスポンス（画像）：** `200 OK`
-- Content-Type: `image/png`
-- グラフ画像のバイナリデータ
-
 ---
 
 #### 6.1.4 リアルタイム結果配信（SSE）
-**エンドポイント：** `GET /vote/:sessionId/stream`
+**エンドポイント：** `GET /api/vote/:sessionId/stream`
 
 **説明：**
 - Server-Sent Events (SSE) による一方向リアルタイム通信
 - 投票があるたびに開催者の画面に結果を配信
+- 投票者が結果閲覧中も配信
 
 **イベント例：**
 ```
-event: vote
-data: {"choiceId": "1", "voteCount": 16, "totalVotes": 36}
-
-event: vote
-data: {"choiceId": "2", "voteCount": 9, "totalVotes": 37}
+event: update
+data: {"choices": [...], "totalVotes": 36}
 
 event: closed
 data: {"message": "投票が終了しました"}
@@ -362,7 +363,6 @@ data: {"message": "投票が終了しました"}
 
 **備考：**
 - WebSocketの代替としてSSEを使用（サーバ→クライアントの一方向通信のため）
-- 必要に応じてWebSocketに変更可能
 - SSEの送信元は該当セッションの Durable Object（投票受付・終了と整合する単一ソース）
 
 ---
@@ -370,7 +370,7 @@ data: {"message": "投票が終了しました"}
 ### 6.2 参加者向けAPI
 
 #### 6.2.1 投票セッション情報取得
-**エンドポイント：** `GET /vote/:sessionId`
+**エンドポイント：** `GET /api/vote/:sessionId`
 
 **リクエスト：** なし（Cookieで投票済みチェック）
 
@@ -421,7 +421,7 @@ data: {"message": "投票が終了しました"}
 ---
 
 #### 6.2.2 投票実行
-**エンドポイント：** `POST /vote/:sessionId`
+**エンドポイント：** `POST /api/vote/:sessionId`
 
 **リクエスト（単一選択）：**
 ```json
@@ -505,11 +505,12 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 
 #### 7.1.1 開催者向け画面
 1. **投票作成画面** (`/`)
-2. **結果表示画面** (`/vote/:sessionId`)
+2. **結果表示画面** (`/vote/:sessionId?view=organizer`)
 
 #### 7.1.2 参加者向け画面
 1. **投票画面** (`/vote/:sessionId`)
 2. **投票完了画面** (同一画面内で状態変化)
+3. **結果閲覧画面** (同一画面内で状態変化)
 
 ---
 
@@ -526,7 +527,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
          │ 投票作成ボタンをクリック
          ▼
 ┌─────────────────┐
-│  結果表示画面     │  `/vote/:sessionId`
+│  結果表示画面     │  `/vote/:sessionId?view=organizer`
 │  (開催者ビュー)   │
 └─────────────────┘
     - QRコード表示
@@ -540,7 +541,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 1. 開催者は `/` にアクセスし、投票作成画面で質問と選択肢を入力
 2. 「投票作成」ボタンをクリック
 3. サーバがセッションを作成し、`sessionId` を返却
-4. `/vote/:sessionId` にリダイレクト（開催者ビュー）
+4. `/vote/:sessionId?view=organizer` にリダイレクト（開催者ビュー）
 5. QRコードとリアルタイムグラフが表示され、投票を受け付ける
 
 ---
@@ -561,10 +562,14 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
          ▼
 ┌─────────────────┐
 │  投票完了画面     │  (同一画面内で状態変化)
+└────────┬────────┘
+         │ 「結果を見る」ボタンをクリック
+         ▼
+┌─────────────────┐
+│  結果閲覧画面     │  (同一画面内で状態変化)
 └─────────────────┘
-    - 「投票ありがとうございました」
-    - または「既に投票済みです」
-    - または「投票は終了しました」
+    - リアルタイムグラフ表示
+    - 「戻る」ボタンで完了画面へ
 ```
 
 **遷移フロー：**
@@ -572,6 +577,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 2. `/vote/:sessionId` にアクセス（参加者ビュー）
 3. 投票画面で選択肢を選んで投票
 4. 投票完了メッセージを表示（同一画面内で状態が変化）
+5. 「結果を見る」ボタンでグラフを表示
 
 ---
 
@@ -640,7 +646,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 
 ---
 
-#### 7.3.2 結果表示画面（開催者ビュー） (`/vote/:sessionId`)
+#### 7.3.2 結果表示画面（開催者ビュー） (`/vote/:sessionId?view=organizer`)
 
 **目的：**
 開催者が投票用QRコードを表示し、リアルタイムで投票結果を確認する画面。
@@ -654,7 +660,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 
 ```
 ┌───────────────────────────────────────────────┐
-│  [棒グラフ] [円グラフ]  [CSV] [JSON] [画像]   │  ← コントロールエリア
+│  [棒グラフ] [円グラフ]  [CSV] [JSON]          │  ← コントロールエリア
 │                              [投票を終了] ┌──┐│
 │                                          │QR││
 │                                          │  ││  ← QRコード
@@ -685,7 +691,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 
 1. **コントロールエリア（画面上部）**
    - **グラフ切り替えボタン**：「棒グラフ」「円グラフ」のトグルボタン
-   - **エクスポートボタン**：「CSV」「JSON」「画像」のボタン群
+   - **エクスポートボタン**：「CSV」「JSON」のボタン群
    - **投票終了ボタン**：クリックで投票受付を終了（確認ダイアログ表示）
 
 2. **QRコード表示エリア（右上）**
@@ -698,7 +704,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 
 4. **グラフ表示エリア（メイン）**
    - 棒グラフまたは円グラフをリアルタイム更新
-   - グラフライブラリ（Chart.js、Recharts等）を使用
+   - グラフライブラリ（Recharts）を使用
    - アニメーション付きで投票結果が変化
 
 5. **投票結果サマリー（画面下部）**
@@ -794,6 +800,8 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 │  あなたの投票:       │
 │  ・ラーメン         │
 │                     │
+│     [結果を見る]     │
+│                     │
 └─────────────────────┘
 ```
 
@@ -809,6 +817,8 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 │  ご協力ありがとう    │
 │  ございました       │
 │                     │
+│     [結果を見る]     │
+│                     │
 └─────────────────────┘
 ```
 
@@ -820,6 +830,8 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 │         ⓘ           │
 │                     │
 │  投票は終了しました  │
+│                     │
+│     [結果を見る]     │
 │                     │
 └─────────────────────┘
 ```
@@ -853,10 +865,12 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 - **Input / TextArea**：フォーム入力用
 - **Radio / Checkbox**：投票形式・投票画面用
 - **Modal / Dialog**：投票終了確認、エラー表示用
+- **ResultChart**：グラフ表示（開催者・投票者共通）
 
 #### 7.5.2 専用コンポーネント
+- **OrganizerView**：開催者用画面（QRコード、管理メニュー付き）
+- **VoterView**：投票者用画面（投票フォーム、完了メッセージ、結果閲覧）
 - **QRCodeDisplay**：QRコード生成・表示
-- **ChartDisplay**：棒グラフ・円グラフ切り替え表示
 - **VoteOptionList**：投票画面の選択肢リスト
 - **ChoiceInput**：投票作成画面の選択肢入力フィールド
 
@@ -874,6 +888,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 - **手軽なアクセス**：QRコードを読み取るだけで投票画面に到達
 - **シンプルな投票**：選択肢を選んでボタンを押すだけ（3ステップ以内）
 - **明確なフィードバック**：投票完了、投票済み、投票終了などの状態が一目で分かる
+- **結果の共有**：投票後に自分も結果を確認できることで、参加意識が高まる
 - **モバイル最適化**：スマホで快適に操作できる
 
 #### 7.6.3 エラーハンドリング
@@ -889,6 +904,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 - **スクリーンリーダー対応**：適切なARIAラベル、セマンティックHTML
 - **カラーコントラスト**：WCAG AA基準（4.5:1以上）
 - **フォーカス表示**：フォーカスリングを明確に表示
+- **ダークモード対応**：OS設定に応じた配色切り替え
 
 ---
 
@@ -1055,7 +1071,7 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 ### 9.1 フロントエンド
 
 #### 9.1.1 フレームワーク・ライブラリ
-- **Next.js 16.0.1**：React フレームワーク（App Router使用）
+- **Next.js 15.5.6**：React フレームワーク（App Router使用）
 - **React 19.2.0**：UIライブラリ
 - **TypeScript 5.x**：型安全な開発
 
@@ -1089,9 +1105,9 @@ voter_token=voter_xyz789abc456; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400
 
 実装フェーズで以下のライブラリを追加予定：
 
-- **QRコード生成**：qrcode.react、qr-code-styling など
-- **グラフ描画**：Chart.js、Recharts、Victory など
-- **UUID生成**：uuid または crypto.randomUUID()（標準API）
+- **QRコード生成**：qrcode.react
+- **グラフ描画**：Recharts
+- **UUID生成**：uuid
 - **CSV生成**：papa-parse または自前実装
 - **画像エクスポート**：html2canvas または canvas API
 
