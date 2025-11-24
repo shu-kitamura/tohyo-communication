@@ -16,7 +16,7 @@ https://vote.shu-kita.net にて公開しています。
 ### Demo
 
 <!-- ここにデモ動画やスクリーンショットを追加予定 -->
-<!-- ![Demo GIF](./docs/demo.gif) -->
+![Demo GIF](./docs/tohyo_demo.gif)
 
 ## アーキテクチャ
 
