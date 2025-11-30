@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
   title: "TOHYO通信 ~Vote Communication~",
   description: "プレゼンテーションやイベントで使用するリアルタイム投票Webアプリケーション",
+  twitter: {
+    card: "summary_large_image",
+    title: "TOHYO通信 ~Vote Communication~",
+    description:
+      "プレゼンやイベントで使えるリアルタイム投票Webアプリケーション",
+    images: ["https://vote.shu-kita.net/twitter-image.png"],
+  },
 };
 
 export default function RootLayout({
