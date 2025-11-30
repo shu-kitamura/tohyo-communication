@@ -15,7 +15,6 @@ https://vote.shu-kita.net にて公開しています。
 
 ### Demo
 
-<!-- ここにデモ動画やスクリーンショットを追加予定 -->
 ![Demo GIF](./docs/tohyo_demo.gif)
 
 ## アーキテクチャ
@@ -36,8 +35,8 @@ https://vote.shu-kita.net にて公開しています。
 
 - **Frontend Framework**: Next.js 15.5.6 (App Router)
 - **UI Library**: React 19.2.0
-- **Styling**: Tailwind CSS 4.x
-- **Language**: TypeScript 5.x
+- **Styling**: Tailwind CSS 4
+- **Language**: TypeScript 5
 - **Infrastructure**: Cloudflare Workers / Durable Objects
 
 ## 機能一覧

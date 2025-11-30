@@ -69,9 +69,6 @@ export function OrganizerView({
                   <DropdownMenuItem onSelect={() => onExport('json')}>
                     JSON
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => onExport('json')}>
-                    画像
-                  </DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
