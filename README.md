@@ -33,10 +33,9 @@ https://vote.shu-kita.net にて公開しています。
 
 ## 技術スタック
 
-- **Frontend Framework**: Next.js 15.5.9 (App Router)
-- **UI Library**: React 19.2.0
-- **Styling**: Tailwind CSS 4
-- **Language**: TypeScript 5
+- **Framework**: Next.js(App Router)
+- **UI**: React / Tailwind CSS
+- **Language**: TypeScript
 - **Infrastructure**: Cloudflare Workers / Durable Objects
 
 ## 機能一覧
