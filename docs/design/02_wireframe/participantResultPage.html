@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>結果表示 (参加者ビュー)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background: #f5f5f5; }
+    .page { max-width: 520px; margin: 0 auto; background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+    h1 { margin: 0 0 8px 0; font-size: 18px; }
+    .meta { color: #555; font-size: 13px; margin-bottom: 12px; }
+    .graph { height: 240px; border: 1px dashed #aaa; border-radius: 8px; background: #fafafa; display: grid; place-items: center; }
+    .summary { margin-top: 12px; }
+    .summary li { margin-bottom: 6px; }
+    .state { margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 14px; }
+    .state.info { background: #e0f2fe; color: #075985; }
+    .state.warn { background: #fef3c7; color: #92400e; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>/vote/:sessionId?view=result</h1>
+    <div class="meta">投票結果はSSEで自動更新</div>
+
+    <div class="graph">グラフ表示（棒 or 円）</div>
+    <ul class="summary">
+      <li>ラーメン: 15票 (42.9%)</li>
+      <li>カレー: 8票 (22.9%)</li>
+      <li>寿司: 12票 (34.3%)</li>
+    </ul>
+
+    <div class="state info">ⓘ 投票ありがとうございます！結果をリアルタイムで表示中。</div>
+    <div class="state warn">投票は終了しました（表示のみ）</div>
+    <div class="state warn">セッションが存在しません（404）</div>
+  </div>
+</body>
+</html>
