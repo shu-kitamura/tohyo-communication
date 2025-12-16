@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Draft - 結果表示 (開催者ビュー)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;500;600&display=swap');
+    :root {
+      --primary: #D9142B;
+      --accent: #F6D9A8;
+      --ink: #0B0B0B;
+      --muted: #4B5563;
+      --panel: rgba(255,255,255,0.86);
+      --line: rgba(255,255,255,0.5);
+      --radius: 16px;
+      --shadow: 0 20px 50px rgba(11,11,11,0.22);
+      --graph-1: #F6D9A8;
+      --graph-2: #0B0B0B;
+      --graph-3: #D9142B;
+      --graph-4: #888888;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Noto Sans JP', 'Noto Sans', system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at 22% 12%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 30%),
+        radial-gradient(circle at 82% -8%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 32%),
+        linear-gradient(180deg, #d9142b 0%, #b41025 50%, #8b0c1c 100%);
+      color: var(--ink);
+      line-height: 1.6;
+      padding: 32px 22px 46px;
+    }
+    .shell { max-width: 1280px; margin: 0 auto; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: 0.1px; color: var(--ink); }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      background: rgba(255,255,255,0.86);
+      border: 1px solid rgba(255,255,255,0.7);
+      padding: 8px;
+      border-radius: 999px;
+      box-shadow: 0 12px 28px rgba(15,23,42,0.18);
+    }
+    button {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.92);
+      color: var(--ink);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border 0.12s ease, background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+    }
+    button:hover { border-color: var(--primary); box-shadow: 0 8px 18px rgba(249,115,22,0.18); }
+    .primary { background: linear-gradient(120deg, #fb923c, #f97316 45%, #ea580c 100%); color: #fff; border-color: rgba(249,115,22,0.4); box-shadow: 0 12px 26px rgba(249,115,22,0.24); }
+    .danger { background: #fff; color: #DC2626; border-color: #FECACA; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(249,115,22,0.18);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+      width: fit-content;
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      font-family: 'Bebas Neue','Noto Sans JP',sans-serif;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 7fr 3fr;
+      gap: 18px;
+      align-items: start;
+    }
+    .card {
+      position: relative;
+      background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border-top: 4px solid rgba(249,115,22,0.45);
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 90% 18%, rgba(255,255,255,0.18), transparent 52%);
+    }
+    .meta { color: var(--muted); font-size: 14px; }
+    .graph {
+      margin-top: 12px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(249,115,22,0.12));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 320px;
+      position: relative;
+      overflow: hidden;
+    }
+    .graph-bars { display: grid; gap: 12px; margin-top: 14px; }
+    .bar {
+      display: grid;
+      grid-template-columns: 140px 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
+    .bar-name { font-weight: 800; }
+    .bar-track {
+      height: 14px;
+      background: #E2E8F0;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transform-origin: left center;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .bar-fill.c1 { background: var(--graph-1); width: 62%; }
+    .bar-fill.c2 { background: var(--graph-3); width: 18%; }
+    .bar-fill.c3 { background: var(--graph-2); width: 20%; }
+    @keyframes pulse { 0% { transform: scaleX(1); } 50% { transform: scaleX(1.02); } 100% { transform: scaleX(1); } }
+    .list { margin: 14px 0 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 6px; }
+    .qr {
+      width: 200px; height: 200px;
+      background: repeating-linear-gradient(45deg, #0F172A 0, #0F172A 12px, #F97316 12px, #F97316 24px);
+      border-radius: 12px;
+      border: 8px solid #fff;
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.18);
+      outline: 2px solid rgba(249,115,22,0.45);
+    }
+    .aside-title { font-weight: 700; margin: 0 0 8px 0; }
+    .aside-block { margin-bottom: 16px; }
+    .state {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #FCD34D;
+      background: #FEF3C7;
+      color: #92400E;
+      font-size: 14px;
+    }
+    .muted-line { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <div class="pill">リアルタイム更新中</div>
+        <h1>/vote/:sessionId?view=organizer</h1>
+        <div class="meta">投影用ビュー。棒/円切替、エクスポート、終了を1〜2タップで。</div>
+      </div>
+      <div class="controls">
+        <button class="primary" type="button">棒グラフ</button>
+        <button type="button">円グラフ</button>
+        <button type="button">CSVで保存</button>
+        <button type="button">JSONで保存</button>
+        <button class="danger" type="button">投票を終了</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div style="display:flex; align-items:center; justify-content: space-between; gap: 12px;">
+          <div>
+            <div class="meta">質問</div>
+            <div style="font-size: 20px; font-weight: 700;">今日の昼食は何がいいですか？</div>
+          </div>
+          <div>
+            <div class="meta">総投票数</div>
+            <div style="font-size: 20px; font-weight: 800;">35票</div>
+          </div>
+        </div>
+
+        <div class="graph">
+          <div class="meta">SSEでリアルタイム更新。値更新は0.3sスムース。</div>
+          <div class="graph-bars">
+            <div class="bar">
+              <div class="bar-name">ラーメン</div>
+              <div class="bar-track"><div class="bar-fill c1"></div></div>
+              <div class="meta">22票 / 62%</div>
+            </div>
+            <div class="bar">
+              <div class="bar-name">カレー</div>
+              <div class="bar-track"><div class="bar-fill c2"></div></div>
+              <div class="meta">6票 / 18%</div>
+            </div>
+            <div class="bar">
+              <div class="bar-name">寿司</div>
+              <div class="bar-track"><div class="bar-fill c3"></div></div>
+              <div class="meta">7票 / 20%</div>
+            </div>
+          </div>
+        </div>
+
+        <ul class="list">
+          <li>終了後は「投票は終了しました」を重ねて表示し、新規投票は拒否。</li>
+          <li>凡例は色と文字で重ねて表示し、遠目でも読めるサイズに。</li>
+          <li>エクスポート完了時は「CSVで保存しました」をトースト表示。</li>
+        </ul>
+
+        <div class="state">投票を終了しますか？ 新しい投票は受け付けなくなります。 ボタン: 「終了する」/「キャンセル」</div>
+      </section>
+
+      <aside class="card">
+        <div class="aside-block">
+          <div class="aside-title">参加者用QRコード</div>
+          <div class="qr" aria-label="QR placeholder"></div>
+          <div class="meta" style="margin-top:8px;">https://example.com/vote/:sessionId</div>
+        </div>
+
+        <div class="aside-block">
+          <div class="aside-title">操作メモ</div>
+          <ul class="list">
+            <li>現在のグラフ種別を強調表示。切替は即時。</li>
+            <li>通信断は「通信が不安定です。再接続してください」。</li>
+            <li>終了後も結果表示は継続、ボタンは非活性化。</li>
+          </ul>
+        </div>
+
+        <div class="aside-block">
+          <div class="aside-title">色と余白</div>
+          <div class="muted-line">プライマリ #2563EB、アクセント #F97316。左右48px、カード内部は16pxを基準に。</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>
