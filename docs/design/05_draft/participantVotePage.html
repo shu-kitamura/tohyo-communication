@@ -1,31 +1,58 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>Draft - 投票画面 (参加者)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TOHYO通信 | 投票（参加者）</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;500;600&display=swap');
     :root {
-      --primary: #D9142B;
-      --accent: #F6D9A8;
-      --ink: #0B0B0B;
-      --muted: #4B5563;
-      --panel: rgba(255,255,255,0.86);
-      --line: rgba(255,255,255,0.45);
+      --primary: #2563EB;
+      --accent: #F97316;
+      --surface: #FFFFFF;
+      --ink: #0B1220;
+      --muted: #475569;
+      --line: #E2E8F0;
       --radius: 14px;
-      --shadow: 0 16px 40px rgba(11,11,11,0.2);
+      --shadow-lg: 0 16px 32px rgba(15, 23, 42, 0.12);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: 'Noto Sans JP', 'Noto Sans', system-ui, -apple-system, sans-serif;
-      background:
-        radial-gradient(circle at 20% 14%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 30%),
-        radial-gradient(circle at 82% -8%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 32%),
-        linear-gradient(180deg, #d9142b 0%, #b41025 50%, #8b0c1c 100%);
+      font-family: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
       color: var(--ink);
       line-height: 1.6;
       padding: 30px 16px 42px;
+
+      /* organizerResultPage と同系のアニメーション背景 */
+      background: linear-gradient(
+        120deg,
+        #e0f2fe,
+        #eff6ff,
+        #ffffff,
+        #f0f9ff,
+        #eef2ff
+      );
+      background-size: 400% 400%;
+      animation: gradientFlow 16s ease-in-out infinite;
+    }
+
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body {
+        animation: none;
+        background-position: 50% 50%;
+      }
     }
     .shell { max-width: 560px; margin: 0 auto; }
     header { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
@@ -35,32 +62,24 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 12px;
+      padding: 4px 10px;
       border-radius: 999px;
-      background: rgba(249,115,22,0.18);
-      color: var(--ink);
+      background: rgba(249, 115, 22, 0.15);
+      color: var(--accent);
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 600;
       width: fit-content;
       letter-spacing: 0.2px;
     }
     .card {
-      background: var(--panel);
-      border: 1px solid rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
       border-radius: var(--radius);
       padding: 18px;
-      box-shadow: var(--shadow);
+      box-shadow: var(--shadow-lg);
       margin-bottom: 16px;
-      border-top: 4px solid rgba(249,115,22,0.5);
-      position: relative;
-      overflow: hidden;
-    }
-    .card::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background: radial-gradient(circle at 92% 16%, rgba(255,255,255,0.16), transparent 52%);
     }
     .options { display: grid; gap: 12px; margin: 16px 0; }
     .option {
@@ -68,29 +87,33 @@
       gap: 12px;
       align-items: center;
       padding: 12px;
-      border: 1px solid rgba(255,255,255,0.6);
+      border: 1px solid var(--line);
       border-radius: 12px;
-      background: rgba(255,255,255,0.88);
+      background: rgba(255,255,255,0.96);
       transition: border 0.12s ease, background 0.12s ease;
     }
-    .option:hover { border-color: var(--primary); background: rgba(249,115,22,0.12); }
-    .option input { width: 18px; height: 18px; accent-color: var(--accent); }
+    .option:hover { border-color: var(--primary); background: rgba(37, 99, 235, 0.08); }
+    .option input { width: 18px; height: 18px; accent-color: var(--primary); }
     button {
-      border: none;
       cursor: pointer;
-      font-weight: 700;
-      font-size: 15px;
       width: 100%;
+      height: 44px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 600;
+      font-size: 14px;
     }
     .primary {
-      background: linear-gradient(120deg, #fb923c, #f97316 45%, #ea580c 100%);
+      background: var(--primary);
+      border-color: var(--primary);
       color: #fff;
-      padding: 12px;
-      border-radius: 12px;
-      box-shadow: 0 12px 28px rgba(249,115,22,0.32), 0 10px 24px rgba(249,115,22,0.22);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
       transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
-    .primary:hover { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(249,115,22,0.36), 0 12px 26px rgba(249,115,22,0.26); }
+    .primary:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(37, 99, 235, 0.4); }
     .state {
       padding: 12px;
       border-radius: 12px;

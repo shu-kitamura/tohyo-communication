@@ -1,31 +1,58 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>Draft - 投票作成 (開催者)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TOHYO通信 | 投票作成（開催者）</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap');
     :root {
-      --primary: #F97316;
-      --accent: #2563EB;
-      --ink: #0F172A;
+      --primary: #2563EB;
+      --accent: #F97316;
+      --surface: #FFFFFF;
+      --ink: #0B1220;
       --muted: #475569;
-      --panel: rgba(255,255,255,0.78);
-      --line: rgba(255,255,255,0.6);
+      --line: #E2E8F0;
       --radius: 14px;
-      --shadow: 0 18px 48px rgba(15,23,42,0.14);
+      --shadow-lg: 0 16px 32px rgba(15, 23, 42, 0.12);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: 'Noto Sans JP', 'Noto Sans', system-ui, -apple-system, sans-serif;
-      background:
-        radial-gradient(circle at 22% 18%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 34%),
-        radial-gradient(circle at 80% -6%, rgba(37,99,235,0.08) 0%, rgba(37,99,235,0) 36%),
-        linear-gradient(180deg, #ffedd5 0%, #ffd6a5 48%, #ffb775 100%);
+      font-family: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
       color: var(--ink);
       line-height: 1.6;
       padding: 36px 20px 46px;
+
+      /* organizerResultPage と合わせて、ゆっくり色が変化するグラデーション背景 */
+      background: linear-gradient(
+        120deg,
+        #e0f2fe,
+        #eff6ff,
+        #ffffff,
+        #f0f9ff,
+        #eef2ff
+      );
+      background-size: 400% 400%;
+      animation: gradientFlow 16s ease-in-out infinite;
+    }
+
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body {
+        animation: none;
+        background-position: 50% 50%;
+      }
     }
     .shell { max-width: 1180px; margin: 0 auto; }
     header {
@@ -46,8 +73,8 @@
     }
     .pulse {
       width: 14px; height: 14px; border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 10px rgba(249,115,22,0.14);
+      background: var(--primary);
+      box-shadow: 0 0 0 10px rgba(37, 99, 235, 0.14);
     }
     .steps {
       display: flex;
@@ -58,9 +85,9 @@
     }
     .steps .dot {
       width: 9px; height: 9px; border-radius: 50%;
-      background: rgba(255,255,255,0.6);
+      background: rgba(37, 99, 235, 0.18);
     }
-    .steps .dot.active { background: var(--primary); box-shadow: 0 0 0 6px rgba(249,115,22,0.25); }
+    .steps .dot.active { background: var(--primary); box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.22); }
     .grid {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -68,31 +95,13 @@
       align-items: start;
     }
     .card {
-      position: relative;
-      background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
-      border: 1px solid rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
       border-radius: var(--radius);
       padding: 22px;
-      box-shadow: var(--shadow), 0 2px 18px rgba(255,255,255,0.38) inset;
-      backdrop-filter: blur(18px) saturate(140%);
-      overflow: hidden;
-    }
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: 1px;
-      border-radius: calc(var(--radius) - 1px);
-      background: linear-gradient(145deg, rgba(255,255,255,0.28), rgba(255,255,255,0.08));
-      pointer-events: none;
-      mix-blend-mode: screen;
-    }
-    .card::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      border-radius: var(--radius);
-      background: radial-gradient(circle at 92% 18%, rgba(249,115,22,0.12), transparent 48%);
+      box-shadow: var(--shadow-lg);
     }
     h1 {
       margin: 0 0 8px 0;
@@ -114,7 +123,7 @@
     textarea:focus, input[type="text"]:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(249,115,22,0.18);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
       background: #fff;
     }
     .field { margin-bottom: 20px; }
@@ -124,19 +133,19 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 10px;
+      padding: 4px 10px;
       border-radius: 999px;
-      background: rgba(249,115,22,0.12);
-      color: var(--ink);
+      background: rgba(249, 115, 22, 0.15);
+      color: var(--accent);
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 600;
     }
     .choices {
       display: flex;
       flex-direction: column;
       gap: 10px;
       background: rgba(248,250,252,0.9);
-      border: 1px dashed rgba(249,115,22,0.36);
+      border: 1px dashed rgba(37, 99, 235, 0.32);
       border-radius: 12px;
       padding: 14px;
     }
@@ -147,27 +156,28 @@
       align-items: center;
     }
     button {
-      border: none;
       cursor: pointer;
-      font-weight: 700;
-      font-size: 15px;
+      height: 44px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 600;
+      font-size: 14px;
     }
     .primary {
-      background: linear-gradient(120deg, #fb923c, #f97316 45%, #ea580c 100%);
+      background: var(--primary);
+      border-color: var(--primary);
       color: #fff;
-      padding: 13px 18px;
-      border-radius: 12px;
-      box-shadow: 0 14px 30px rgba(249,115,22,0.32), 0 10px 24px rgba(249,115,22,0.22);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
       transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
-    .primary:hover { transform: translateY(-1px); box-shadow: 0 16px 34px rgba(249,115,22,0.36), 0 12px 26px rgba(249,115,22,0.26); }
+    .primary:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(37, 99, 235, 0.4); }
     .ghost {
-      background: #fff;
-      color: var(--primary);
-      border: 1px solid rgba(249,115,22,0.4);
-      padding: 11px 14px;
-      border-radius: 12px;
-      box-shadow: 0 6px 14px rgba(249,115,22,0.16);
+      background: var(--surface);
+      color: var(--ink);
+      border-color: var(--line);
     }
     .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
     .note { color: var(--muted); font-size: 14px; }
