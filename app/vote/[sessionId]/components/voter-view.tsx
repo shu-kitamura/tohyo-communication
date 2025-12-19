@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircleIcon, CircleCheck, CircleX } from 'lucide-react';
+import { AlertCircleIcon } from 'lucide-react';
 import { Choice, GetSessionResponse } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
