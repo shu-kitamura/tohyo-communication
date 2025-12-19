@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>投票画面 (参加者)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background: #f5f5f5; }
+    .page { max-width: 520px; margin: 0 auto; background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+    h1 { margin: 0 0 8px 0; font-size: 18px; }
+    .meta { color: #555; font-size: 13px; margin-bottom: 16px; }
+    .card { border: 1px dashed #aaa; padding: 16px; border-radius: 8px; margin-bottom: 14px; background: #fafafa; }
+    .options { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+    .option { padding: 12px; border: 1px solid #ccc; border-radius: 6px; }
+    .button { display: inline-block; text-align: center; width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
+    .primary { background: #2563eb; color: #fff; }
+    .disabled { background: #cbd5e1; color: #475569; cursor: not-allowed; }
+    .state { padding: 12px; border-radius: 6px; margin-top: 8px; font-size: 14px; }
+    .state.info { background: #e0f2fe; color: #075985; }
+    .state.warn { background: #fef3c7; color: #92400e; }
+    .state.error { background: #fee2e2; color: #991b1b; }
+    .link { color: #2563eb; text-decoration: underline; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>今日の昼食は何がいいですか？</h1>
+    <div class="meta">投票形式: 単一選択</div>
+
+    <section class="card" aria-label="投票可能状態">
+      <h1>投票タイトル</h1>
+      <div class="options">
+        <label class="option"><input type="radio" name="vote"> 選択肢1</label>
+        <label class="option"><input type="radio" name="vote"> 選択肢2</label>
+        <label class="option"><input type="radio" name="vote"> 選択肢3</label>
+      </div>
+      <button class="button primary" type="button">投票する</button>
+      <div class="state warn">未選択エラー例: 「1つ以上選んでください」</div>
+      <div class="state info">送信中: ボタンにスピナー表示、二重送信防止。</div>
+    </section>
+
+    <div class="meta">投票形式: 複数選択</div>
+
+    <section class="card" aria-label="複数選択例">
+      <h1>投票タイトル</h1>
+      <div class="options">
+        <label class="option"><input type="checkbox" checked> 選択肢1</label>
+        <label class="option"><input type="checkbox"> 選択肢2</label>
+        <label class="option"><input type="checkbox" checked> 選択肢3</label>
+      </div>
+      <button class="button primary" type="button">投票する</button>
+    </section>
+
+    <div class="meta">投票後</div>
+    <section class="card" aria-label="投票完了">
+      <div class="state info">✓ 投票ありがとうございました！</div>
+      <div>あなたの投票: 選択肢1</div>
+      <div style="margin-top: 10px;">
+        <span class="link">結果を見る → `/vote/:sessionId?view=result`</span>
+      </div>
+    </section>
+
+    <div class="meta">投票済み</div>
+    <section class="card" aria-label="既に投票済み">
+      <div class="state info">ⓘ 既に投票済みです</div>
+      <div style="margin-top: 10px;">
+        <span class="link">結果を見る → `/vote/:sessionId?view=result`</span>
+      </div>
+    </section>
+
+    <div class="meta">投票終了 or Not Found</div>
+    <section class="card" aria-label="終了/404">
+      <div class="state warn">投票は終了しました（結果のみ表示）</div>
+      <div class="state error">404 / セッションが存在しません</div>
+      <div style="margin-top: 8px;">必要ならホームへのリンクを最小限で配置。</div>
+    </section>
+  </div>
+</body>
+</html>

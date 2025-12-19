@@ -22,7 +22,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import { Choice } from '@/lib/types';
 import { useState } from 'react';
 
@@ -44,30 +44,38 @@ export function ResultChart({ question, choices, totalVotes }: ResultChartProps)
   }));
 
   return (
-    <Card className="w-full h-full">
-      <CardHeader>
-        <div className="flex justify-between items-start">
+    <Card className="h-full w-full rounded-[14px] border-slate-200/80 bg-white/92 shadow-[0_16px_32px_rgba(15,23,42,0.12)] backdrop-blur-md">
+      <CardHeader className="pb-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <CardTitle className="text-2xl">{question}</CardTitle>
-            <CardDescription>総投票数: {totalVotes}票</CardDescription>
+            <CardTitle className="text-xl font-semibold tracking-tight md:text-2xl">{question}</CardTitle>
+            <CardDescription className="text-xs text-slate-500 md:text-sm">
+              総投票数: {totalVotes}票
+            </CardDescription>
           </div>
           <Tabs
             value={chartType}
             onValueChange={(value) => setChartType(value as 'bar' | 'pie')}
-            className="w-[200px]"
+            className="w-full max-w-[220px]"
           >
-            <TabsList>
-              <TabsTrigger value="bar">
-                <Label>棒グラフ</Label>
+            <TabsList className="grid w-full grid-cols-2 rounded-full bg-slate-100/80">
+              <TabsTrigger
+                value="bar"
+                className="rounded-full data-[state=active]:bg-white data-[state=active]:text-slate-900"
+              >
+                <Label className="text-xs md:text-sm">棒グラフ</Label>
               </TabsTrigger>
-              <TabsTrigger value="pie">
-                <Label>円グラフ</Label>
+              <TabsTrigger
+                value="pie"
+                className="rounded-full data-[state=active]:bg-white data-[state=active]:text-slate-900"
+              >
+                <Label className="text-xs md:text-sm">円グラフ</Label>
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
       </CardHeader>
-      <CardContent className="h-96">
+      <CardContent className="h-80 md:h-96">
         {chartType === 'bar' ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{top: 20}}>
