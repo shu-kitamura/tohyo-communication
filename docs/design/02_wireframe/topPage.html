@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>トップページ - TOHYO通信</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
+    .page { max-width: 1100px; margin: 0 auto; background: #fff; }
+    
+    /* ヘッダー */
+    header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      padding: 16px 24px;
+      border-bottom: 1px solid #ddd;
+      background: #0f172a;
+      color: #fff;
+    }
+    .logo { font-size: 20px; font-weight: bold; }
+    .logo span { color: #2563eb; }
+    
+    /* ヒーローセクション */
+    .hero {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(180deg, #eff6ff 0%, #fff 100%);
+    }
+    .hero-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .hero-logo .icon-placeholder {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 32px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    .hero-logo .brand-text {
+      font-size: 36px;
+      font-weight: bold;
+      color: #0f172a;
+    }
+    .hero-logo .brand-text span {
+      color: #2563eb;
+    }
+    .hero-logo .brand-sub {
+      font-size: 14px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    .hero h1 { 
+      font-size: 32px; 
+      margin: 0 0 16px 0;
+      color: #0f172a;
+    }
+    .hero .tagline {
+      font-size: 18px;
+      color: #475569;
+      margin: 0 0 32px 0;
+    }
+    .hero .cta {
+      display: inline-block;
+      background: #2563eb;
+      color: #fff;
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .hero .cta:hover { background: #1d4ed8; }
+    .hero .sub-text {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    /* 特徴セクション */
+    .features {
+      padding: 48px 24px;
+      background: #fff;
+    }
+    .features h2 {
+      text-align: center;
+      font-size: 24px;
+      margin: 0 0 32px 0;
+      color: #0f172a;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .feature-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+    }
+    .feature-card .icon {
+      width: 48px;
+      height: 48px;
+      background: #dbeafe;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .feature-card h3 {
+      font-size: 18px;
+      margin: 0 0 8px 0;
+      color: #0f172a;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: #475569;
+      margin: 0;
+    }
+
+    /* 使い方セクション */
+    .how-to {
+      padding: 48px 24px;
+      background: #f8fafc;
+    }
+    .how-to h2 {
+      text-align: center;
+      font-size: 24px;
+      margin: 0 0 32px 0;
+      color: #0f172a;
+    }
+    .steps-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+    .steps-box {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 24px;
+    }
+    .steps-box h3 {
+      font-size: 18px;
+      margin: 0 0 16px 0;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #2563eb;
+      color: #0f172a;
+    }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .step:last-child { margin-bottom: 0; }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      background: #2563eb;
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .step-content h4 {
+      margin: 0 0 4px 0;
+      font-size: 15px;
+      color: #0f172a;
+    }
+    .step-content p {
+      margin: 0;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    /* CTAセクション */
+    .cta-section {
+      text-align: center;
+      padding: 48px 24px;
+      background: #0f172a;
+      color: #fff;
+    }
+    .cta-section h2 {
+      font-size: 24px;
+      margin: 0 0 16px 0;
+    }
+    .cta-section p {
+      font-size: 16px;
+      color: #94a3b8;
+      margin: 0 0 24px 0;
+    }
+    .cta-section .cta {
+      display: inline-block;
+      background: #2563eb;
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* フッター */
+    footer {
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
+      background: #fff;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    /* 補足情報（ワイヤーフレーム用） */
+    .sidebar { 
+      margin: 24px; 
+      padding: 12px; 
+      border: 1px solid #ddd; 
+      background: #fffbeb; 
+      border-radius: 6px; 
+    }
+    .state-note { font-size: 13px; color: #444; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- ヘッダー -->
+    <header>
+      <div class="logo">TOHYO<span>通信</span></div>
+      <span style="font-size: 14px; color: #94a3b8;">~Vote Communication~</span>
+    </header>
+
+    <!-- ヒーローセクション -->
+    <section class="hero">
+      <div class="hero-logo">
+        <div class="icon-placeholder">T</div>
+        <div>
+          <div class="brand-text">TOHYO<span>通信</span></div>
+          <div class="brand-sub">~Vote Communication~</div>
+        </div>
+      </div>
+      <h1>リアルタイム投票で、場を盛り上げよう</h1>
+      <p class="tagline">QRコードを読み取るだけで即参加。<br>投票結果がリアルタイムで画面に反映されます。</p>
+      <a class="cta" href="/vote">投票を作成する</a>
+      <p class="sub-text">ログイン不要・無料でご利用いただけます</p>
+    </section>
+
+    <!-- 特徴セクション -->
+    <section class="features">
+      <h2>TOHYO通信の特徴</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="icon">⚡</div>
+          <h3>リアルタイム更新</h3>
+          <p>投票結果が瞬時にグラフに反映。会場の一体感を演出します。</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📱</div>
+          <h3>QRコードで即参加</h3>
+          <p>ログイン不要。スマホでQRコードを読み取るだけで投票できます。</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📊</div>
+          <h3>見やすいグラフ表示</h3>
+          <p>棒グラフ・円グラフを切り替え可能。プロジェクター投影にも最適。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 使い方セクション -->
+    <section class="how-to">
+      <h2>使い方</h2>
+      <div class="steps-container">
+        <!-- 開催者向け -->
+        <div class="steps-box">
+          <h3>📣 開催者の方</h3>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>投票を作成</h4>
+              <p>質問と選択肢を入力して投票セッションを作成</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>QRコードを共有</h4>
+              <p>生成されたQRコードを参加者に見せる</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>結果をリアルタイム表示</h4>
+              <p>投票結果がリアルタイムでグラフに反映</p>
+            </div>
+          </div>
+        </div>
+        <!-- 参加者向け -->
+        <div class="steps-box">
+          <h3>🙋 参加者の方</h3>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>QRコードを読み取る</h4>
+              <p>開催者が表示するQRコードをスマホで読み取り</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>選択肢を選んで投票</h4>
+              <p>表示された選択肢から選んで送信</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>結果を確認</h4>
+              <p>投票後、リアルタイムで結果を閲覧</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- フッター -->
+    <footer>
+      <p>© 2025 TOHYO通信 - Vote Communication</p>
+    </footer>
+
+  </div>
+</body>
+</html>

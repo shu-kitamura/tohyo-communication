@@ -1,192 +1,186 @@
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { CreateSessionRequest, CreateSessionResponse, VoteType } from '@/lib/types';
-
-import { AlertCircleIcon, Plus, X } from "lucide-react";
-
-import {
-  Alert,
-  AlertTitle,
-} from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import Link from 'next/link';
+import Image from 'next/image';
+import { Plus, Zap, Smartphone, BarChart3, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function Home() {
-  const router = useRouter();
-  const [question, setQuestion] = useState('');
-  const [voteType, setVoteType] = useState<VoteType>('single');
-  const [choices, setChoices] = useState(['', '']);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleAddChoice = () => {
-    if (choices.length < 10) {
-      setChoices([...choices, '']);
-    }
-  };
-
-  const handleRemoveChoice = (index: number) => {
-    if (choices.length > 2) {
-      setChoices(choices.filter((_, i) => i !== index));
-    }
-  };
-
-  const handleChoiceChange = (index: number, value: string) => {
-    const newChoices = [...choices];
-    newChoices[index] = value;
-    setChoices(newChoices);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!question.trim()) {
-      setError('質問を入力してください');
-      return;
-    }
-
-    const validChoices = choices.filter((c) => c.trim());
-    if (validChoices.length < 2) {
-      setError('選択肢は2つ以上必要です');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const body: CreateSessionRequest = {
-        question,
-        voteType,
-        choices: validChoices.map((text) => ({ text })),
-      };
-
-      const res = await fetch('/api/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const data: CreateSessionResponse = await res.json();
-
-      if (!res.ok) {
-        setError((data as { error?: string }).error || '投票セッションの作成に失敗しました');
-        return;
-      }
-
-      // Redirect to organizer view
-      router.push(`/vote/${data.sessionId}?view=organizer`);
-    } catch {
-      setError('投票セッションの作成に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 py-8 md:py-10">
-      <div className="mx-auto max-w-2xl">
-        <Card className="bg-white/90 backdrop-blur-md border-slate-200/80 shadow-[0_16px_32px_rgba(15,23,42,0.12)] rounded-[14px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-2xl tracking-tight">投票を作成</CardTitle>
-            <p className="mt-1 text-sm text-slate-500">
-              タイトルと選択肢を入力して投票を作成
-            </p>
-          </CardHeader>
-        <CardContent>
-          <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-            <div className="space-y-2" id="question">
-              <Label htmlFor="question">タイトル</Label>
-              <Input
-                id="question"
-                type="text"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="例: 今日の昼食は何がいいですか？"
-                required
-              />
-            </div>
+    <div className="min-h-[calc(100vh-4rem)]">
+      {/* ヒーローセクション */}
+      <section className="relative overflow-hidden py-16 md:py-24 px-4">
+        {/* 背景のグラデーション装飾 */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
+        </div>
 
-              <div className="space-y-2" id="vote-type">
-                <Label className="font-semibold">投票形式</Label>
-                <RadioGroup
-                  defaultValue="single"
-                  className="flex flex-wrap gap-4 text-sm"
-                  onValueChange={(value) => setVoteType(value as VoteType)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="single" id="single" />
-                    <Label htmlFor="single">単一選択</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="multiple" id="multiple" />
-                    <Label htmlFor="multiple">複数選択</Label>
-                  </div>
-                </RadioGroup>
-              </div>
+        <div className="mx-auto max-w-4xl text-center">
+          {/* ロゴ */}
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <Image
+              src="/tohyo-communication.svg"
+              alt="TOHYO通信 ロゴ"
+              width={250}
+              height={250}
+              priority
+            />
+          </div>
 
-              <div className="space-y-2" id="choices">
-                <Label className="font-semibold">選択肢</Label>
-                <div className="space-y-3 rounded-xl border border-dashed border-blue-500/40 bg-slate-50/80 p-4">
-                  {choices.map((choice, index) => (
-                    <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center">
-                      <Input
-                        type="text"
-                        value={choice}
-                        onChange={(e) => handleChoiceChange(index, e.target.value)}
-                        placeholder="選択肢を入力"
-                        required
-                        aria-label={`選択肢${index + 1}`}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={choices.length <= 2}
-                        onClick={() => handleRemoveChoice(index)}
-                        className="disabled:bg-slate-200"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <div>
-                    <Button type="button" variant="ghost" size="sm" onClick={handleAddChoice}>
-                      <Plus className="mr-1 h-4 w-4" /> 選択肢を追加
-                    </Button>
-                  </div>
+          {/* キャッチコピー */}
+          <h1 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">
+            リアルタイム投票で、場を盛り上げよう
+          </h1>
+          <p className="text-base md:text-lg text-slate-600 mb-8 leading-relaxed">
+            QRコードを読み取るだけで即参加。<br className="hidden sm:block" />
+            投票結果がリアルタイムで画面に反映されます。
+          </p>
+
+          {/* CTAボタン */}
+          <Link href="/vote">
+            <Button
+              size="lg"
+              className="h-14 px-8 text-lg rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all hover:-translate-y-0.5"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              投票を作成する
+            </Button>
+          </Link>
+
+          {/* サブテキスト */}
+          <div className="mt-6">
+            <span className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-sm font-medium">
+              <Check className="h-4 w-4" />
+              ログイン不要・無料
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* 特徴セクション */}
+      <section className="py-16 md:py-20 px-4 bg-slate-50/50">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-12">
+            TOHYO通信の特徴
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="bg-white/80 backdrop-blur border-slate-200/80 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+              <CardContent className="pt-8 pb-6 px-6 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mx-auto mb-5 flex items-center justify-center">
+                  <Zap className="h-8 w-8 text-blue-600" />
                 </div>
-              </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">リアルタイム更新</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  投票結果が瞬時にグラフに反映。会場全体で一体感を演出できます。
+                </p>
+              </CardContent>
+            </Card>
 
-              {error && (
-                <Alert variant="destructive" className="border-red-200 bg-red-50/90">
-                  <AlertCircleIcon className="h-4 w-4" />
-                  <AlertTitle>{error}</AlertTitle>
-                </Alert>
-              )}
+            <Card className="bg-white/80 backdrop-blur border-slate-200/80 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+              <CardContent className="pt-8 pb-6 px-6 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mx-auto mb-5 flex items-center justify-center">
+                  <Smartphone className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">QRコードで即参加</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  ログイン不要。スマホでQRコードを読み取るだけで、すぐに投票できます。
+                </p>
+              </CardContent>
+            </Card>
 
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="h-11 rounded-xl px-6 shadow-[0_6px_18px_rgba(37,99,235,0.35)] hover:shadow-[0_10px_24px_rgba(37,99,235,0.4)]"
-                >
-                  {loading ? '作成中…' : '投票を作成'}
-                </Button>
-              </div>
+            <Card className="bg-white/80 backdrop-blur border-slate-200/80 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+              <CardContent className="pt-8 pb-6 px-6 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mx-auto mb-5 flex items-center justify-center">
+                  <BarChart3 className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">見やすいグラフ表示</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  棒グラフ・円グラフを切り替え可能。プロジェクター投影にも最適です。
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
 
-            </form>
-          </CardContent>
-        </Card>
+      {/* 使い方セクション */}
+      <section className="py-16 md:py-20 px-4">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-12">
+            使い方
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* 開催者向け */}
+            <Card className="bg-white/80 backdrop-blur border-slate-200/80 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-5 pb-4 border-b-2 border-blue-600 flex items-center gap-2">
+                  開催者の方
+                </h3>
+                <div className="space-y-5">
+                  <Step number={1} title="投票を作成" description="質問と選択肢を入力して投票セッションを作成します。" />
+                  <Step number={2} title="QRコードを共有" description="生成されたQRコードをプロジェクターなどで参加者に見せます。" />
+                  <Step number={3} title="結果をリアルタイム表示" description="投票結果がリアルタイムでグラフに反映されます。" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 参加者向け */}
+            <Card className="bg-white/80 backdrop-blur border-slate-200/80 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-5 pb-4 border-b-2 border-blue-600 flex items-center gap-2">
+                  参加者の方
+                </h3>
+                <div className="space-y-5">
+                  <Step number={1} title="QRコードを読み取る" description="開催者が表示するQRコードをスマホで読み取ります。" />
+                  <Step number={2} title="選択肢を選んで投票" description="表示された選択肢から選んで送信ボタンを押します。" />
+                  <Step number={3} title="結果を確認" description="投票後、リアルタイムで結果を閲覧できます。" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* CTAセクション */}
+      <section className="py-16 md:py-20 px-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">
+            さっそく始めてみよう
+          </h2>
+          <p className="text-slate-400 mb-8">
+            アカウント登録不要。今すぐ投票セッションを作成できます。
+          </p>
+          <Link href="/vote">
+            <Button
+              size="lg"
+              className="h-14 px-8 text-lg rounded-xl shadow-lg shadow-blue-500/40 hover:shadow-xl hover:shadow-blue-500/50 transition-all hover:-translate-y-0.5"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              投票を作成する
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* フッター */}
+      <footer className="py-8 px-4 text-center text-sm text-slate-500 border-t border-slate-200">
+        <p>© 2025 TOHYO通信 - Vote Communication</p>
+      </footer>
+    </div>
+  );
+}
+
+function Step({ number, title, description }: { number: number; title: string; description: string }) {
+  return (
+    <div className="flex items-start gap-4">
+      <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-md shadow-blue-500/30">
+        {number}
+      </div>
+      <div>
+        <h4 className="font-medium text-slate-900 mb-1">{title}</h4>
+        <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
       </div>
     </div>
   );
