@@ -21,9 +21,8 @@ export default function Home() {
             <Image
               src="/tohyo-communication.svg"
               alt="TOHYO通信 ロゴ"
-              width={150}
-              height={150}
-              className=""
+              width={250}
+              height={250}
               priority
             />
           </div>
@@ -114,10 +113,9 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* 開催者向け */}
-            <Card className="bg-white/80 backdrop-blur border-slate-200/80 shadow-lg">
+            <Card className="bg-white/80 backdrop-blur border-slate-200/80 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold text-slate-900 mb-5 pb-4 border-b-2 border-blue-600 flex items-center gap-2">
-                  <span className="text-xl">📣</span>
                   開催者の方
                 </h3>
                 <div className="space-y-5">
@@ -129,10 +127,9 @@ export default function Home() {
             </Card>
 
             {/* 参加者向け */}
-            <Card className="bg-white/80 backdrop-blur border-slate-200/80 shadow-lg">
+            <Card className="bg-white/80 backdrop-blur border-slate-200/80 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold text-slate-900 mb-5 pb-4 border-b-2 border-blue-600 flex items-center gap-2">
-                  <span className="text-xl">🙋</span>
                   参加者の方
                 </h3>
                 <div className="space-y-5">
