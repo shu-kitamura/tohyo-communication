@@ -1,7 +1,7 @@
-import { Download, Copy } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { Choice, GetSessionResponse } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Download, Copy } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { Choice, GetSessionResponse } from "@/lib/types";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,40 +9,27 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { Toaster, toast } from "sonner"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { ResultChart } from './result-chart';
+} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Toaster, toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResultChart } from "./result-chart";
 
 interface OrganizerViewProps {
   session: GetSessionResponse;
   choices: Choice[];
   sessionId: string;
   onCloseSession: () => void;
-  onExport: (format: 'json' | 'csv') => void;
+  onExport: (format: "json" | "csv") => void;
 }
 
-export function OrganizerView({ 
-  session, 
-  choices, 
-  sessionId, 
-  onCloseSession, 
-  onExport 
+export function OrganizerView({
+  session,
+  choices,
+  sessionId,
+  onCloseSession,
+  onExport,
 }: OrganizerViewProps) {
   const totalVotes = choices.reduce((sum, c) => sum + c.voteCount, 0);
   const voteUrl = `${window.location.origin}/vote/${sessionId}`;
@@ -64,18 +51,14 @@ export function OrganizerView({
                   className="h-11 rounded-xl border-slate-200 bg-white/90 px-4 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-md"
                 >
                   <Download className="h-4 w-4" />
-                  ダウンロード  
+                  ダウンロード
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-40" align="end">
                 <DropdownMenuLabel>データ形式</DropdownMenuLabel>
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onSelect={() => onExport('csv')}>
-                    CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => onExport('json')}>
-                    JSON
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onExport("csv")}>CSV</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onExport("json")}>JSON</DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -114,17 +97,13 @@ export function OrganizerView({
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:items-start">
           <div className="w-full lg:col-span-3">
-            <ResultChart
-              question={session.question}
-              choices={choices}
-              totalVotes={totalVotes}
-            />
+            <ResultChart question={session.question} choices={choices} totalVotes={totalVotes} />
           </div>
 
           <div className="space-y-4">
             <Card className="bg-white/92 backdrop-blur-md border-slate-200/80 shadow-[0_16px_32px_rgba(15,23,42,0.12)] rounded-[14px]">
               <CardHeader>
-              <CardTitle className="text-center">投票用QRコード</CardTitle>
+                <CardTitle className="text-center">投票用QRコード</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4">
                 <QRCodeSVG value={voteUrl} size={200} />

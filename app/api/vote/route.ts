@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
+import { NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { CreateSessionRequest, CreateSessionResponse, Session } from '@/lib/types';
+import { CreateSessionRequest, CreateSessionResponse, Session } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,29 +9,20 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!body.question || body.question.trim().length === 0) {
-      return NextResponse.json(
-        { error: '質問を入力してください' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "質問を入力してください" }, { status: 400 });
     }
 
     if (!body.choices || body.choices.length < 2) {
-      return NextResponse.json(
-        { error: '選択肢は2つ以上必要です' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "選択肢は2つ以上必要です" }, { status: 400 });
     }
 
     if (body.choices.length > 10) {
-      return NextResponse.json(
-        { error: '選択肢は10個までです' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "選択肢は10個までです" }, { status: 400 });
     }
 
-    if (body.voteType !== 'single' && body.voteType !== 'multiple') {
+    if (body.voteType !== "single" && body.voteType !== "multiple") {
       return NextResponse.json(
-        { error: '投票形式はsingleまたはmultipleを指定してください' },
+        { error: "投票形式はsingleまたはmultipleを指定してください" },
         { status: 400 }
       );
     }
@@ -45,14 +36,14 @@ export async function POST(request: NextRequest) {
     const initResponse = await stub.fetch("http://do/init", {
       method: "POST",
       body: JSON.stringify({ ...body, sessionId }),
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
 
     if (!initResponse.ok) {
       throw new Error("Failed to initialize session in Durable Object");
     }
 
-    const session = await initResponse.json() as Session;
+    const session = (await initResponse.json()) as Session;
 
     const baseUrl = request.nextUrl.origin;
     const response: CreateSessionResponse = {
@@ -63,10 +54,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    console.error('Error creating session:', error);
-    return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
-      { status: 500 }
-    );
+    console.error("Error creating session:", error);
+    return NextResponse.json({ error: "サーバーエラーが発生しました" }, { status: 500 });
   }
 }

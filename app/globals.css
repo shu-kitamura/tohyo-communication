@@ -123,14 +123,7 @@
 
 body {
   margin: 0;
-  background: linear-gradient(
-    120deg,
-    #e0f2fe,
-    #eff6ff,
-    #ffffff,
-    #f0f9ff,
-    #eef2ff
-  );
+  background: linear-gradient(120deg, #e0f2fe, #eff6ff, #ffffff, #f0f9ff, #eef2ff);
   background-size: 400% 400%;
   animation: gradientFlow 16s ease-in-out infinite;
 }

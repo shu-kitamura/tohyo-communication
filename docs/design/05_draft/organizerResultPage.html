@@ -1,282 +1,370 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TOHYO通信 | 結果表示（開催者）</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TOHYO通信 | 結果表示（開催者）</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
 
-  <style>
-    :root {
-      --primary: #2563EB;
-      --accent: #F97316;
-      --surface: #FFFFFF;
-      --ink: #0B1220;
-      --muted: #475569;
-      --line: #E2E8F0;
-      --radius: 14px;
-      --shadow-lg: 0 16px 32px rgba(15, 23, 42, 0.12);
+    <style>
+      :root {
+        --primary: #2563eb;
+        --accent: #f97316;
+        --surface: #ffffff;
+        --ink: #0b1220;
+        --muted: #475569;
+        --line: #e2e8f0;
+        --radius: 14px;
+        --shadow-lg: 0 16px 32px rgba(15, 23, 42, 0.12);
 
-      --g1: #2563EB;
-      --g2: #10B981;
-      --g3: #F59E0B;
-      --g4: #EC4899;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
-      color: var(--ink);
-      line-height: 1.6;
-
-      /* ドット無し：色変化を少し強めたアニメーション・グラデーション */
-      background: linear-gradient(
-        120deg,
-        #e0f2fe,
-        #eff6ff,
-        #ffffff,
-        #f0f9ff,
-        #eef2ff
-      );
-      background-size: 400% 400%;
-      animation: gradientFlow 16s ease-in-out infinite;
-    }
-
-    @keyframes gradientFlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* Reduce motion */
-    @media (prefers-reduced-motion: reduce) {
-      body {
-        animation: none;
-        background-position: 50% 50%;
+        --g1: #2563eb;
+        --g2: #10b981;
+        --g3: #f59e0b;
+        --g4: #ec4899;
       }
-    }
 
-    .container {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 32px 24px 48px;
-    }
+      * {
+        box-sizing: border-box;
+      }
 
-    /* Header */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
+      body {
+        margin: 0;
+        font-family:
+          "Noto Sans JP",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        color: var(--ink);
+        line-height: 1.6;
 
-    .header-left { display: grid; gap: 6px; }
+        /* ドット無し：色変化を少し強めたアニメーション・グラデーション */
+        background: linear-gradient(120deg, #e0f2fe, #eff6ff, #ffffff, #f0f9ff, #eef2ff);
+        background-size: 400% 400%;
+        animation: gradientFlow 16s ease-in-out infinite;
+      }
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      width: fit-content;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 600;
-      background: rgba(249, 115, 22, 0.15);
-      color: var(--accent);
-    }
+      @keyframes gradientFlow {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
 
-    h1 { margin: 0; font-size: 22px; font-weight: 600; }
+      /* Reduce motion */
+      @media (prefers-reduced-motion: reduce) {
+        body {
+          animation: none;
+          background-position: 50% 50%;
+        }
+      }
 
-    .subtitle { font-size: 14px; color: var(--muted); }
+      .container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 32px 24px 48px;
+      }
 
-    /* Controls */
-    .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+      /* Header */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
 
-    button {
-      height: 44px;
-      padding: 0 16px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--ink);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+      .header-left {
+        display: grid;
+        gap: 6px;
+      }
 
-    button.primary {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: #fff;
-      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
-    }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: fit-content;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        background: rgba(249, 115, 22, 0.15);
+        color: var(--accent);
+      }
 
-    button.danger { border-color: #FECACA; color: #DC2626; }
+      h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 600;
+      }
 
-    /* Layout */
-    .grid {
-      display: grid;
-      grid-template-columns: 7fr 3fr;
-      gap: 24px;
-      align-items: start;
-    }
+      .subtitle {
+        font-size: 14px;
+        color: var(--muted);
+      }
 
-    .card {
-      background: rgba(255,255,255,0.92);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-radius: var(--radius);
-      padding: 20px;
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow-lg);
-    }
+      /* Controls */
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
 
-    /* Main card */
-    .summary {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
+      button {
+        height: 44px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
 
-    .question { font-size: 20px; font-weight: 600; }
+      button.primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+      }
 
-    .total { text-align: right; }
-    .total .count { font-size: 22px; font-weight: 600; }
-    .total .label { font-size: 13px; color: var(--muted); }
+      button.danger {
+        border-color: #fecaca;
+        color: #dc2626;
+      }
 
-    /* Graph */
-    .graph {
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 16px;
-      background: rgba(255,255,255,0.96);
-    }
+      /* Layout */
+      .grid {
+        display: grid;
+        grid-template-columns: 7fr 3fr;
+        gap: 24px;
+        align-items: start;
+      }
 
-    .graph-note { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+      .card {
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: var(--radius);
+        padding: 20px;
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-lg);
+      }
 
-    .bars { display: grid; gap: 12px; }
+      /* Main card */
+      .summary {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
 
-    .bar {
-      display: grid;
-      grid-template-columns: 120px 1fr auto;
-      align-items: center;
-      gap: 12px;
-    }
+      .question {
+        font-size: 20px;
+        font-weight: 600;
+      }
 
-    .bar-name { font-weight: 500; }
+      .total {
+        text-align: right;
+      }
+      .total .count {
+        font-size: 22px;
+        font-weight: 600;
+      }
+      .total .label {
+        font-size: 13px;
+        color: var(--muted);
+      }
 
-    .track {
-      height: 14px;
-      background: #E2E8F0;
-      border-radius: 999px;
-      overflow: hidden;
-    }
+      /* Graph */
+      .graph {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.96);
+      }
 
-    .fill { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
-    .c1 { background: var(--g1); width: 62%; }
-    .c2 { background: var(--g2); width: 18%; }
-    .c3 { background: var(--g3); width: 20%; }
+      .graph-note {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
 
-    .bar-meta { font-size: 13px; color: var(--muted); white-space: nowrap; }
+      .bars {
+        display: grid;
+        gap: 12px;
+      }
 
-    /* Aside */
-    aside { display: grid; gap: 20px; }
+      .bar {
+        display: grid;
+        grid-template-columns: 120px 1fr auto;
+        align-items: center;
+        gap: 12px;
+      }
 
-    .aside-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+      .bar-name {
+        font-weight: 500;
+      }
 
-    .qr {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      border-radius: 12px;
-      background: repeating-linear-gradient(45deg, #0F172A 0, #0F172A 10px, #F97316 10px, #F97316 20px);
-    }
+      .track {
+        height: 14px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+      }
 
-    .url { font-size: 13px; color: var(--muted); margin-top: 6px; word-break: break-all; }
+      .fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.3s ease;
+      }
+      .c1 {
+        background: var(--g1);
+        width: 62%;
+      }
+      .c2 {
+        background: var(--g2);
+        width: 18%;
+      }
+      .c3 {
+        background: var(--g3);
+        width: 20%;
+      }
 
-    .note { font-size: 13px; color: var(--muted); line-height: 1.5; }
+      .bar-meta {
+        font-size: 13px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
 
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr; }
-      .total { text-align: left; }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <div class="header-left">
-        <div class="badge">リアルタイム更新中</div>
-        <h1>結果を表示中</h1>
-        <div class="subtitle">背景はゆっくり色が変化します。</div>
+      /* Aside */
+      aside {
+        display: grid;
+        gap: 20px;
+      }
+
+      .aside-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .qr {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 12px;
+        background: repeating-linear-gradient(
+          45deg,
+          #0f172a 0,
+          #0f172a 10px,
+          #f97316 10px,
+          #f97316 20px
+        );
+      }
+
+      .url {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 6px;
+        word-break: break-all;
+      }
+
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .total {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-left">
+          <div class="badge">リアルタイム更新中</div>
+          <h1>結果を表示中</h1>
+          <div class="subtitle">背景はゆっくり色が変化します。</div>
+        </div>
+        <div class="controls">
+          <button class="primary">棒グラフ</button>
+          <button>円グラフ</button>
+          <button>CSVで保存</button>
+          <button class="danger">投票を終了</button>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <div class="summary">
+            <div>
+              <div class="subtitle">質問</div>
+              <div class="question">今日の昼食は何がいいですか？</div>
+            </div>
+            <div class="total">
+              <div class="label">総投票数</div>
+              <div class="count">35 票</div>
+            </div>
+          </div>
+
+          <div class="graph">
+            <div class="graph-note">SSEでリアルタイム更新しています</div>
+            <div class="bars">
+              <div class="bar">
+                <div class="bar-name">ラーメン</div>
+                <div class="track"><div class="fill c1"></div></div>
+                <div class="bar-meta">22 票 / 62%</div>
+              </div>
+              <div class="bar">
+                <div class="bar-name">カレー</div>
+                <div class="track"><div class="fill c2"></div></div>
+                <div class="bar-meta">6 票 / 18%</div>
+              </div>
+              <div class="bar">
+                <div class="bar-name">寿司</div>
+                <div class="track"><div class="fill c3"></div></div>
+                <div class="bar-meta">7 票 / 20%</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside>
+          <div class="card">
+            <div class="aside-title">参加者用QRコード</div>
+            <div class="qr" aria-label="QRコード"></div>
+            <div class="url">https://example.com/vote/abcd1234</div>
+          </div>
+
+          <div class="card">
+            <div class="aside-title">操作メモ</div>
+            <div class="note">
+              グラフ切替は即時反映されます。<br />
+              投票終了後も結果は表示され続けます。
+            </div>
+          </div>
+        </aside>
       </div>
-      <div class="controls">
-        <button class="primary">棒グラフ</button>
-        <button>円グラフ</button>
-        <button>CSVで保存</button>
-        <button class="danger">投票を終了</button>
-      </div>
-    </header>
-
-    <div class="grid">
-      <section class="card">
-        <div class="summary">
-          <div>
-            <div class="subtitle">質問</div>
-            <div class="question">今日の昼食は何がいいですか？</div>
-          </div>
-          <div class="total">
-            <div class="label">総投票数</div>
-            <div class="count">35 票</div>
-          </div>
-        </div>
-
-        <div class="graph">
-          <div class="graph-note">SSEでリアルタイム更新しています</div>
-          <div class="bars">
-            <div class="bar">
-              <div class="bar-name">ラーメン</div>
-              <div class="track"><div class="fill c1"></div></div>
-              <div class="bar-meta">22 票 / 62%</div>
-            </div>
-            <div class="bar">
-              <div class="bar-name">カレー</div>
-              <div class="track"><div class="fill c2"></div></div>
-              <div class="bar-meta">6 票 / 18%</div>
-            </div>
-            <div class="bar">
-              <div class="bar-name">寿司</div>
-              <div class="track"><div class="fill c3"></div></div>
-              <div class="bar-meta">7 票 / 20%</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <aside>
-        <div class="card">
-          <div class="aside-title">参加者用QRコード</div>
-          <div class="qr" aria-label="QRコード"></div>
-          <div class="url">https://example.com/vote/abcd1234</div>
-        </div>
-
-        <div class="card">
-          <div class="aside-title">操作メモ</div>
-          <div class="note">
-            グラフ切替は即時反映されます。<br>
-            投票終了後も結果は表示され続けます。
-          </div>
-        </div>
-      </aside>
     </div>
-  </div>
-</body>
+  </body>
 </html>

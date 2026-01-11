@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 // GET /vote/:sessionId/stream - SSE for real-time updates

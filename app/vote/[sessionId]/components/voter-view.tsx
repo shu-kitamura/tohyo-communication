@@ -1,18 +1,13 @@
-import { useState } from 'react';
-import { AlertCircleIcon } from 'lucide-react';
-import { Choice, GetSessionResponse } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Alert, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from "@/components/ui/checkbox"
-import { ResultChart } from './result-chart';
+import { useState } from "react";
+import { AlertCircleIcon } from "lucide-react";
+import { Choice, GetSessionResponse } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ResultChart } from "./result-chart";
 
 interface VoterViewProps {
   session: GetSessionResponse;
@@ -24,26 +19,24 @@ interface VoterViewProps {
   onSubmit: (selectedChoices: string[]) => Promise<void>;
 }
 
-export function VoterView({ 
-  session, 
-  choices, 
-  message, 
-  error, 
+export function VoterView({
+  session,
+  choices,
+  message,
+  error,
   showResults,
   setShowResults,
-  onSubmit 
+  onSubmit,
 }: VoterViewProps) {
   const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
 
   // Handle choice selection
   const handleChoiceChange = (choiceId: string) => {
-    if (session?.voteType === 'single') {
+    if (session?.voteType === "single") {
       setSelectedChoices([choiceId]);
     } else {
       setSelectedChoices((prev) =>
-        prev.includes(choiceId)
-          ? prev.filter((id) => id !== choiceId)
-          : [...prev, choiceId]
+        prev.includes(choiceId) ? prev.filter((id) => id !== choiceId) : [...prev, choiceId]
       );
     }
   };
@@ -68,11 +61,7 @@ export function VoterView({
           </div>
 
           <Card className="mt-2 rounded-[14px] border-slate-200/80 bg-white/92 p-4 shadow-[0_16px_32px_rgba(15,23,42,0.12)] backdrop-blur-md">
-            <ResultChart
-              question={session.question}
-              choices={choices}
-              totalVotes={totalVotes}
-            />
+            <ResultChart question={session.question} choices={choices} totalVotes={totalVotes} />
           </Card>
         </div>
       </div>
@@ -88,19 +77,16 @@ export function VoterView({
             <div className="space-y-3">
               <div
                 className={
-                  message.includes('完了')
-                    ? 'rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900'
-                    : message.includes('終了')
-                    ? 'rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
-                    : 'rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900'
+                  message.includes("完了")
+                    ? "rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900"
+                    : message.includes("終了")
+                      ? "rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                      : "rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900"
                 }
               >
-                {message || 'この端末では投票済みです'}
+                {message || "この端末では投票済みです"}
               </div>
-              <Button
-                onClick={() => setShowResults(true)}
-                className="mt-1 w-full rounded-xl"
-              >
+              <Button onClick={() => setShowResults(true)} className="mt-1 w-full rounded-xl">
                 結果を見る
               </Button>
             </div>
@@ -122,8 +108,11 @@ export function VoterView({
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
-              {session.voteType === 'single' ? (
-                <RadioGroup onValueChange={(value) => handleChoiceChange(value)} className="space-y-1">
+              {session.voteType === "single" ? (
+                <RadioGroup
+                  onValueChange={(value) => handleChoiceChange(value)}
+                  className="space-y-1"
+                >
                   {session.choices.map((choice) => (
                     <Label
                       key={choice.choiceId}

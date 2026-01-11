@@ -1,37 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { CreateSessionRequest, CreateSessionResponse, VoteType } from '@/lib/types';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { CreateSessionRequest, CreateSessionResponse, VoteType } from "@/lib/types";
 
 import { AlertCircleIcon, Plus, X } from "lucide-react";
 
-import {
-  Alert,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function CreateVotePage() {
   const router = useRouter();
-  const [question, setQuestion] = useState('');
-  const [voteType, setVoteType] = useState<VoteType>('single');
-  const [choices, setChoices] = useState(['', '']);
-  const [error, setError] = useState('');
+  const [question, setQuestion] = useState("");
+  const [voteType, setVoteType] = useState<VoteType>("single");
+  const [choices, setChoices] = useState(["", ""]);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleAddChoice = () => {
     if (choices.length < 10) {
-      setChoices([...choices, '']);
+      setChoices([...choices, ""]);
     }
   };
 
@@ -49,16 +41,16 @@ export default function CreateVotePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!question.trim()) {
-      setError('質問を入力してください');
+      setError("質問を入力してください");
       return;
     }
 
     const validChoices = choices.filter((c) => c.trim());
     if (validChoices.length < 2) {
-      setError('選択肢は2つ以上必要です');
+      setError("選択肢は2つ以上必要です");
       return;
     }
 
@@ -71,23 +63,23 @@ export default function CreateVotePage() {
         choices: validChoices.map((text) => ({ text })),
       };
 
-      const res = await fetch('/api/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
       const data: CreateSessionResponse = await res.json();
 
       if (!res.ok) {
-        setError((data as { error?: string }).error || '投票セッションの作成に失敗しました');
+        setError((data as { error?: string }).error || "投票セッションの作成に失敗しました");
         return;
       }
 
       // Redirect to organizer view
       router.push(`/vote/${data.sessionId}?view=organizer`);
     } catch {
-      setError('投票セッションの作成に失敗しました');
+      setError("投票セッションの作成に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -99,23 +91,21 @@ export default function CreateVotePage() {
         <Card className="bg-white/90 backdrop-blur-md border-slate-200/80 shadow-[0_16px_32px_rgba(15,23,42,0.12)] rounded-[14px]">
           <CardHeader className="pb-3">
             <CardTitle className="text-2xl tracking-tight">投票を作成</CardTitle>
-            <p className="mt-1 text-sm text-slate-500">
-              タイトルと選択肢を入力して投票を作成
-            </p>
+            <p className="mt-1 text-sm text-slate-500">タイトルと選択肢を入力して投票を作成</p>
           </CardHeader>
-        <CardContent>
-          <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-            <div className="space-y-2" id="question">
-              <Label htmlFor="question">タイトル</Label>
-              <Input
-                id="question"
-                type="text"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="例: 今日の昼食は何がいいですか？"
-                required
-              />
-            </div>
+          <CardContent>
+            <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+              <div className="space-y-2" id="question">
+                <Label htmlFor="question">タイトル</Label>
+                <Input
+                  id="question"
+                  type="text"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="例: 今日の昼食は何がいいですか？"
+                  required
+                />
+              </div>
 
               <div className="space-y-2" id="vote-type">
                 <Label className="font-semibold">投票形式</Label>
@@ -139,7 +129,10 @@ export default function CreateVotePage() {
                 <Label className="font-semibold">選択肢</Label>
                 <div className="space-y-3 rounded-xl border border-dashed border-blue-500/40 bg-slate-50/80 p-4">
                   {choices.map((choice, index) => (
-                    <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center">
+                    <div
+                      key={index}
+                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center"
+                    >
                       <Input
                         type="text"
                         value={choice}
@@ -180,10 +173,9 @@ export default function CreateVotePage() {
                   disabled={loading}
                   className="h-11 rounded-xl px-6 shadow-[0_6px_18px_rgba(37,99,235,0.35)] hover:shadow-[0_10px_24px_rgba(37,99,235,0.4)]"
                 >
-                  {loading ? '作成中…' : '投票を作成'}
+                  {loading ? "作成中…" : "投票を作成"}
                 </Button>
               </div>
-
             </form>
           </CardContent>
         </Card>

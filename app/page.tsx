@@ -1,8 +1,8 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import { Plus, Zap, Smartphone, BarChart3, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import Link from "next/link";
+import Image from "next/image";
+import { Plus, Zap, Smartphone, BarChart3, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Home() {
   return (
@@ -32,7 +32,8 @@ export default function Home() {
             リアルタイム投票で、場を盛り上げよう
           </h1>
           <p className="text-base md:text-lg text-slate-600 mb-8 leading-relaxed">
-            QRコードを読み取るだけで即参加。<br className="hidden sm:block" />
+            QRコードを読み取るだけで即参加。
+            <br className="hidden sm:block" />
             投票結果がリアルタイムで画面に反映されます。
           </p>
 
@@ -119,9 +120,21 @@ export default function Home() {
                   開催者の方
                 </h3>
                 <div className="space-y-5">
-                  <Step number={1} title="投票を作成" description="質問と選択肢を入力して投票セッションを作成します。" />
-                  <Step number={2} title="QRコードを共有" description="生成されたQRコードをプロジェクターなどで参加者に見せます。" />
-                  <Step number={3} title="結果をリアルタイム表示" description="投票結果がリアルタイムでグラフに反映されます。" />
+                  <Step
+                    number={1}
+                    title="投票を作成"
+                    description="質問と選択肢を入力して投票セッションを作成します。"
+                  />
+                  <Step
+                    number={2}
+                    title="QRコードを共有"
+                    description="生成されたQRコードをプロジェクターなどで参加者に見せます。"
+                  />
+                  <Step
+                    number={3}
+                    title="結果をリアルタイム表示"
+                    description="投票結果がリアルタイムでグラフに反映されます。"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -133,9 +146,21 @@ export default function Home() {
                   参加者の方
                 </h3>
                 <div className="space-y-5">
-                  <Step number={1} title="QRコードを読み取る" description="開催者が表示するQRコードをスマホで読み取ります。" />
-                  <Step number={2} title="選択肢を選んで投票" description="表示された選択肢から選んで送信ボタンを押します。" />
-                  <Step number={3} title="結果を確認" description="投票後、リアルタイムで結果を閲覧できます。" />
+                  <Step
+                    number={1}
+                    title="QRコードを読み取る"
+                    description="開催者が表示するQRコードをスマホで読み取ります。"
+                  />
+                  <Step
+                    number={2}
+                    title="選択肢を選んで投票"
+                    description="表示された選択肢から選んで送信ボタンを押します。"
+                  />
+                  <Step
+                    number={3}
+                    title="結果を確認"
+                    description="投票後、リアルタイムで結果を閲覧できます。"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -146,9 +171,7 @@ export default function Home() {
       {/* CTAセクション */}
       <section className="py-16 md:py-20 px-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            さっそく始めてみよう
-          </h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">さっそく始めてみよう</h2>
           <p className="text-slate-400 mb-8">
             アカウント登録不要。今すぐ投票セッションを作成できます。
           </p>
@@ -172,7 +195,15 @@ export default function Home() {
   );
 }
 
-function Step({ number, title, description }: { number: number; title: string; description: string }) {
+function Step({
+  number,
+  title,
+  description,
+}: {
+  number: number;
+  title: string;
+  description: string;
+}) {
   return (
     <div className="flex items-start gap-4">
       <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-md shadow-blue-500/30">

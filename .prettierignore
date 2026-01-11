@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+build
+.open-next
+dist
+*.log
+package-lock.json
+.wrangler

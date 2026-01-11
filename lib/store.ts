@@ -1,5 +1,5 @@
 // In-memory data store for voting sessions and votes
-import { Session, Vote } from './types';
+import { Session, Vote } from "./types";
 
 class VotingStore {
   private sessions = new Map<string, Session>();
@@ -65,6 +65,9 @@ class VotingStore {
 export const store = new VotingStore();
 
 // Cleanup old sessions every hour
-setInterval(() => {
-  store.cleanupOldSessions();
-}, 60 * 60 * 1000);
+setInterval(
+  () => {
+    store.cleanupOldSessions();
+  },
+  60 * 60 * 1000
+);
