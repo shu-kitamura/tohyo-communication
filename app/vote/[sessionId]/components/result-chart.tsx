@@ -22,11 +22,20 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import { Choice } from '@/lib/types';
 import { useState } from 'react';
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+const COLORS = [
+  '#3B82F6',
+  '#10B981',
+  '#F59E0B',
+  '#EF4444',
+  '#8B5CF6',
+  '#EC4899',
+  '#14B8A6',
+  '#F97316',
+];
 
 interface ResultChartProps {
   question: string;
@@ -34,13 +43,22 @@ interface ResultChartProps {
   totalVotes: number;
 }
 
-export function ResultChart({ question, choices, totalVotes }: ResultChartProps) {
-  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
+export function ResultChart({
+  question,
+  choices,
+  totalVotes,
+}: ResultChartProps) {
+  const [chartType, setChartType] = useState<'bar' | 'pie'>(
+    'bar'
+  );
 
   const chartData = choices.map((choice) => ({
     name: choice.text,
     votes: choice.voteCount,
-    percentage: totalVotes > 0 ? Math.round((choice.voteCount / totalVotes) * 100) : 0,
+    percentage:
+      totalVotes > 0
+        ? Math.round((choice.voteCount / totalVotes) * 100)
+        : 0,
   }));
 
   return (
@@ -48,14 +66,18 @@ export function ResultChart({ question, choices, totalVotes }: ResultChartProps)
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <CardTitle className="text-xl font-semibold tracking-tight md:text-2xl">{question}</CardTitle>
+            <CardTitle className="text-xl font-semibold tracking-tight md:text-2xl">
+              {question}
+            </CardTitle>
             <CardDescription className="text-xs text-slate-500 md:text-sm">
               総投票数: {totalVotes}票
             </CardDescription>
           </div>
           <Tabs
             value={chartType}
-            onValueChange={(value) => setChartType(value as 'bar' | 'pie')}
+            onValueChange={(value) =>
+              setChartType(value as 'bar' | 'pie')
+            }
             className="w-full max-w-[220px]"
           >
             <TabsList className="grid w-full grid-cols-2 rounded-full bg-slate-100/80">
@@ -63,13 +85,17 @@ export function ResultChart({ question, choices, totalVotes }: ResultChartProps)
                 value="bar"
                 className="rounded-full data-[state=active]:bg-white data-[state=active]:text-slate-900"
               >
-                <Label className="text-xs md:text-sm">棒グラフ</Label>
+                <Label className="text-xs md:text-sm">
+                  棒グラフ
+                </Label>
               </TabsTrigger>
               <TabsTrigger
                 value="pie"
                 className="rounded-full data-[state=active]:bg-white data-[state=active]:text-slate-900"
               >
-                <Label className="text-xs md:text-sm">円グラフ</Label>
+                <Label className="text-xs md:text-sm">
+                  円グラフ
+                </Label>
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -78,7 +104,7 @@ export function ResultChart({ question, choices, totalVotes }: ResultChartProps)
       <CardContent className="h-80 md:h-96">
         {chartType === 'bar' ? (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{top: 20}}>
+            <BarChart data={chartData} margin={{ top: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="name"
@@ -98,7 +124,7 @@ export function ResultChart({ question, choices, totalVotes }: ResultChartProps)
                   position="top"
                   offset={12}
                   fontSize={12}
-                  fill='#000000'
+                  fill="#000000"
                 />
               </Bar>
             </BarChart>
@@ -111,13 +137,18 @@ export function ResultChart({ question, choices, totalVotes }: ResultChartProps)
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value }) => `${name}: ${value}`}
+                label={({ name, value }) =>
+                  `${name}: ${value}`
+                }
                 outerRadius={120}
                 fill="#8884d8"
                 dataKey="votes"
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Legend />

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { ExportJsonResponse, Session } from '@/lib/types';
 
 // GET /vote/:sessionId/export - Export results
@@ -13,22 +13,22 @@ export async function GET(
     const id = env.VOTE_SESSION.idFromName(sessionId);
     const stub = env.VOTE_SESSION.get(id);
 
-    const doRes = await stub.fetch("http://do/export");
-    
+    const doRes = await stub.fetch('http://do/export');
+
     if (!doRes.ok) {
-        if (doRes.status === 404) {
-            return NextResponse.json(
-                { error: 'セッションが見つかりません' },
-                { status: 404 }
-            );
-        }
+      if (doRes.status === 404) {
         return NextResponse.json(
-            { error: 'サーバーエラーが発生しました' },
-            { status: 500 }
+          { error: 'セッションが見つかりません' },
+          { status: 404 }
         );
+      }
+      return NextResponse.json(
+        { error: 'サーバーエラーが発生しました' },
+        { status: 500 }
+      );
     }
 
-    const session = await doRes.json() as Session;
+    const session = (await doRes.json()) as Session;
 
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format');
@@ -40,12 +40,22 @@ export async function GET(
       );
     }
 
-    const totalVotes = session.choices.reduce((sum, choice) => sum + choice.voteCount, 0);
-    const choicesWithPercentage = session.choices.map((choice) => ({
-      text: choice.text,
-      voteCount: choice.voteCount,
-      percentage: totalVotes > 0 ? Math.round((choice.voteCount / totalVotes) * 1000) / 10 : 0,
-    }));
+    const totalVotes = session.choices.reduce(
+      (sum, choice) => sum + choice.voteCount,
+      0
+    );
+    const choicesWithPercentage = session.choices.map(
+      (choice) => ({
+        text: choice.text,
+        voteCount: choice.voteCount,
+        percentage:
+          totalVotes > 0
+            ? Math.round(
+                (choice.voteCount / totalVotes) * 1000
+              ) / 10
+            : 0,
+      })
+    );
 
     if (format === 'json') {
       const response: ExportJsonResponse = {
@@ -63,7 +73,8 @@ export async function GET(
       const csvRows = [
         '選択肢,得票数,得票率',
         ...choicesWithPercentage.map(
-          (choice) => `${choice.text},${choice.voteCount},${choice.percentage}%`
+          (choice) =>
+            `${choice.text},${choice.voteCount},${choice.percentage}%`
         ),
       ];
       const csv = csvRows.join('\n');
@@ -87,7 +98,10 @@ export async function GET(
     }
 
     return NextResponse.json(
-      { error: '無効なformatです。json, csv, imageのいずれかを指定してください' },
+      {
+        error:
+          '無効なformatです。json, csv, imageのいずれかを指定してください',
+      },
       { status: 400 }
     );
   } catch (error) {

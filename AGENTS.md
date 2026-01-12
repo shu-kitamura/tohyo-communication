@@ -1,6 +1,7 @@
 # AI Agent Guidelines
 
 ## Project Overview
+
 - Real-Time Polling App: A serverless real-time voting web application for events and workshops, currently live at https://vote.shu-kita.net. It allows hosts to create questions and participants to vote via QR code, with instant visualization of results.
 - Purpose: Developed to collect and display audience opinions instantly, addressing the lack of real-time feedback and poor visibility in traditional polling tools. Participants can see voting results update live, fostering engagement in the venue.
 - Key Features:
@@ -14,6 +15,7 @@
 - Status: This project is a personal portfolio piece aimed at demonstrating real-time web technology. It is already deployed for use in small-scale events, so stability is important, though the user load is relatively low.
 
 ## Design Philosophy
+
 - Readability First: Prioritize code clarity and readability over premature optimization or overly abstract design. The codebase favors straightforward, explicit implementations rather than complex abstractions, so that it’s easy to understand and maintain.
 - Maintainable & Simple: Ensure that solutions remain simple and maintainable. It's acceptable to sacrifice some performance or elegance if it makes the code easier to read and modify. Avoid clever one-liners or deep nesting that could confuse contributors.
 - Type Safety and Clarity: Leverage TypeScript to maintain strict types and catch errors early. Eliminate unnecessary any or unknown types by defining proper interfaces (e.g. adding generic types to Cloudflare context instead of using any). Clear, strong typing improves reliability and serves as documentation for the code.
@@ -21,6 +23,7 @@
 - Consistent Style: Follow a consistent coding style throughout the project. Use descriptive names for variables and functions, keep functions focused on single tasks, and organize code into logical modules when it improves clarity. The emphasis is on a clean codebase reflecting best practices without over-engineering.
 
 ## Scope of Changes
+
 - Incremental Improvements: Make changes in a conservative, incremental fashion. Focus on bug fixes, small feature enhancements, refactoring for clarity, and addressing known issues, rather than sweeping rewrites. Large architectural changes or introducing new major dependencies are out of scope unless explicitly requested.
 - Preserve Existing Behavior: The application is already live and working; any modifications should preserve core functionality (real-time voting, result display, data consistency). Before changing a behavior, consider backward compatibility and whether existing users (even if few) might be relying on it. When in doubt, prefer a solution that maintains the current expected behavior.
 - No Unnecessary Config Changes: Do not modify configuration or build files (such as package.json, build settings, or Cloudflare config) unless it is required to fix a known problem. Avoid dependency updates or config tweaks that are not directly related to a given task, as they might introduce deployment or compatibility issues. The deployment setup should remain stable.
@@ -29,6 +32,7 @@
 - Testing Changes: Since the project currently lacks automated tests, be diligent in testing your changes manually. Verify that new code works as expected by simulating typical usage (creating a session, voting, viewing results, etc.) and that no new errors are introduced. Ensure that improvements solve the intended problem without breaking other parts of the system.
 
 ## AI Behavior Guidelines
+
 - Language Use: Communicate with the project maintainer in Japanese, as the maintainer is Japanese and project documentation is primarily in Japanese. All explanations, discussions, and user-facing messages should be given in clear and concise Japanese (丁寧すぎる表現は不要ですが、分かりやすく簡潔に). Code (identifiers, comments) remains in English where appropriate, but UI text and comments follow the project's language convention.
 - Clarity and Brevity: Keep explanations and reasoning concise and focused. Avoid overly verbose descriptions. When explaining a change or answering a question, get to the point quickly, using simple language (in Japanese) so the maintainer can easily grasp the intent.
 - Adhere to Style Conventions: Follow the established style of the repository in both code and communication. For example, code comments in the React frontend are written in Japanese, so use Japanese for new UI-related comments or text to match. Commit messages should be informative and typically in English (unless the maintainer prefers Japanese), written in present-tense imperative (e.g., "Fix ...", "Add ..."). Maintain consistency with existing naming, formatting, and commenting styles.
@@ -37,6 +41,7 @@
 - No Unauthorized Actions: The agent should not perform actions outside the scope of assigned tasks. Do not delete files, change licenses, or alter critical settings unless explicitly directed. All changes should be relevant to the task at hand and compliant with the guidelines in this document.
 
 ## Output Expectations
+
 - Code Delivery: Provide code changes that are well-formatted and ready to integrate. Use proper Markdown syntax for any code blocks in chat or documentation (including language tags for syntax highlighting). The code should conform to the project's linting and formatting conventions, so it fits naturally into the codebase.
 - Explanation of Changes: Along with any code submission, include a brief explanation of what was done and why, written in Japanese. Keep it to a few sentences. For example, if fixing a bug, you might write: "投票済みチェックのバグを修正しました。重複投票を防ぐためのトークン確認ロジックに誤りがあったため、正しく判定するよう修正しています。" This provides context without unnecessary detail.
 - Structured Responses: Organize information in responses or documentation for easy reading. When describing steps, listing features, or summarizing changes, use bullet points or numbered lists (as demonstrated in this document) instead of long paragraphs. This formatting helps the maintainer quickly grasp key points.

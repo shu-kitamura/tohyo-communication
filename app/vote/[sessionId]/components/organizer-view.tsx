@@ -9,24 +9,24 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from '@/components/ui/popover';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { Toaster, toast } from "sonner"
+} from '@/components/ui/tooltip';
+import { Toaster, toast } from 'sonner';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from '@/components/ui/card';
 import { ResultChart } from './result-chart';
 
 interface OrganizerViewProps {
@@ -37,14 +37,17 @@ interface OrganizerViewProps {
   onExport: (format: 'json' | 'csv') => void;
 }
 
-export function OrganizerView({ 
-  session, 
-  choices, 
-  sessionId, 
-  onCloseSession, 
-  onExport 
+export function OrganizerView({
+  session,
+  choices,
+  sessionId,
+  onCloseSession,
+  onExport,
 }: OrganizerViewProps) {
-  const totalVotes = choices.reduce((sum, c) => sum + c.voteCount, 0);
+  const totalVotes = choices.reduce(
+    (sum, c) => sum + c.voteCount,
+    0
+  );
   const voteUrl = `${window.location.origin}/vote/${sessionId}`;
 
   return (
@@ -64,16 +67,25 @@ export function OrganizerView({
                   className="h-11 rounded-xl border-slate-200 bg-white/90 px-4 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-md"
                 >
                   <Download className="h-4 w-4" />
-                  ダウンロード  
+                  ダウンロード
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-40" align="end">
-                <DropdownMenuLabel>データ形式</DropdownMenuLabel>
+              <DropdownMenuContent
+                className="w-40"
+                align="end"
+              >
+                <DropdownMenuLabel>
+                  データ形式
+                </DropdownMenuLabel>
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onSelect={() => onExport('csv')}>
+                  <DropdownMenuItem
+                    onSelect={() => onExport('csv')}
+                  >
                     CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => onExport('json')}>
+                  <DropdownMenuItem
+                    onSelect={() => onExport('json')}
+                  >
                     JSON
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -90,8 +102,12 @@ export function OrganizerView({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64 rounded-xl border border-slate-200 bg-white/95 shadow-lg">
-                <p className="text-sm font-semibold text-slate-900">投票を終了しますか？</p>
-                <p className="mt-1 text-xs text-slate-500">終了後も結果は参加者に表示されます。</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  投票を終了しますか？
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  終了後も結果は参加者に表示されます。
+                </p>
                 <div className="mt-4 flex justify-start gap-2">
                   <Button
                     variant="destructive"
@@ -124,12 +140,16 @@ export function OrganizerView({
           <div className="space-y-4">
             <Card className="bg-white/92 backdrop-blur-md border-slate-200/80 shadow-[0_16px_32px_rgba(15,23,42,0.12)] rounded-[14px]">
               <CardHeader>
-              <CardTitle className="text-center">投票用QRコード</CardTitle>
+                <CardTitle className="text-center">
+                  投票用QRコード
+                </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4">
                 <QRCodeSVG value={voteUrl} size={200} />
                 <div className="flex items-center gap-2">
-                  <p className="text-xs text-gray-600 break-all">{voteUrl}</p>
+                  <p className="text-xs text-gray-600 break-all">
+                    {voteUrl}
+                  </p>
                   <Toaster />
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -138,14 +158,20 @@ export function OrganizerView({
                         size="icon"
                         className="h-8 w-8 rounded-full border-slate-200 bg-white/90"
                         onClick={() => {
-                          navigator.clipboard.writeText(voteUrl);
-                          toast.success("URLをコピーしました");
+                          navigator.clipboard.writeText(
+                            voteUrl
+                          );
+                          toast.success(
+                            'URLをコピーしました'
+                          );
                         }}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>URLをコピー</TooltipContent>
+                    <TooltipContent>
+                      URLをコピー
+                    </TooltipContent>
                   </Tooltip>
                 </div>
               </CardContent>

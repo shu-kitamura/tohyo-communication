@@ -3,27 +3,23 @@
   "main": "worker.ts",
   "name": "tohyo-communication",
   "compatibility_date": "2025-03-25",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "durable_objects": {
     "bindings": [
       {
         "name": "VOTE_SESSION",
-        "class_name": "VoteSessionDO"
-      }
-    ]
+        "class_name": "VoteSessionDO",
+      },
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": [
-        "VoteSessionDO"
-      ]
-    }
-  ]
+      "new_sqlite_classes": ["VoteSessionDO"],
+    },
+  ],
 }
