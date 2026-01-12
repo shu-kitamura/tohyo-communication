@@ -2,29 +2,34 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreateSessionRequest, CreateSessionResponse, VoteType } from '@/lib/types';
-
-import { AlertCircleIcon, Plus, X } from "lucide-react";
-
 import {
-  Alert,
-  AlertTitle,
-} from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+  CreateSessionRequest,
+  CreateSessionResponse,
+  VoteType,
+} from '@/lib/types';
+
+import { AlertCircleIcon, Plus, X } from 'lucide-react';
+
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from '@/components/ui/radio-group';
 
 export default function CreateVotePage() {
   const router = useRouter();
   const [question, setQuestion] = useState('');
-  const [voteType, setVoteType] = useState<VoteType>('single');
+  const [voteType, setVoteType] =
+    useState<VoteType>('single');
   const [choices, setChoices] = useState(['', '']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,7 +46,10 @@ export default function CreateVotePage() {
     }
   };
 
-  const handleChoiceChange = (index: number, value: string) => {
+  const handleChoiceChange = (
+    index: number,
+    value: string
+  ) => {
     const newChoices = [...choices];
     newChoices[index] = value;
     setChoices(newChoices);
@@ -80,7 +88,10 @@ export default function CreateVotePage() {
       const data: CreateSessionResponse = await res.json();
 
       if (!res.ok) {
-        setError((data as { error?: string }).error || '投票セッションの作成に失敗しました');
+        setError(
+          (data as { error?: string }).error ||
+            '投票セッションの作成に失敗しました'
+        );
         return;
       }
 
@@ -98,52 +109,81 @@ export default function CreateVotePage() {
       <div className="mx-auto max-w-2xl">
         <Card className="bg-white/90 backdrop-blur-md border-slate-200/80 shadow-[0_16px_32px_rgba(15,23,42,0.12)] rounded-[14px]">
           <CardHeader className="pb-3">
-            <CardTitle className="text-2xl tracking-tight">投票を作成</CardTitle>
+            <CardTitle className="text-2xl tracking-tight">
+              投票を作成
+            </CardTitle>
             <p className="mt-1 text-sm text-slate-500">
               タイトルと選択肢を入力して投票を作成
             </p>
           </CardHeader>
-        <CardContent>
-          <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-            <div className="space-y-2" id="question">
-              <Label htmlFor="question">タイトル</Label>
-              <Input
-                id="question"
-                type="text"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="例: 今日の昼食は何がいいですか？"
-                required
-              />
-            </div>
+          <CardContent>
+            <form
+              className="flex flex-col gap-6"
+              onSubmit={handleSubmit}
+            >
+              <div className="space-y-2" id="question">
+                <Label htmlFor="question">タイトル</Label>
+                <Input
+                  id="question"
+                  type="text"
+                  value={question}
+                  onChange={(e) =>
+                    setQuestion(e.target.value)
+                  }
+                  placeholder="例: 今日の昼食は何がいいですか？"
+                  required
+                />
+              </div>
 
               <div className="space-y-2" id="vote-type">
-                <Label className="font-semibold">投票形式</Label>
+                <Label className="font-semibold">
+                  投票形式
+                </Label>
                 <RadioGroup
                   defaultValue="single"
                   className="flex flex-wrap gap-4 text-sm"
-                  onValueChange={(value) => setVoteType(value as VoteType)}
+                  onValueChange={(value) =>
+                    setVoteType(value as VoteType)
+                  }
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="single" id="single" />
+                    <RadioGroupItem
+                      value="single"
+                      id="single"
+                    />
                     <Label htmlFor="single">単一選択</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="multiple" id="multiple" />
-                    <Label htmlFor="multiple">複数選択</Label>
+                    <RadioGroupItem
+                      value="multiple"
+                      id="multiple"
+                    />
+                    <Label htmlFor="multiple">
+                      複数選択
+                    </Label>
                   </div>
                 </RadioGroup>
               </div>
 
               <div className="space-y-2" id="choices">
-                <Label className="font-semibold">選択肢</Label>
+                <Label className="font-semibold">
+                  選択肢
+                </Label>
                 <div className="space-y-3 rounded-xl border border-dashed border-blue-500/40 bg-slate-50/80 p-4">
                   {choices.map((choice, index) => (
-                    <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center">
+                    <div
+                      key={index}
+                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center"
+                    >
                       <Input
                         type="text"
                         value={choice}
-                        onChange={(e) => handleChoiceChange(index, e.target.value)}
+                        onChange={(e) =>
+                          handleChoiceChange(
+                            index,
+                            e.target.value
+                          )
+                        }
                         placeholder="選択肢を入力"
                         required
                         aria-label={`選択肢${index + 1}`}
@@ -152,7 +192,9 @@ export default function CreateVotePage() {
                         type="button"
                         variant="outline"
                         disabled={choices.length <= 2}
-                        onClick={() => handleRemoveChoice(index)}
+                        onClick={() =>
+                          handleRemoveChoice(index)
+                        }
                         className="disabled:bg-slate-200"
                       >
                         <X className="h-4 w-4" />
@@ -160,15 +202,24 @@ export default function CreateVotePage() {
                     </div>
                   ))}
                   <div>
-                    <Button type="button" variant="ghost" size="sm" onClick={handleAddChoice}>
-                      <Plus className="mr-1 h-4 w-4" /> 選択肢を追加
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleAddChoice}
+                    >
+                      <Plus className="mr-1 h-4 w-4" />{' '}
+                      選択肢を追加
                     </Button>
                   </div>
                 </div>
               </div>
 
               {error && (
-                <Alert variant="destructive" className="border-red-200 bg-red-50/90">
+                <Alert
+                  variant="destructive"
+                  className="border-red-200 bg-red-50/90"
+                >
                   <AlertCircleIcon className="h-4 w-4" />
                   <AlertTitle>{error}</AlertTitle>
                 </Alert>
@@ -183,7 +234,6 @@ export default function CreateVotePage() {
                   {loading ? '作成中…' : '投票を作成'}
                 </Button>
               </div>
-
             </form>
           </CardContent>
         </Card>

@@ -1,6 +1,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, Zap, Smartphone, BarChart3, Check } from 'lucide-react';
+import {
+  Plus,
+  Zap,
+  Smartphone,
+  BarChart3,
+  Check,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -32,7 +38,8 @@ export default function Home() {
             リアルタイム投票で、場を盛り上げよう
           </h1>
           <p className="text-base md:text-lg text-slate-600 mb-8 leading-relaxed">
-            QRコードを読み取るだけで即参加。<br className="hidden sm:block" />
+            QRコードを読み取るだけで即参加。
+            <br className="hidden sm:block" />
             投票結果がリアルタイムで画面に反映されます。
           </p>
 
@@ -70,7 +77,9 @@ export default function Home() {
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mx-auto mb-5 flex items-center justify-center">
                   <Zap className="h-8 w-8 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">リアルタイム更新</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                  リアルタイム更新
+                </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
                   投票結果が瞬時にグラフに反映。会場全体で一体感を演出できます。
                 </p>
@@ -82,7 +91,9 @@ export default function Home() {
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mx-auto mb-5 flex items-center justify-center">
                   <Smartphone className="h-8 w-8 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">QRコードで即参加</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                  QRコードで即参加
+                </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
                   ログイン不要。スマホでQRコードを読み取るだけで、すぐに投票できます。
                 </p>
@@ -94,7 +105,9 @@ export default function Home() {
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mx-auto mb-5 flex items-center justify-center">
                   <BarChart3 className="h-8 w-8 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">見やすいグラフ表示</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                  見やすいグラフ表示
+                </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
                   棒グラフ・円グラフを切り替え可能。プロジェクター投影にも最適です。
                 </p>
@@ -119,9 +132,21 @@ export default function Home() {
                   開催者の方
                 </h3>
                 <div className="space-y-5">
-                  <Step number={1} title="投票を作成" description="質問と選択肢を入力して投票セッションを作成します。" />
-                  <Step number={2} title="QRコードを共有" description="生成されたQRコードをプロジェクターなどで参加者に見せます。" />
-                  <Step number={3} title="結果をリアルタイム表示" description="投票結果がリアルタイムでグラフに反映されます。" />
+                  <Step
+                    number={1}
+                    title="投票を作成"
+                    description="質問と選択肢を入力して投票セッションを作成します。"
+                  />
+                  <Step
+                    number={2}
+                    title="QRコードを共有"
+                    description="生成されたQRコードをプロジェクターなどで参加者に見せます。"
+                  />
+                  <Step
+                    number={3}
+                    title="結果をリアルタイム表示"
+                    description="投票結果がリアルタイムでグラフに反映されます。"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -133,9 +158,21 @@ export default function Home() {
                   参加者の方
                 </h3>
                 <div className="space-y-5">
-                  <Step number={1} title="QRコードを読み取る" description="開催者が表示するQRコードをスマホで読み取ります。" />
-                  <Step number={2} title="選択肢を選んで投票" description="表示された選択肢から選んで送信ボタンを押します。" />
-                  <Step number={3} title="結果を確認" description="投票後、リアルタイムで結果を閲覧できます。" />
+                  <Step
+                    number={1}
+                    title="QRコードを読み取る"
+                    description="開催者が表示するQRコードをスマホで読み取ります。"
+                  />
+                  <Step
+                    number={2}
+                    title="選択肢を選んで投票"
+                    description="表示された選択肢から選んで送信ボタンを押します。"
+                  />
+                  <Step
+                    number={3}
+                    title="結果を確認"
+                    description="投票後、リアルタイムで結果を閲覧できます。"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -172,15 +209,27 @@ export default function Home() {
   );
 }
 
-function Step({ number, title, description }: { number: number; title: string; description: string }) {
+function Step({
+  number,
+  title,
+  description,
+}: {
+  number: number;
+  title: string;
+  description: string;
+}) {
   return (
     <div className="flex items-start gap-4">
       <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-md shadow-blue-500/30">
         {number}
       </div>
       <div>
-        <h4 className="font-medium text-slate-900 mb-1">{title}</h4>
-        <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
+        <h4 className="font-medium text-slate-900 mb-1">
+          {title}
+        </h4>
+        <p className="text-sm text-slate-600 leading-relaxed">
+          {description}
+        </p>
       </div>
     </div>
   );

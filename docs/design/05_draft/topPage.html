@@ -1,648 +1,764 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TOHYO通信 | トップページ</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <title>TOHYO通信 | トップページ</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <style>
-    :root {
-      --primary: #2563EB;
-      --primary-dark: #1d4ed8;
-      --accent: #F97316;
-      --surface: #FFFFFF;
-      --ink: #0B1220;
-      --muted: #475569;
-      --line: #E2E8F0;
-      --radius: 14px;
-      --shadow-lg: 0 16px 32px rgba(15, 23, 42, 0.12);
-      --shadow-xl: 0 24px 48px rgba(15, 23, 42, 0.16);
-    }
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --accent: #f97316;
+        --surface: #ffffff;
+        --ink: #0b1220;
+        --muted: #475569;
+        --line: #e2e8f0;
+        --radius: 14px;
+        --shadow-lg: 0 16px 32px rgba(15, 23, 42, 0.12);
+        --shadow-xl: 0 24px 48px rgba(15, 23, 42, 0.16);
+      }
 
-    * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
 
-    body {
-      margin: 0;
-      font-family: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
-      color: var(--ink);
-      line-height: 1.6;
-      background: linear-gradient(
-        120deg,
-        #e0f2fe,
-        #eff6ff,
-        #ffffff,
-        #f0f9ff,
-        #eef2ff
-      );
-      background-size: 400% 400%;
-      animation: gradientFlow 16s ease-in-out infinite;
-    }
-
-    @keyframes gradientFlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
       body {
-        animation: none;
-        background-position: 50% 50%;
+        margin: 0;
+        font-family:
+          'Noto Sans JP',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        color: var(--ink);
+        line-height: 1.6;
+        background: linear-gradient(
+          120deg,
+          #e0f2fe,
+          #eff6ff,
+          #ffffff,
+          #f0f9ff,
+          #eef2ff
+        );
+        background-size: 400% 400%;
+        animation: gradientFlow 16s ease-in-out infinite;
       }
-    }
 
-    /* ========== ヘッダー ========== */
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 32px;
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
+      @keyframes gradientFlow {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
 
-    .header-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
+      @media (prefers-reduced-motion: reduce) {
+        body {
+          animation: none;
+          background-position: 50% 50%;
+        }
+      }
 
-    .header-logo .pulse {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.25);
-      animation: pulse 2s ease-in-out infinite;
-    }
+      /* ========== ヘッダー ========== */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 32px;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
 
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.25); }
-      50% { box-shadow: 0 0 0 12px rgba(37, 99, 235, 0.1); }
-    }
+      .header-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+      }
 
-    .header-logo .brand {
-      font-size: 18px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.3px;
-    }
+      .header-logo .pulse {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary);
+        box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.25);
+        animation: pulse 2s ease-in-out infinite;
+      }
 
-    .header-logo .brand span {
-      color: var(--primary);
-    }
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.25);
+        }
+        50% {
+          box-shadow: 0 0 0 12px rgba(37, 99, 235, 0.1);
+        }
+      }
 
-    .header-nav {
-      font-size: 14px;
-      color: #94a3b8;
-    }
+      .header-logo .brand {
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.3px;
+      }
 
-    /* ========== ヒーローセクション ========== */
-    .hero {
-      text-align: center;
-      padding: 80px 24px 72px;
-      position: relative;
-      overflow: hidden;
-    }
+      .header-logo .brand span {
+        color: var(--primary);
+      }
 
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(
-        circle at 30% 40%,
-        rgba(37, 99, 235, 0.08) 0%,
-        transparent 50%
-      );
-      pointer-events: none;
-    }
+      .header-nav {
+        font-size: 14px;
+        color: #94a3b8;
+      }
 
-    .hero-logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 32px;
-      position: relative;
-    }
+      /* ========== ヒーローセクション ========== */
+      .hero {
+        text-align: center;
+        padding: 80px 24px 72px;
+        position: relative;
+        overflow: hidden;
+      }
 
-    .hero-logo .icon-box {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 40px;
-      font-weight: 700;
-      box-shadow: 
-        0 8px 24px rgba(37, 99, 235, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      position: relative;
-    }
+      .hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle at 30% 40%,
+          rgba(37, 99, 235, 0.08) 0%,
+          transparent 50%
+        );
+        pointer-events: none;
+      }
 
-    .hero-logo .icon-box::after {
-      content: '';
-      position: absolute;
-      inset: -4px;
-      border-radius: 24px;
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), transparent);
-      z-index: -1;
-    }
+      .hero-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin-bottom: 32px;
+        position: relative;
+      }
 
-    .hero-logo .brand-group {
-      text-align: left;
-    }
+      .hero-logo .icon-box {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 40px;
+        font-weight: 700;
+        box-shadow:
+          0 8px 24px rgba(37, 99, 235, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        position: relative;
+      }
 
-    .hero-logo .brand-text {
-      font-size: 42px;
-      font-weight: 700;
-      color: var(--ink);
-      letter-spacing: -0.5px;
-    }
+      .hero-logo .icon-box::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 24px;
+        background: linear-gradient(
+          135deg,
+          rgba(37, 99, 235, 0.3),
+          transparent
+        );
+        z-index: -1;
+      }
 
-    .hero-logo .brand-text span {
-      color: var(--primary);
-    }
+      .hero-logo .brand-group {
+        text-align: left;
+      }
 
-    .hero-logo .brand-sub {
-      font-size: 14px;
-      color: var(--muted);
-      margin-top: 2px;
-      letter-spacing: 1px;
-    }
+      .hero-logo .brand-text {
+        font-size: 42px;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.5px;
+      }
 
-    .hero h1 {
-      font-size: 36px;
-      font-weight: 700;
-      margin: 0 0 20px 0;
-      color: var(--ink);
-      letter-spacing: -0.3px;
-    }
+      .hero-logo .brand-text span {
+        color: var(--primary);
+      }
 
-    .hero .tagline {
-      font-size: 18px;
-      color: var(--muted);
-      margin: 0 0 40px 0;
-      line-height: 1.7;
-    }
+      .hero-logo .brand-sub {
+        font-size: 14px;
+        color: var(--muted);
+        margin-top: 2px;
+        letter-spacing: 1px;
+      }
 
-    .hero .cta-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      color: #fff;
-      padding: 18px 40px;
-      border-radius: 14px;
-      font-size: 18px;
-      font-weight: 600;
-      text-decoration: none;
-      box-shadow: 
-        0 8px 24px rgba(37, 99, 235, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
+      .hero h1 {
+        font-size: 36px;
+        font-weight: 700;
+        margin: 0 0 20px 0;
+        color: var(--ink);
+        letter-spacing: -0.3px;
+      }
 
-    .hero .cta-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 
-        0 12px 32px rgba(37, 99, 235, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
+      .hero .tagline {
+        font-size: 18px;
+        color: var(--muted);
+        margin: 0 0 40px 0;
+        line-height: 1.7;
+      }
 
-    .hero .cta-btn svg {
-      width: 20px;
-      height: 20px;
-    }
+      .hero .cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        color: #fff;
+        padding: 18px 40px;
+        border-radius: 14px;
+        font-size: 18px;
+        font-weight: 600;
+        text-decoration: none;
+        box-shadow:
+          0 8px 24px rgba(37, 99, 235, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
 
-    .hero .sub-text {
-      margin-top: 20px;
-      font-size: 14px;
-      color: var(--muted);
-    }
+      .hero .cta-btn:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 12px 32px rgba(37, 99, 235, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      }
 
-    .hero .sub-text .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(16, 185, 129, 0.12);
-      color: #059669;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 600;
-    }
+      .hero .cta-btn svg {
+        width: 20px;
+        height: 20px;
+      }
 
-    /* ========== 特徴セクション ========== */
-    .features {
-      padding: 72px 24px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
+      .hero .sub-text {
+        margin-top: 20px;
+        font-size: 14px;
+        color: var(--muted);
+      }
 
-    .features h2 {
-      text-align: center;
-      font-size: 28px;
-      font-weight: 700;
-      margin: 0 0 48px 0;
-      color: var(--ink);
-    }
+      .hero .sub-text .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+      }
 
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-    }
+      /* ========== 特徴セクション ========== */
+      .features {
+        padding: 72px 24px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
 
-    @media (max-width: 768px) {
+      .features h2 {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 48px 0;
+        color: var(--ink);
+      }
+
       .feature-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
       }
-    }
 
-    .feature-card {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 32px 24px;
-      text-align: center;
-      box-shadow: var(--shadow-lg);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
+      @media (max-width: 768px) {
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+      }
 
-    .feature-card:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-xl);
-    }
+      .feature-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 32px 24px;
+        text-align: center;
+        box-shadow: var(--shadow-lg);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
 
-    .feature-card .icon {
-      width: 64px;
-      height: 64px;
-      background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-      border-radius: 16px;
-      margin: 0 auto 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-    }
+      .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+      }
 
-    .feature-card h3 {
-      font-size: 18px;
-      font-weight: 600;
-      margin: 0 0 12px 0;
-      color: var(--ink);
-    }
+      .feature-card .icon {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(
+          135deg,
+          #dbeafe 0%,
+          #eff6ff 100%
+        );
+        border-radius: 16px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+      }
 
-    .feature-card p {
-      font-size: 14px;
-      color: var(--muted);
-      margin: 0;
-      line-height: 1.7;
-    }
+      .feature-card h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 12px 0;
+        color: var(--ink);
+      }
 
-    /* ========== 使い方セクション ========== */
-    .how-to {
-      padding: 72px 24px;
-      background: rgba(248, 250, 252, 0.8);
-    }
+      .feature-card p {
+        font-size: 14px;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.7;
+      }
 
-    .how-to-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
+      /* ========== 使い方セクション ========== */
+      .how-to {
+        padding: 72px 24px;
+        background: rgba(248, 250, 252, 0.8);
+      }
 
-    .how-to h2 {
-      text-align: center;
-      font-size: 28px;
-      font-weight: 700;
-      margin: 0 0 48px 0;
-      color: var(--ink);
-    }
+      .how-to-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
 
-    .steps-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 32px;
-    }
+      .how-to h2 {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 48px 0;
+        color: var(--ink);
+      }
 
-    @media (max-width: 768px) {
       .steps-container {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
       }
-    }
 
-    .steps-box {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 28px;
-      box-shadow: var(--shadow-lg);
-    }
+      @media (max-width: 768px) {
+        .steps-container {
+          grid-template-columns: 1fr;
+        }
+      }
 
-    .steps-box h3 {
-      font-size: 18px;
-      font-weight: 600;
-      margin: 0 0 20px 0;
-      padding-bottom: 16px;
-      border-bottom: 2px solid var(--primary);
-      color: var(--ink);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+      .steps-box {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 28px;
+        box-shadow: var(--shadow-lg);
+      }
 
-    .step {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      margin-bottom: 20px;
-    }
+      .steps-box h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 20px 0;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--primary);
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-    .step:last-child {
-      margin-bottom: 0;
-    }
+      .step {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
 
-    .step-num {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      color: #fff;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 700;
-      flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }
+      .step:last-child {
+        margin-bottom: 0;
+      }
 
-    .step-content h4 {
-      margin: 0 0 4px 0;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--ink);
-    }
+      .step-num {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      }
 
-    .step-content p {
-      margin: 0;
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
+      .step-content h4 {
+        margin: 0 0 4px 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink);
+      }
 
-    /* ========== CTAセクション ========== */
-    .cta-section {
-      text-align: center;
-      padding: 80px 24px;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      color: #fff;
-      position: relative;
-      overflow: hidden;
-    }
+      .step-content p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
 
-    .cta-section::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: radial-gradient(
-        circle at 70% 30%,
-        rgba(37, 99, 235, 0.15) 0%,
-        transparent 50%
-      );
-      pointer-events: none;
-    }
+      /* ========== CTAセクション ========== */
+      .cta-section {
+        text-align: center;
+        padding: 80px 24px;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 100%
+        );
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+      }
 
-    .cta-section h2 {
-      font-size: 28px;
-      font-weight: 700;
-      margin: 0 0 16px 0;
-      position: relative;
-    }
+      .cta-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+          circle at 70% 30%,
+          rgba(37, 99, 235, 0.15) 0%,
+          transparent 50%
+        );
+        pointer-events: none;
+      }
 
-    .cta-section p {
-      font-size: 16px;
-      color: #94a3b8;
-      margin: 0 0 32px 0;
-      position: relative;
-    }
+      .cta-section h2 {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 16px 0;
+        position: relative;
+      }
 
-    .cta-section .cta-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      color: #fff;
-      padding: 16px 36px;
-      border-radius: 14px;
-      font-size: 17px;
-      font-weight: 600;
-      text-decoration: none;
-      box-shadow: 
-        0 8px 24px rgba(37, 99, 235, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      position: relative;
-    }
+      .cta-section p {
+        font-size: 16px;
+        color: #94a3b8;
+        margin: 0 0 32px 0;
+        position: relative;
+      }
 
-    .cta-section .cta-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 
-        0 12px 32px rgba(37, 99, 235, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
+      .cta-section .cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        color: #fff;
+        padding: 16px 36px;
+        border-radius: 14px;
+        font-size: 17px;
+        font-weight: 600;
+        text-decoration: none;
+        box-shadow:
+          0 8px 24px rgba(37, 99, 235, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+        position: relative;
+      }
 
-    /* ========== フッター ========== */
-    footer {
-      padding: 28px 24px;
-      text-align: center;
-      font-size: 13px;
-      color: var(--muted);
-      background: var(--surface);
-      border-top: 1px solid var(--line);
-    }
+      .cta-section .cta-btn:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 12px 32px rgba(37, 99, 235, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      }
 
-    footer a {
-      color: var(--primary);
-      text-decoration: none;
-    }
+      /* ========== フッター ========== */
+      footer {
+        padding: 28px 24px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--muted);
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+      }
 
-    footer a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
+      footer a {
+        color: var(--primary);
+        text-decoration: none;
+      }
 
-  <!-- ヘッダー -->
-  <header>
-    <a href="/" class="header-logo">
-      <div class="pulse"></div>
-      <div class="brand">TOHYO<span>通信</span></div>
-    </a>
-    <nav class="header-nav">
-      ~Vote Communication~
-    </nav>
-  </header>
+      footer a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ヘッダー -->
+    <header>
+      <a href="/" class="header-logo">
+        <div class="pulse"></div>
+        <div class="brand">TOHYO<span>通信</span></div>
+      </a>
+      <nav class="header-nav">~Vote Communication~</nav>
+    </header>
 
-  <!-- ヒーローセクション -->
-  <section class="hero">
-    <div class="hero-logo">
-      <div class="icon-box">T</div>
-      <div class="brand-group">
-        <div class="brand-text">TOHYO<span>通信</span></div>
-        <div class="brand-sub">~Vote Communication~</div>
+    <!-- ヒーローセクション -->
+    <section class="hero">
+      <div class="hero-logo">
+        <div class="icon-box">T</div>
+        <div class="brand-group">
+          <div class="brand-text">
+            TOHYO<span>通信</span>
+          </div>
+          <div class="brand-sub">~Vote Communication~</div>
+        </div>
       </div>
-    </div>
-    <h1>リアルタイム投票で、場を盛り上げよう</h1>
-    <p class="tagline">
-      QRコードを読み取るだけで即参加。<br>
-      投票結果がリアルタイムで画面に反映されます。
-    </p>
-    <a href="/vote" class="cta-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-      </svg>
-      投票を作成する
-    </a>
-    <p class="sub-text">
-      <span class="badge">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+      <h1>リアルタイム投票で、場を盛り上げよう</h1>
+      <p class="tagline">
+        QRコードを読み取るだけで即参加。<br />
+        投票結果がリアルタイムで画面に反映されます。
+      </p>
+      <a href="/vote" class="cta-btn">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4v16m8-8H4"
+          />
         </svg>
-        ログイン不要・無料
-      </span>
-    </p>
-  </section>
+        投票を作成する
+      </a>
+      <p class="sub-text">
+        <span class="badge">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          ログイン不要・無料
+        </span>
+      </p>
+    </section>
 
-  <!-- 特徴セクション -->
-  <section class="features">
-    <h2>TOHYO通信の特徴</h2>
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="icon">⚡</div>
-        <h3>リアルタイム更新</h3>
-        <p>投票結果が瞬時にグラフに反映。会場全体で一体感を演出できます。</p>
+    <!-- 特徴セクション -->
+    <section class="features">
+      <h2>TOHYO通信の特徴</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="icon">⚡</div>
+          <h3>リアルタイム更新</h3>
+          <p>
+            投票結果が瞬時にグラフに反映。会場全体で一体感を演出できます。
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📱</div>
+          <h3>QRコードで即参加</h3>
+          <p>
+            ログイン不要。スマホでQRコードを読み取るだけで、すぐに投票できます。
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📊</div>
+          <h3>見やすいグラフ表示</h3>
+          <p>
+            棒グラフ・円グラフを切り替え可能。プロジェクター投影にも最適です。
+          </p>
+        </div>
       </div>
-      <div class="feature-card">
-        <div class="icon">📱</div>
-        <h3>QRコードで即参加</h3>
-        <p>ログイン不要。スマホでQRコードを読み取るだけで、すぐに投票できます。</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">📊</div>
-        <h3>見やすいグラフ表示</h3>
-        <p>棒グラフ・円グラフを切り替え可能。プロジェクター投影にも最適です。</p>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- 使い方セクション -->
-  <section class="how-to">
-    <div class="how-to-inner">
-      <h2>使い方</h2>
-      <div class="steps-container">
-        <!-- 開催者向け -->
-        <div class="steps-box">
-          <h3>
-            <span>📣</span>
-            開催者の方
-          </h3>
-          <div class="step">
-            <div class="step-num">1</div>
-            <div class="step-content">
-              <h4>投票を作成</h4>
-              <p>質問と選択肢を入力して投票セッションを作成します。</p>
+    <!-- 使い方セクション -->
+    <section class="how-to">
+      <div class="how-to-inner">
+        <h2>使い方</h2>
+        <div class="steps-container">
+          <!-- 開催者向け -->
+          <div class="steps-box">
+            <h3>
+              <span>📣</span>
+              開催者の方
+            </h3>
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h4>投票を作成</h4>
+                <p>
+                  質問と選択肢を入力して投票セッションを作成します。
+                </p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h4>QRコードを共有</h4>
+                <p>
+                  生成されたQRコードをプロジェクターなどで参加者に見せます。
+                </p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h4>結果をリアルタイム表示</h4>
+                <p>
+                  投票結果がリアルタイムでグラフに反映されます。
+                </p>
+              </div>
             </div>
           </div>
-          <div class="step">
-            <div class="step-num">2</div>
-            <div class="step-content">
-              <h4>QRコードを共有</h4>
-              <p>生成されたQRコードをプロジェクターなどで参加者に見せます。</p>
+          <!-- 参加者向け -->
+          <div class="steps-box">
+            <h3>
+              <span>🙋</span>
+              参加者の方
+            </h3>
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h4>QRコードを読み取る</h4>
+                <p>
+                  開催者が表示するQRコードをスマホで読み取ります。
+                </p>
+              </div>
             </div>
-          </div>
-          <div class="step">
-            <div class="step-num">3</div>
-            <div class="step-content">
-              <h4>結果をリアルタイム表示</h4>
-              <p>投票結果がリアルタイムでグラフに反映されます。</p>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h4>選択肢を選んで投票</h4>
+                <p>
+                  表示された選択肢から選んで送信ボタンを押します。
+                </p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h4>結果を確認</h4>
+                <p>
+                  投票後、リアルタイムで結果を閲覧できます。
+                </p>
+              </div>
             </div>
           </div>
         </div>
-        <!-- 参加者向け -->
-        <div class="steps-box">
-          <h3>
-            <span>🙋</span>
-            参加者の方
-          </h3>
-          <div class="step">
-            <div class="step-num">1</div>
-            <div class="step-content">
-              <h4>QRコードを読み取る</h4>
-              <p>開催者が表示するQRコードをスマホで読み取ります。</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-num">2</div>
-            <div class="step-content">
-              <h4>選択肢を選んで投票</h4>
-              <p>表示された選択肢から選んで送信ボタンを押します。</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-num">3</div>
-            <div class="step-content">
-              <h4>結果を確認</h4>
-              <p>投票後、リアルタイムで結果を閲覧できます。</p>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- CTAセクション -->
-  <section class="cta-section">
-    <h2>さっそく始めてみよう</h2>
-    <p>アカウント登録不要。今すぐ投票セッションを作成できます。</p>
-    <a href="/vote" class="cta-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-      </svg>
-      投票を作成する
-    </a>
-  </section>
+    <!-- CTAセクション -->
+    <section class="cta-section">
+      <h2>さっそく始めてみよう</h2>
+      <p>
+        アカウント登録不要。今すぐ投票セッションを作成できます。
+      </p>
+      <a href="/vote" class="cta-btn">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        投票を作成する
+      </a>
+    </section>
 
-  <!-- フッター -->
-  <footer>
-    <p>© 2025 TOHYO通信 - Vote Communication</p>
-  </footer>
-
-</body>
+    <!-- フッター -->
+    <footer>
+      <p>© 2025 TOHYO通信 - Vote Communication</p>
+    </footer>
+  </body>
 </html>

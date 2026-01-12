@@ -29,11 +29,13 @@ class VotingStore {
 
   // Vote management
   addVote(vote: Vote): void {
-    const sessionVotes = this.votes.get(vote.sessionId) || [];
+    const sessionVotes =
+      this.votes.get(vote.sessionId) || [];
     sessionVotes.push(vote);
     this.votes.set(vote.sessionId, sessionVotes);
 
-    const tokens = this.voterTokens.get(vote.sessionId) || new Set();
+    const tokens =
+      this.voterTokens.get(vote.sessionId) || new Set();
     tokens.add(vote.voterToken);
     this.voterTokens.set(vote.sessionId, tokens);
   }
@@ -52,8 +54,12 @@ class VotingStore {
     const now = new Date();
     const timeoutMs = 24 * 60 * 60 * 1000; // 24 hours
 
-    for (const [sessionId, session] of this.sessions.entries()) {
-      const age = now.getTime() - session.createdAt.getTime();
+    for (const [
+      sessionId,
+      session,
+    ] of this.sessions.entries()) {
+      const age =
+        now.getTime() - session.createdAt.getTime();
       if (age > timeoutMs) {
         this.deleteSession(sessionId);
       }
@@ -65,6 +71,9 @@ class VotingStore {
 export const store = new VotingStore();
 
 // Cleanup old sessions every hour
-setInterval(() => {
-  store.cleanupOldSessions();
-}, 60 * 60 * 1000);
+setInterval(
+  () => {
+    store.cleanupOldSessions();
+  },
+  60 * 60 * 1000
+);

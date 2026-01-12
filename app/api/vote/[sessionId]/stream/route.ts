@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 // GET /vote/:sessionId/stream - SSE for real-time updates
 export async function GET(
@@ -11,5 +11,5 @@ export async function GET(
   const id = env.VOTE_SESSION.idFromName(sessionId);
   const stub = env.VOTE_SESSION.get(id);
 
-  return stub.fetch("http://do/stream");
+  return stub.fetch('http://do/stream');
 }

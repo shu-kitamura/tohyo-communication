@@ -8,10 +8,13 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+} from '@/components/ui/card';
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from '@/components/ui/radio-group';
 import { Alert, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from "@/components/ui/checkbox"
+import { Checkbox } from '@/components/ui/checkbox';
 import { ResultChart } from './result-chart';
 
 interface VoterViewProps {
@@ -24,16 +27,18 @@ interface VoterViewProps {
   onSubmit: (selectedChoices: string[]) => Promise<void>;
 }
 
-export function VoterView({ 
-  session, 
-  choices, 
-  message, 
-  error, 
+export function VoterView({
+  session,
+  choices,
+  message,
+  error,
   showResults,
   setShowResults,
-  onSubmit 
+  onSubmit,
 }: VoterViewProps) {
-  const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
+  const [selectedChoices, setSelectedChoices] = useState<
+    string[]
+  >([]);
 
   // Handle choice selection
   const handleChoiceChange = (choiceId: string) => {
@@ -56,13 +61,22 @@ export function VoterView({
 
   // Show results view
   if (showResults) {
-    const totalVotes = choices.reduce((sum, c) => sum + c.voteCount, 0);
+    const totalVotes = choices.reduce(
+      (sum, c) => sum + c.voteCount,
+      0
+    );
     return (
       <div className="min-h-[calc(100vh-4rem)] px-4 py-8">
         <div className="mx-auto flex max-w-3xl flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
-            <h1 className="text-base font-semibold text-slate-900 md:text-lg">投票結果</h1>
-            <Button variant="outline" size="sm" onClick={() => setShowResults(false)}>
+            <h1 className="text-base font-semibold text-slate-900 md:text-lg">
+              投票結果
+            </h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowResults(false)}
+            >
               ← 戻る
             </Button>
           </div>
@@ -91,8 +105,8 @@ export function VoterView({
                   message.includes('完了')
                     ? 'rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900'
                     : message.includes('終了')
-                    ? 'rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
-                    : 'rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900'
+                      ? 'rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'
+                      : 'rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900'
                 }
               >
                 {message || 'この端末では投票済みです'}
@@ -121,17 +135,30 @@ export function VoterView({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col space-y-4"
+            >
               {session.voteType === 'single' ? (
-                <RadioGroup onValueChange={(value) => handleChoiceChange(value)} className="space-y-1">
+                <RadioGroup
+                  onValueChange={(value) =>
+                    handleChoiceChange(value)
+                  }
+                  className="space-y-1"
+                >
                   {session.choices.map((choice) => (
                     <Label
                       key={choice.choiceId}
                       htmlFor={choice.choiceId}
                       className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white/95 px-3.5 py-2.5 text-sm transition hover:border-blue-500 hover:bg-blue-50/60"
                     >
-                      <RadioGroupItem value={choice.choiceId} id={choice.choiceId} />
-                      <span className="text-base">{choice.text}</span>
+                      <RadioGroupItem
+                        value={choice.choiceId}
+                        id={choice.choiceId}
+                      />
+                      <span className="text-base">
+                        {choice.text}
+                      </span>
                     </Label>
                   ))}
                 </RadioGroup>
@@ -146,23 +173,37 @@ export function VoterView({
                       <Checkbox
                         value={choice.choiceId}
                         id={choice.choiceId}
-                        checked={selectedChoices.includes(choice.choiceId)}
-                        onCheckedChange={() => handleChoiceChange(choice.choiceId)}
+                        checked={selectedChoices.includes(
+                          choice.choiceId
+                        )}
+                        onCheckedChange={() =>
+                          handleChoiceChange(
+                            choice.choiceId
+                          )
+                        }
                       />
-                      <span className="text-base">{choice.text}</span>
+                      <span className="text-base">
+                        {choice.text}
+                      </span>
                     </Label>
                   ))}
                 </div>
               )}
 
               {error && (
-                <Alert variant="destructive" className="border-red-200 bg-red-50/90">
+                <Alert
+                  variant="destructive"
+                  className="border-red-200 bg-red-50/90"
+                >
                   <AlertCircleIcon className="h-4 w-4" />
                   <AlertTitle>{error}</AlertTitle>
                 </Alert>
               )}
 
-              <Button type="submit" className="mt-1 h-11 rounded-xl">
+              <Button
+                type="submit"
+                className="mt-1 h-11 rounded-xl"
+              >
                 <Label>投票する</Label>
               </Button>
             </form>
