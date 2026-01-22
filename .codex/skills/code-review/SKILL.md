@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Review source code and create a report in Japanese for Web apps built with TypeScript, Next.js (App Router), React, Tailwind CSS, and Cloudflare Workers/Durable Objects. Use when asked to review or audit code in this stack, including API routes, SSE, and Durable Object logic.
+description: Review TypeScript/Next.js( App Router )/React/Tailwind/Cloudflare Workers & Durable Objects code and write a Japanese report.
 ---
 
 ## TL;DR
