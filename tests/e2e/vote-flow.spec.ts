@@ -6,10 +6,11 @@ test('投票フロー（作成→投票→集計反映）', async ({
 }) => {
   await page.goto('/');
   await page
-    .getByRole('link', { name: '投票を作成する' })
+    .locator('a[href="/vote"]')
+    .first()
     .click();
 
-  await page.getByLabel('タイトル').fill('E2Eテスト');
+  await page.locator('input#question').fill('E2Eテスト');
   await page.getByLabel('選択肢1').fill('A案');
   await page.getByLabel('選択肢2').fill('B案');
   await page
