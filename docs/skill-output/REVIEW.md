@@ -1,0 +1,33 @@
+# レビュー結果
+
+スコープ: `app/`, `components/`, `./` 配下の `*.ts`, `*.tsx`（`app/api`, `app/vote`, `lib`, `worker.ts`, `tests` など）
+
+- [Must] 投票APIで入力バリデーションが不足し、500や不正投票が起き得る
+  - `Where` : `app/api/vote/[sessionId]/route.ts:64`, `lib/durable_object.ts:149`
+  - `What` : `choiceIds` の型/長さ、`voteType`(single/multiple) の制約、選択肢IDの存在チェックがないため、`choiceIds.includes` が例外になったり、単一選択セッションに複数票が入る
+  - `Why` : APIは公開されているため不正なリクエストで投票集計が崩れたり、DOで例外が発生して信頼性が落ちる
+  - `How to fix` : ルートとDO双方で `Array.isArray(choiceIds)`・空配列拒否・重複排除・存在しないID拒否・`voteType` に応じた件数制約を追加し、無効なら `400` を返す
+
+- [Should] セッション作成時の選択肢テキストがサーバ側で検証されていない
+  - `Where` : `app/api/vote/route.ts:14`, `lib/durable_object.ts:60`
+  - `What` : `choices` の各 `text` が空/空白でも通過し、空の選択肢が作成できる
+  - `Why` : UIでは防げてもAPI直叩きで空データが混入し、投票UIやエクスポートの品質が落ちる
+  - `How to fix` : `text.trim().length > 0` を全件チェックし、空が含まれる場合は `400` を返す（DO側にも同等のガードを追加）
+
+- [Should] 終了・エクスポート操作がHTTPエラーを無視して成功扱いになる
+  - `Where` : `app/vote/[sessionId]/page.tsx:148`, `app/vote/[sessionId]/page.tsx:160`
+  - `What` : `close`/`export` の `res.ok` を確認せず、失敗しても「投票を終了しました」やダウンロード実行が走る
+  - `Why` : ネットワーク障害や404時にユーザーへ誤情報が出る
+  - `How to fix` : `res.ok` を判定し、失敗時は `res.json()` の `error` を表示・成功時のみメッセージ更新/ダウンロードを行う
+
+- [May] CSVエクスポートで値のエスケープがなく、CSVが壊れる
+  - `Where` : `app/api/vote/[sessionId]/export/route.ts:72`
+  - `What` : `choice.text` をそのまま連結しており、カンマ/改行/ダブルクォートを含むとCSVが崩れる
+  - `Why` : 実データに含まれるとエクスポートの信頼性が落ちる
+  - `How to fix` : `"` を `""` に置換し、`"${text}"` で囲む等のCSVエスケープを実装する
+
+- [May] SSEの再接続が無効化されており、瞬断で更新が止まる
+  - `Where` : `app/vote/[sessionId]/page.tsx:99`
+  - `What` : `onerror` で即 `close()` しており自動リトライが働かない
+  - `Why` : 一時的なネットワーク不調で以降の結果更新が途切れる
+  - `How to fix` : `close()` を外す、もしくは指数バックオフで再接続する
