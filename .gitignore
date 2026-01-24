@@ -40,3 +40,6 @@ next-env.d.ts
 
 # wrangler
 .wrangler/
+
+# test results
+test-results/
