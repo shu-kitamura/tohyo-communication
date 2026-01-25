@@ -5,10 +5,7 @@ test('投票フロー（作成→投票→集計反映）', async ({
   context,
 }) => {
   await page.goto('/');
-  await page
-    .locator('a[href="/vote"]')
-    .first()
-    .click();
+  await page.locator('a[href="/vote"]').first().click();
 
   await page.locator('input#question').fill('E2Eテスト');
   await page.getByLabel('選択肢1').fill('A案');
@@ -29,9 +26,9 @@ test('投票フロー（作成→投票→集計反映）', async ({
   const sessionId = match?.[1] ?? '';
   expect(sessionId).not.toBe('');
 
-  await expect(
-    page.getByText('総投票数:')
-  ).toContainText('0票');
+  await expect(page.getByText('総投票数:')).toContainText(
+    '0票'
+  );
 
   const voterPage = await context.newPage();
   await voterPage.goto(`/vote/${sessionId}`);
@@ -46,7 +43,8 @@ test('投票フロー（作成→投票→集計反映）', async ({
     voterPage.getByText('投票が完了しました')
   ).toBeVisible();
 
-  await expect(
-    page.getByText('総投票数:')
-  ).toContainText('1票', { timeout: 5000 });
+  await expect(page.getByText('総投票数:')).toContainText(
+    '1票',
+    { timeout: 5000 }
+  );
 });

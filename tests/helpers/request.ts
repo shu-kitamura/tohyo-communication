@@ -8,15 +8,17 @@ export const createRequest = (
   const request = new Request(url, {
     ...rest,
     body:
-      body === undefined
-        ? undefined
-        : JSON.stringify(body),
+      body === undefined ? undefined : JSON.stringify(body),
     headers: {
-      ...(body ? { "Content-Type": "application/json" } : {}),
-      ...headers
-    }
+      ...(body
+        ? { 'Content-Type': 'application/json' }
+        : {}),
+      ...headers,
+    },
   });
 
-  (request as Request & { nextUrl: URL }).nextUrl = new URL(url);
+  (request as Request & { nextUrl: URL }).nextUrl = new URL(
+    url
+  );
   return request;
 };
