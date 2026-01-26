@@ -1,11 +1,13 @@
+import { NextRequest } from 'next/server';
+
 type RequestInitWithBody = RequestInit & { body?: unknown };
 
 export const createRequest = (
   url: string,
   init: RequestInitWithBody = {}
-): Request => {
+): NextRequest => {
   const { body, headers, ...rest } = init;
-  const request = new Request(url, {
+  const request = new NextRequest(url, {
     ...rest,
     body:
       body === undefined ? undefined : JSON.stringify(body),
@@ -16,9 +18,5 @@ export const createRequest = (
       ...headers,
     },
   });
-
-  (request as Request & { nextUrl: URL }).nextUrl = new URL(
-    url
-  );
   return request;
 };

@@ -58,7 +58,7 @@ describe('POST /api/vote', () => {
         choices: [{ text: 'A' }, { text: 'B' }],
       },
     });
-    const res = await POST(req as any);
+    const res = await POST(req);
     const data = await res.json();
 
     expect(res.status).toBe(201);
@@ -101,7 +101,7 @@ describe('POST /api/vote', () => {
         choices: [{ text: 'A' }, { text: 'B' }],
       },
     });
-    const res = await POST(req as any);
+    const res = await POST(req);
     expect(res.status).toBe(201);
   });
 
@@ -114,7 +114,7 @@ describe('POST /api/vote', () => {
         choices: [{ text: 'A' }, { text: 'B' }],
       },
     });
-    const res = await POST(req as any);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -127,7 +127,7 @@ describe('POST /api/vote', () => {
         choices: [{ text: 'A' }],
       },
     });
-    const res = await POST(req as any);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -142,7 +142,7 @@ describe('POST /api/vote', () => {
         })),
       },
     });
-    const res = await POST(req as any);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -155,7 +155,7 @@ describe('POST /api/vote', () => {
         choices: [{ text: 'A' }, { text: 'B' }],
       },
     });
-    const res = await POST(req as any);
+    const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
@@ -180,7 +180,7 @@ describe('POST /api/vote', () => {
         choices: [{ text: 'A' }, { text: 'B' }],
       },
     });
-    const res = await POST(req as any);
+    const res = await POST(req);
     expect(res.status).toBe(500);
   });
 });
