@@ -16,19 +16,23 @@ description: Planning specialist for feature implementation, architecture change
 ## 計画プロセス
 
 ### 1. 要件分析
+
 - 依頼内容を過不足なく理解する
 - 不明点があれば確認質問をする
 - 成功基準を明確にする
 - 前提と制約を明示する
 
 ### 2. アーキテクチャ確認
+
 - 既存コードベースの構造を把握する
 - 影響範囲のコンポーネントを特定する
 - 既存の類似実装を確認する
 - 再利用できるパターンを検討する
 
 ### 3. ステップ分解
+
 以下を含む具体的な手順に落とし込む:
+
 - 何をするかが明確なアクション
 - 対象ファイルと場所
 - 手順間の依存関係
@@ -36,6 +40,7 @@ description: Planning specialist for feature implementation, architecture change
 - 想定リスク
 
 ### 4. 実装順序
+
 - 依存関係に沿って優先度を決める
 - 関連する変更をまとめる
 - 作業の切り替えを最小限にする
@@ -44,25 +49,29 @@ description: Planning specialist for feature implementation, architecture change
 ## 計画フォーマット
 
 計画は `docs/skill-output/PLAN.md` に記載する。  
-フォーマットは以下の通り。  
+フォーマットは以下の通り。
 
 ```markdown
 # 実装計画: [機能名]
 
 ## 概要
+
 [2-3文で要約]
 
 ## 要件
+
 - [要件1]
 - [要件2]
 
 ## アーキテクチャ変更
+
 - [変更1: ファイルパスと説明]
 - [変更2: ファイルパスと説明]
 
 ## 実装手順
 
 ### フェーズ1: [フェーズ名]
+
 1. **[ステップ名]** (File: path/to/file.ts)
    - Action: 具体的な作業内容
    - Why: この手順の理由
@@ -73,18 +82,22 @@ description: Planning specialist for feature implementation, architecture change
    ...
 
 ### フェーズ2: [フェーズ名]
+
 ...
 
 ## テスト戦略
+
 - ユニットテスト: [テスト対象ファイル]
 - 結合テスト: [テスト対象フロー]
 - E2Eテスト: [ユーザー導線]
 
 ## リスクと対策
+
 - **Risk**: [説明]
   - Mitigation: [対応策]
 
 ## 成功基準
+
 - [ ] 基準1
 - [ ] 基準2
 ```
