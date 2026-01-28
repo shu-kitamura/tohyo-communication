@@ -155,7 +155,48 @@ export class VoteSessionDO implements DurableObject {
 
     if (!voterToken) {
       return new Response(
-        JSON.stringify({ error: 'Voter token required' }),
+        JSON.stringify({ error: 'Bad request' }),
+        { status: 400 }
+      );
+    }
+
+    // VAL-06: choiceIdsが配列でない場合は不正
+    if (!Array.isArray(choiceIds)) {
+      return new Response(
+        JSON.stringify({ error: 'Bad request' }),
+        { status: 400 }
+      );
+    }
+
+    // VAL-01: single選択で複数のchoiceIdsは不正
+    if (session.voteType === 'single' && choiceIds.length > 1) {
+      return new Response(
+        JSON.stringify({ error: '単一選択では1つだけ選んでください' }),
+        { status: 400 }
+      );
+    }
+
+    // VAL-04: choiceIdsに重複がある場合は不正
+    if (new Set(choiceIds).size !== choiceIds.length) {
+      return new Response(
+        JSON.stringify({ error: 'Bad request' }),
+        { status: 400 }
+      );
+    }
+
+    // VAL-03: 空配列は不正
+    if (choiceIds.length === 0) {
+      return new Response(
+        JSON.stringify({ error: '選択肢を選んでください' }),
+        { status: 400 }
+      );
+    }
+
+    // VAL-05: 存在しないchoiceIdを含む場合は不正
+    const validChoiceIds = session.choices.map((c) => c.choiceId);
+    if (!choiceIds.every((id) => validChoiceIds.includes(id))) {
+      return new Response(
+        JSON.stringify({ error: 'Bad request' }),
         { status: 400 }
       );
     }
@@ -171,21 +212,12 @@ export class VoteSessionDO implements DurableObject {
     }
 
     // Update vote counts
-    let updated = false;
     session.choices = session.choices.map((c) => {
       if (choiceIds.includes(c.choiceId)) {
-        updated = true;
         return { ...c, voteCount: c.voteCount + 1 };
       }
       return c;
     });
-
-    if (!updated) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid choices' }),
-        { status: 400 }
-      );
-    }
 
     // Save session and voter record
     await this.state.storage.put('session', session);
