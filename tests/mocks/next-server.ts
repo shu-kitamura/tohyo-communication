@@ -53,4 +53,18 @@ export class NextResponse extends Response {
   }
 }
 
-export type NextRequest = Request;
+export class NextRequest extends Request {
+  nextUrl: URL;
+
+  constructor(
+    input: RequestInfo | URL,
+    init?: RequestInit
+  ) {
+    super(input, init);
+    const url =
+      typeof input === 'string' || input instanceof URL
+        ? input.toString()
+        : input.url;
+    this.nextUrl = new URL(url);
+  }
+}

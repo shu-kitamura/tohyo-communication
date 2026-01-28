@@ -15,8 +15,9 @@ export class VoteSessionDO implements DurableObject {
   private sessions: Set<ReadableStreamDefaultController> =
     new Set();
 
-  constructor(state: DurableObjectState, _env: unknown) {
+  constructor(state: DurableObjectState, env: unknown) {
     this.state = state;
+    void env;
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -41,17 +42,17 @@ export class VoteSessionDO implements DurableObject {
 
     // Close session
     if (method === 'POST' && path === '/close') {
-      return this.handleClose(request);
+      return this.handleClose();
     }
 
     // SSE Stream
     if (method === 'GET' && path === '/stream') {
-      return this.handleStream(request);
+      return this.handleStream();
     }
 
     // Export data
     if (method === 'GET' && path === '/export') {
-      return this.handleExport(request);
+      return this.handleExport();
     }
 
     return new Response('Not Found', { status: 404 });
@@ -205,7 +206,7 @@ export class VoteSessionDO implements DurableObject {
     );
   }
 
-  async handleClose(_request: Request): Promise<Response> {
+  async handleClose(): Promise<Response> {
     const session =
       await this.state.storage.get<Session>('session');
     if (!session) {
@@ -229,7 +230,7 @@ export class VoteSessionDO implements DurableObject {
     });
   }
 
-  async handleExport(_request: Request): Promise<Response> {
+  async handleExport(): Promise<Response> {
     const session =
       await this.state.storage.get<Session>('session');
     if (!session) {
@@ -244,7 +245,7 @@ export class VoteSessionDO implements DurableObject {
     });
   }
 
-  handleStream(_request: Request): Response {
+  handleStream(): Response {
     let controller: ReadableStreamDefaultController;
 
     const stream = new ReadableStream({
@@ -268,7 +269,7 @@ export class VoteSessionDO implements DurableObject {
             controller.enqueue(
               new TextEncoder().encode(data)
             );
-          } catch (_e) {
+          } catch {
             // Ignore if stream is closed
           }
         }
@@ -290,7 +291,7 @@ export class VoteSessionDO implements DurableObject {
     for (const controller of this.sessions) {
       try {
         controller.enqueue(encoded);
-      } catch (_err) {
+      } catch {
         this.sessions.delete(controller);
       }
     }

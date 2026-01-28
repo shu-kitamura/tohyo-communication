@@ -39,7 +39,7 @@ describe('POST /api/vote/:sessionId/close', () => {
       'http://localhost/api/vote/id/close',
       { method: 'POST' }
     );
-    const res = await POST(req as any, {
+    const res = await POST(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     const data = await res.json();
@@ -71,7 +71,7 @@ describe('POST /api/vote/:sessionId/close', () => {
       'http://localhost/api/vote/id/close',
       { method: 'POST' }
     );
-    const res = await POST(req as any, {
+    const res = await POST(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     expect(res.status).toBe(200);
@@ -94,7 +94,7 @@ describe('POST /api/vote/:sessionId/close', () => {
       'http://localhost/api/vote/unknown/close',
       { method: 'POST' }
     );
-    const res = await POST(req as any, {
+    const res = await POST(req, {
       params: Promise.resolve({
         sessionId: 'unknown',
       }),
@@ -119,7 +119,7 @@ describe('POST /api/vote/:sessionId/close', () => {
       'http://localhost/api/vote/id/close',
       { method: 'POST' }
     );
-    const res = await POST(req as any, {
+    const res = await POST(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     expect(res.status).toBe(500);

@@ -60,7 +60,7 @@ describe('GET /api/vote/:sessionId', () => {
     const req = createRequest(
       'http://localhost/api/vote/id'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     const data = await res.json();
@@ -98,7 +98,7 @@ describe('GET /api/vote/:sessionId', () => {
     const req = createRequest(
       'http://localhost/api/vote/id'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     const data = await res.json();
@@ -136,7 +136,7 @@ describe('GET /api/vote/:sessionId', () => {
     const req = createRequest(
       'http://localhost/api/vote/id'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     const data = await res.json();
@@ -163,7 +163,7 @@ describe('GET /api/vote/:sessionId', () => {
     const req = createRequest(
       'http://localhost/api/vote/unknown'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({
         sessionId: 'unknown',
       }),
@@ -189,7 +189,7 @@ describe('GET /api/vote/:sessionId', () => {
     const req = createRequest(
       'http://localhost/api/vote/id'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
 
@@ -222,7 +222,7 @@ describe('POST /api/vote/:sessionId', () => {
         body: { choiceIds: ['1'] },
       }
     );
-    const res = await POST(req as any, {
+    const res = await POST(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     const data = await res.json();
@@ -255,7 +255,7 @@ describe('POST /api/vote/:sessionId', () => {
         body: { choiceIds: ['x'] },
       }
     );
-    const res = await POST(req as any, {
+    const res = await POST(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     expect(res.status).toBe(400);
@@ -282,7 +282,7 @@ describe('POST /api/vote/:sessionId', () => {
         body: { choiceIds: ['1'] },
       }
     );
-    const res = await POST(req as any, {
+    const res = await POST(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     expect(res.status).toBe(409);
@@ -309,7 +309,7 @@ describe('POST /api/vote/:sessionId', () => {
         body: { choiceIds: ['1'] },
       }
     );
-    const res = await POST(req as any, {
+    const res = await POST(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     expect(res.status).toBe(403);
@@ -336,7 +336,7 @@ describe('POST /api/vote/:sessionId', () => {
         body: { choiceIds: ['1'] },
       }
     );
-    const res = await POST(req as any, {
+    const res = await POST(req, {
       params: Promise.resolve({
         sessionId: 'unknown',
       }),

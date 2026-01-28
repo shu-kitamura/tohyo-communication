@@ -45,7 +45,7 @@ describe('GET /api/vote/:sessionId/export', () => {
     const req = createRequest(
       'http://localhost/api/vote/id/export?format=json'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     const data = await res.json();
@@ -72,7 +72,7 @@ describe('GET /api/vote/:sessionId/export', () => {
     const req = createRequest(
       'http://localhost/api/vote/id/export?format=csv'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     const text = await res.text();
@@ -102,7 +102,7 @@ describe('GET /api/vote/:sessionId/export', () => {
     const req = createRequest(
       'http://localhost/api/vote/id/export'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     expect(res.status).toBe(400);
@@ -124,7 +124,7 @@ describe('GET /api/vote/:sessionId/export', () => {
     const req = createRequest(
       'http://localhost/api/vote/id/export?format=image'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     expect(res.status).toBe(501);
@@ -146,7 +146,7 @@ describe('GET /api/vote/:sessionId/export', () => {
     const req = createRequest(
       'http://localhost/api/vote/id/export?format=xml'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({ sessionId: 'id' }),
     });
     expect(res.status).toBe(400);
@@ -168,7 +168,7 @@ describe('GET /api/vote/:sessionId/export', () => {
     const req = createRequest(
       'http://localhost/api/vote/unknown/export?format=json'
     );
-    const res = await GET(req as any, {
+    const res = await GET(req, {
       params: Promise.resolve({
         sessionId: 'unknown',
       }),
