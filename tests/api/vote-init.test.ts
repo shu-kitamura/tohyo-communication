@@ -183,4 +183,30 @@ describe('POST /api/vote', () => {
     const res = await POST(req);
     expect(res.status).toBe(500);
   });
+
+  it('INIT-08: choicesのtextが空なら400', async () => {
+    const req = createRequest('http://localhost/api/vote', {
+      method: 'POST',
+      body: {
+        question: 'Q',
+        voteType: 'single',
+        choices: [{ text: 'A' }, { text: '' }],
+      },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
+  it('INIT-08-2: choicesのtextが空白のみなら400', async () => {
+    const req = createRequest('http://localhost/api/vote', {
+      method: 'POST',
+      body: {
+        question: 'Q',
+        voteType: 'single',
+        choices: [{ text: 'A' }, { text: '   ' }],
+      },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
 });

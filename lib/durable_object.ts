@@ -169,9 +169,14 @@ export class VoteSessionDO implements DurableObject {
     }
 
     // VAL-01: single選択で複数のchoiceIdsは不正
-    if (session.voteType === 'single' && choiceIds.length > 1) {
+    if (
+      session.voteType === 'single' &&
+      choiceIds.length > 1
+    ) {
       return new Response(
-        JSON.stringify({ error: '単一選択では1つだけ選んでください' }),
+        JSON.stringify({
+          error: '単一選択では1つだけ選んでください',
+        }),
         { status: 400 }
       );
     }
@@ -193,8 +198,12 @@ export class VoteSessionDO implements DurableObject {
     }
 
     // VAL-05: 存在しないchoiceIdを含む場合は不正
-    const validChoiceIds = session.choices.map((c) => c.choiceId);
-    if (!choiceIds.every((id) => validChoiceIds.includes(id))) {
+    const validChoiceIds = session.choices.map(
+      (c) => c.choiceId
+    );
+    if (
+      !choiceIds.every((id) => validChoiceIds.includes(id))
+    ) {
       return new Response(
         JSON.stringify({ error: 'Bad request' }),
         { status: 400 }

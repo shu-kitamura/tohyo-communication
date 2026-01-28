@@ -19,15 +19,16 @@
 
 ### 3.1 セッション作成: POST /api/vote
 
-| ID      | 観点 | 条件/入力                                      | 期待結果                                                |
-| ------- | ---- | ---------------------------------------------- | ------------------------------------------------------- |
-| INIT-01 | 正常 | questionあり、choices=2〜10、voteType=single   | 201、sessionId/voteUrl/createdAtが返る                  |
-| INIT-02 | 正常 | questionあり、choices=2〜10、voteType=multiple | 201、sessionId/voteUrl/createdAtが返る                  |
-| INIT-03 | 異常 | questionが空/空白                              | 400、`質問を入力してください`                           |
-| INIT-04 | 異常 | choicesが未指定または1件以下                   | 400、`選択肢は2つ以上必要です`                          |
-| INIT-05 | 異常 | choicesが11件以上                              | 400、`選択肢は10個までです`                             |
-| INIT-06 | 異常 | voteTypeがsingle/multiple以外                  | 400、`投票形式はsingleまたはmultipleを指定してください` |
-| INIT-07 | 異常 | DO初期化失敗                                   | 500                                                     |
+| ID      | 観点 | 条件/入力                                      | 期待結果                               |
+| ------- | ---- | ---------------------------------------------- | -------------------------------------- |
+| INIT-01 | 正常 | questionあり、choices=2〜10、voteType=single   | 201、sessionId/voteUrl/createdAtが返る |
+| INIT-02 | 正常 | questionあり、choices=2〜10、voteType=multiple | 201、sessionId/voteUrl/createdAtが返る |
+| INIT-03 | 異常 | questionが空/空白                              | 400                                    |
+| INIT-04 | 異常 | choicesが未指定または1件以下                   | 400                                    |
+| INIT-05 | 異常 | choicesが11件以上                              | 400                                    |
+| INIT-06 | 異常 | voteTypeがsingle/multiple以外                  | 400                                    |
+| INIT-07 | 異常 | DO初期化失敗                                   | 500                                    |
+| INIT-08 | 異常 | choicesのtextが空/空白を含む                   | 400                                    |
 
 ### 3.2 セッション取得: GET /api/vote/:sessionId
 
@@ -53,15 +54,15 @@
 
 choiceIdsの入力バリデーションに関する詳細テストケース。
 
-| ID       | 観点 | 条件/入力                                  | 期待結果 |
-| -------- | ---- | ------------------------------------------ | -------- |
-| VAL-01   | 異常 | type=single で複数のchoiceIds（例: [1,2]） | 400      |
-| VAL-02   | 正常 | type=single で1つのchoiceId                | 201      |
-| VAL-03   | 異常 | choiceIdsが空配列（[]）                    | 400      |
-| VAL-04   | 異常 | choiceIdsに重複あり（例: [1,1]）           | 400      |
-| VAL-05   | 異常 | 存在しないchoiceIdを含む（例: [999]）      | 400      |
-| VAL-06   | 異常 | choiceIdsが配列でない（例: "1"）           | 400      |
-| VAL-07   | 正常 | type=multiple で複数のchoiceIds            | 201      |
+| ID     | 観点 | 条件/入力                                  | 期待結果 |
+| ------ | ---- | ------------------------------------------ | -------- |
+| VAL-01 | 異常 | type=single で複数のchoiceIds（例: [1,2]） | 400      |
+| VAL-02 | 正常 | type=single で1つのchoiceId                | 201      |
+| VAL-03 | 異常 | choiceIdsが空配列（[]）                    | 400      |
+| VAL-04 | 異常 | choiceIdsに重複あり（例: [1,1]）           | 400      |
+| VAL-05 | 異常 | 存在しないchoiceIdを含む（例: [999]）      | 400      |
+| VAL-06 | 異常 | choiceIdsが配列でない（例: "1"）           | 400      |
+| VAL-07 | 正常 | type=multiple で複数のchoiceIds            | 201      |
 
 ### 3.4 投票終了: POST /api/vote/:sessionId/close
 

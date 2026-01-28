@@ -36,6 +36,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // INIT-08: 選択肢のtextが空/空白の場合は不正
+    if (
+      body.choices.some(
+        (c) => !c.text || c.text.trim().length === 0
+      )
+    ) {
+      return NextResponse.json(
+        { error: '選択肢のテキストを入力してください' },
+        { status: 400 }
+      );
+    }
+
     if (
       body.voteType !== 'single' &&
       body.voteType !== 'multiple'
