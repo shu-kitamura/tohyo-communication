@@ -9,6 +9,7 @@ export const createRequest = (
   const { body, headers, ...rest } = init;
   const request = new NextRequest(url, {
     ...rest,
+    signal: init.signal ?? undefined,
     body:
       body === undefined ? undefined : JSON.stringify(body),
     headers: {
