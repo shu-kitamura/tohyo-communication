@@ -2,18 +2,6 @@
 
 スコープ: `app/`, `components/`, `./` 配下の `*.ts`, `*.tsx`（`app/api`, `app/vote`, `lib`, `worker.ts`, `tests` など）
 
-- [Must] 投票APIで入力バリデーションが不足し、500や不正投票が起き得る
-  - `Where` : `app/api/vote/[sessionId]/route.ts:64`, `lib/durable_object.ts:149`
-  - `What` : `choiceIds` の型/長さ、`voteType`(single/multiple) の制約、選択肢IDの存在チェックがないため、`choiceIds.includes` が例外になったり、単一選択セッションに複数票が入る
-  - `Why` : APIは公開されているため不正なリクエストで投票集計が崩れたり、DOで例外が発生して信頼性が落ちる
-  - `How to fix` : ルートとDO双方で `Array.isArray(choiceIds)`・空配列拒否・重複排除・存在しないID拒否・`voteType` に応じた件数制約を追加し、無効なら `400` を返す
-
-- [Should] セッション作成時の選択肢テキストがサーバ側で検証されていない
-  - `Where` : `app/api/vote/route.ts:14`, `lib/durable_object.ts:60`
-  - `What` : `choices` の各 `text` が空/空白でも通過し、空の選択肢が作成できる
-  - `Why` : UIでは防げてもAPI直叩きで空データが混入し、投票UIやエクスポートの品質が落ちる
-  - `How to fix` : `text.trim().length > 0` を全件チェックし、空が含まれる場合は `400` を返す（DO側にも同等のガードを追加）
-
 - [Should] 終了・エクスポート操作がHTTPエラーを無視して成功扱いになる
   - `Where` : `app/vote/[sessionId]/page.tsx:148`, `app/vote/[sessionId]/page.tsx:160`
   - `What` : `close`/`export` の `res.ok` を確認せず、失敗しても「投票を終了しました」やダウンロード実行が走る
