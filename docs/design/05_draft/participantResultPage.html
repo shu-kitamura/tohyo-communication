@@ -2,22 +2,12 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TOHYO通信 | 結果表示（参加者）</title>
 
     <!-- Fonts -->
-    <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-    />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap"
       rel="stylesheet"
@@ -43,7 +33,7 @@
       body {
         margin: 0;
         font-family:
-          'Noto Sans JP',
+          "Noto Sans JP",
           system-ui,
           -apple-system,
           sans-serif;
@@ -52,14 +42,7 @@
         padding: 30px 16px 42px;
 
         /* organizerResultPage と同系のアニメーション背景 */
-        background: linear-gradient(
-          120deg,
-          #e0f2fe,
-          #eff6ff,
-          #ffffff,
-          #f0f9ff,
-          #eef2ff
-        );
+        background: linear-gradient(120deg, #e0f2fe, #eff6ff, #ffffff, #f0f9ff, #eef2ff);
         background-size: 400% 400%;
         animation: gradientFlow 16s ease-in-out infinite;
       }
@@ -168,34 +151,14 @@
   <body>
     <div class="shell">
       <h1>/vote/:sessionId?view=result</h1>
-      <div class="meta">
-        投票結果をリアルタイムで表示。操作は最小限。
-      </div>
+      <div class="meta">投票結果をリアルタイムで表示。操作は最小限。</div>
 
       <section class="card">
         <div class="graph">グラフ（棒 or 円）</div>
         <div class="legend">
-          <span
-            ><span
-              class="dot"
-              style="background: var(--graph-1)"
-            ></span
-            >ラーメン</span
-          >
-          <span
-            ><span
-              class="dot"
-              style="background: var(--graph-2)"
-            ></span
-            >カレー</span
-          >
-          <span
-            ><span
-              class="dot"
-              style="background: var(--graph-3)"
-            ></span
-            >寿司</span
-          >
+          <span><span class="dot" style="background: var(--graph-1)"></span>ラーメン</span>
+          <span><span class="dot" style="background: var(--graph-2)"></span>カレー</span>
+          <span><span class="dot" style="background: var(--graph-3)"></span>寿司</span>
         </div>
         <ul class="list">
           <li>ラーメン: 15票 (42.9%)</li>
@@ -203,15 +166,9 @@
           <li>寿司: 12票 (34.3%)</li>
         </ul>
 
-        <div class="state info">
-          投票ありがとうございます！結果をリアルタイムで表示中。
-        </div>
-        <div class="state warn">
-          投票は終了しました（表示のみ）
-        </div>
-        <div class="state warn">
-          セッションが存在しません
-        </div>
+        <div class="state info">投票ありがとうございます！結果をリアルタイムで表示中。</div>
+        <div class="state warn">投票は終了しました（表示のみ）</div>
+        <div class="state warn">セッションが存在しません</div>
       </section>
     </div>
   </body>

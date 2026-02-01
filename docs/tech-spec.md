@@ -288,11 +288,7 @@
 {
   "question": "今日の昼食は何がいいですか？",
   "voteType": "single",
-  "choices": [
-    { "text": "ラーメン" },
-    { "text": "カレー" },
-    { "text": "寿司" }
-  ]
+  "choices": [{ "text": "ラーメン" }, { "text": "カレー" }, { "text": "寿司" }]
 }
 ```
 

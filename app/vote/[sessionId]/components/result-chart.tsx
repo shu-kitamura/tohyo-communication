@@ -9,32 +9,22 @@ import {
   Legend,
   LabelList,
   ResponsiveContainer,
-} from 'recharts';
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import { Choice } from '@/lib/types';
-import { useState } from 'react';
+} from "recharts";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Choice } from "@/lib/types";
+import { useState } from "react";
 
 const COLORS = [
-  '#3B82F6',
-  '#10B981',
-  '#F59E0B',
-  '#EF4444',
-  '#8B5CF6',
-  '#EC4899',
-  '#14B8A6',
-  '#F97316',
+  "#3B82F6",
+  "#10B981",
+  "#F59E0B",
+  "#EF4444",
+  "#8B5CF6",
+  "#EC4899",
+  "#14B8A6",
+  "#F97316",
 ];
 
 interface ResultChartProps {
@@ -43,22 +33,13 @@ interface ResultChartProps {
   totalVotes: number;
 }
 
-export function ResultChart({
-  question,
-  choices,
-  totalVotes,
-}: ResultChartProps) {
-  const [chartType, setChartType] = useState<'bar' | 'pie'>(
-    'bar'
-  );
+export function ResultChart({ question, choices, totalVotes }: ResultChartProps) {
+  const [chartType, setChartType] = useState<"bar" | "pie">("bar");
 
   const chartData = choices.map((choice) => ({
     name: choice.text,
     votes: choice.voteCount,
-    percentage:
-      totalVotes > 0
-        ? Math.round((choice.voteCount / totalVotes) * 100)
-        : 0,
+    percentage: totalVotes > 0 ? Math.round((choice.voteCount / totalVotes) * 100) : 0,
   }));
 
   return (
@@ -75,9 +56,7 @@ export function ResultChart({
           </div>
           <Tabs
             value={chartType}
-            onValueChange={(value) =>
-              setChartType(value as 'bar' | 'pie')
-            }
+            onValueChange={(value) => setChartType(value as "bar" | "pie")}
             className="w-full max-w-[220px]"
           >
             <TabsList className="grid w-full grid-cols-2 rounded-full bg-slate-100/80">
@@ -85,33 +64,24 @@ export function ResultChart({
                 value="bar"
                 className="rounded-full data-[state=active]:bg-white data-[state=active]:text-slate-900"
               >
-                <Label className="text-xs md:text-sm">
-                  棒グラフ
-                </Label>
+                <Label className="text-xs md:text-sm">棒グラフ</Label>
               </TabsTrigger>
               <TabsTrigger
                 value="pie"
                 className="rounded-full data-[state=active]:bg-white data-[state=active]:text-slate-900"
               >
-                <Label className="text-xs md:text-sm">
-                  円グラフ
-                </Label>
+                <Label className="text-xs md:text-sm">円グラフ</Label>
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
       </CardHeader>
       <CardContent className="h-80 md:h-96">
-        {chartType === 'bar' ? (
+        {chartType === "bar" ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="name"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-              />
+              <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
               <Bar
                 dataKey="votes"
                 fill="#5382daff"
@@ -120,12 +90,7 @@ export function ResultChart({
                 className="m-10"
                 isAnimationActive={false}
               >
-                <LabelList
-                  position="top"
-                  offset={12}
-                  fontSize={12}
-                  fill="#000000"
-                />
+                <LabelList position="top" offset={12} fontSize={12} fill="#000000" />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -137,18 +102,13 @@ export function ResultChart({
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value }) =>
-                  `${name}: ${value}`
-                }
+                label={({ name, value }) => `${name}: ${value}`}
                 outerRadius={120}
                 fill="#8884d8"
                 dataKey="votes"
               >
                 {chartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Legend />

@@ -1,14 +1,8 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import {
-  Plus,
-  Zap,
-  Smartphone,
-  BarChart3,
-  Check,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import Link from "next/link";
+import Image from "next/image";
+import { Plus, Zap, Smartphone, BarChart3, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Home() {
   return (
@@ -77,9 +71,7 @@ export default function Home() {
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mx-auto mb-5 flex items-center justify-center">
                   <Zap className="h-8 w-8 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  リアルタイム更新
-                </h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">リアルタイム更新</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
                   投票結果が瞬時にグラフに反映。会場全体で一体感を演出できます。
                 </p>
@@ -91,9 +83,7 @@ export default function Home() {
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mx-auto mb-5 flex items-center justify-center">
                   <Smartphone className="h-8 w-8 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  QRコードで即参加
-                </h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">QRコードで即参加</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
                   ログイン不要。スマホでQRコードを読み取るだけで、すぐに投票できます。
                 </p>
@@ -105,9 +95,7 @@ export default function Home() {
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mx-auto mb-5 flex items-center justify-center">
                   <BarChart3 className="h-8 w-8 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  見やすいグラフ表示
-                </h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">見やすいグラフ表示</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
                   棒グラフ・円グラフを切り替え可能。プロジェクター投影にも最適です。
                 </p>
@@ -183,9 +171,7 @@ export default function Home() {
       {/* CTAセクション */}
       <section className="py-16 md:py-20 px-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            さっそく始めてみよう
-          </h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">さっそく始めてみよう</h2>
           <p className="text-slate-400 mb-8">
             アカウント登録不要。今すぐ投票セッションを作成できます。
           </p>
@@ -224,12 +210,8 @@ function Step({
         {number}
       </div>
       <div>
-        <h4 className="font-medium text-slate-900 mb-1">
-          {title}
-        </h4>
-        <p className="text-sm text-slate-600 leading-relaxed">
-          {description}
-        </p>
+        <h4 className="font-medium text-slate-900 mb-1">{title}</h4>
+        <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
       </div>
     </div>
   );

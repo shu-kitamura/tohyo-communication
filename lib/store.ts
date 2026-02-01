@@ -1,5 +1,5 @@
 // In-memory data store for voting sessions and votes
-import { Session, Vote } from './types';
+import { Session, Vote } from "./types";
 
 class VotingStore {
   private sessions = new Map<string, Session>();
@@ -29,13 +29,11 @@ class VotingStore {
 
   // Vote management
   addVote(vote: Vote): void {
-    const sessionVotes =
-      this.votes.get(vote.sessionId) || [];
+    const sessionVotes = this.votes.get(vote.sessionId) || [];
     sessionVotes.push(vote);
     this.votes.set(vote.sessionId, sessionVotes);
 
-    const tokens =
-      this.voterTokens.get(vote.sessionId) || new Set();
+    const tokens = this.voterTokens.get(vote.sessionId) || new Set();
     tokens.add(vote.voterToken);
     this.voterTokens.set(vote.sessionId, tokens);
   }
@@ -54,12 +52,8 @@ class VotingStore {
     const now = new Date();
     const timeoutMs = 24 * 60 * 60 * 1000; // 24 hours
 
-    for (const [
-      sessionId,
-      session,
-    ] of this.sessions.entries()) {
-      const age =
-        now.getTime() - session.createdAt.getTime();
+    for (const [sessionId, session] of this.sessions.entries()) {
+      const age = now.getTime() - session.createdAt.getTime();
       if (age > timeoutMs) {
         this.deleteSession(sessionId);
       }
@@ -75,5 +69,5 @@ setInterval(
   () => {
     store.cleanupOldSessions();
   },
-  60 * 60 * 1000
+  60 * 60 * 1000,
 );

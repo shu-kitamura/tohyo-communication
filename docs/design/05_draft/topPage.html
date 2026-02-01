@@ -2,22 +2,12 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TOHYO通信 | トップページ</title>
 
     <!-- Fonts -->
-    <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-    />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
       rel="stylesheet"
@@ -44,20 +34,13 @@
       body {
         margin: 0;
         font-family:
-          'Noto Sans JP',
+          "Noto Sans JP",
           system-ui,
           -apple-system,
           sans-serif;
         color: var(--ink);
         line-height: 1.6;
-        background: linear-gradient(
-          120deg,
-          #e0f2fe,
-          #eff6ff,
-          #ffffff,
-          #f0f9ff,
-          #eef2ff
-        );
+        background: linear-gradient(120deg, #e0f2fe, #eff6ff, #ffffff, #f0f9ff, #eef2ff);
         background-size: 400% 400%;
         animation: gradientFlow 16s ease-in-out infinite;
       }
@@ -147,17 +130,13 @@
       }
 
       .hero::before {
-        content: '';
+        content: "";
         position: absolute;
         top: -50%;
         left: -50%;
         width: 200%;
         height: 200%;
-        background: radial-gradient(
-          circle at 30% 40%,
-          rgba(37, 99, 235, 0.08) 0%,
-          transparent 50%
-        );
+        background: radial-gradient(circle at 30% 40%, rgba(37, 99, 235, 0.08) 0%, transparent 50%);
         pointer-events: none;
       }
 
@@ -173,11 +152,7 @@
       .hero-logo .icon-box {
         width: 80px;
         height: 80px;
-        background: linear-gradient(
-          135deg,
-          var(--primary) 0%,
-          var(--primary-dark) 100%
-        );
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         border-radius: 20px;
         display: flex;
         align-items: center;
@@ -192,15 +167,11 @@
       }
 
       .hero-logo .icon-box::after {
-        content: '';
+        content: "";
         position: absolute;
         inset: -4px;
         border-radius: 24px;
-        background: linear-gradient(
-          135deg,
-          rgba(37, 99, 235, 0.3),
-          transparent
-        );
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), transparent);
         z-index: -1;
       }
 
@@ -245,11 +216,7 @@
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        background: linear-gradient(
-          135deg,
-          var(--primary) 0%,
-          var(--primary-dark) 100%
-        );
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         color: #fff;
         padding: 18px 40px;
         border-radius: 14px;
@@ -343,11 +310,7 @@
       .feature-card .icon {
         width: 64px;
         height: 64px;
-        background: linear-gradient(
-          135deg,
-          #dbeafe 0%,
-          #eff6ff 100%
-        );
+        background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
         border-radius: 16px;
         margin: 0 auto 20px;
         display: flex;
@@ -437,11 +400,7 @@
       .step-num {
         width: 32px;
         height: 32px;
-        background: linear-gradient(
-          135deg,
-          var(--primary) 0%,
-          var(--primary-dark) 100%
-        );
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         color: #fff;
         border-radius: 50%;
         display: flex;
@@ -471,28 +430,20 @@
       .cta-section {
         text-align: center;
         padding: 80px 24px;
-        background: linear-gradient(
-          135deg,
-          #0f172a 0%,
-          #1e293b 100%
-        );
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         color: #fff;
         position: relative;
         overflow: hidden;
       }
 
       .cta-section::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: radial-gradient(
-          circle at 70% 30%,
-          rgba(37, 99, 235, 0.15) 0%,
-          transparent 50%
-        );
+        background: radial-gradient(circle at 70% 30%, rgba(37, 99, 235, 0.15) 0%, transparent 50%);
         pointer-events: none;
       }
 
@@ -514,11 +465,7 @@
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        background: linear-gradient(
-          135deg,
-          var(--primary) 0%,
-          var(--primary-dark) 100%
-        );
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         color: #fff;
         padding: 16px 36px;
         border-radius: 14px;
@@ -576,9 +523,7 @@
       <div class="hero-logo">
         <div class="icon-box">T</div>
         <div class="brand-group">
-          <div class="brand-text">
-            TOHYO<span>通信</span>
-          </div>
+          <div class="brand-text">TOHYO<span>通信</span></div>
           <div class="brand-sub">~Vote Communication~</div>
         </div>
       </div>
@@ -595,11 +540,7 @@
           stroke="currentColor"
           stroke-width="2"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 4v16m8-8H4"
-          />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
         </svg>
         投票を作成する
       </a>
@@ -614,11 +555,7 @@
             stroke="currentColor"
             stroke-width="2"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M5 13l4 4L19 7"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           ログイン不要・無料
         </span>
@@ -632,23 +569,17 @@
         <div class="feature-card">
           <div class="icon">⚡</div>
           <h3>リアルタイム更新</h3>
-          <p>
-            投票結果が瞬時にグラフに反映。会場全体で一体感を演出できます。
-          </p>
+          <p>投票結果が瞬時にグラフに反映。会場全体で一体感を演出できます。</p>
         </div>
         <div class="feature-card">
           <div class="icon">📱</div>
           <h3>QRコードで即参加</h3>
-          <p>
-            ログイン不要。スマホでQRコードを読み取るだけで、すぐに投票できます。
-          </p>
+          <p>ログイン不要。スマホでQRコードを読み取るだけで、すぐに投票できます。</p>
         </div>
         <div class="feature-card">
           <div class="icon">📊</div>
           <h3>見やすいグラフ表示</h3>
-          <p>
-            棒グラフ・円グラフを切り替え可能。プロジェクター投影にも最適です。
-          </p>
+          <p>棒グラフ・円グラフを切り替え可能。プロジェクター投影にも最適です。</p>
         </div>
       </div>
     </section>
@@ -668,27 +599,21 @@
               <div class="step-num">1</div>
               <div class="step-content">
                 <h4>投票を作成</h4>
-                <p>
-                  質問と選択肢を入力して投票セッションを作成します。
-                </p>
+                <p>質問と選択肢を入力して投票セッションを作成します。</p>
               </div>
             </div>
             <div class="step">
               <div class="step-num">2</div>
               <div class="step-content">
                 <h4>QRコードを共有</h4>
-                <p>
-                  生成されたQRコードをプロジェクターなどで参加者に見せます。
-                </p>
+                <p>生成されたQRコードをプロジェクターなどで参加者に見せます。</p>
               </div>
             </div>
             <div class="step">
               <div class="step-num">3</div>
               <div class="step-content">
                 <h4>結果をリアルタイム表示</h4>
-                <p>
-                  投票結果がリアルタイムでグラフに反映されます。
-                </p>
+                <p>投票結果がリアルタイムでグラフに反映されます。</p>
               </div>
             </div>
           </div>
@@ -702,27 +627,21 @@
               <div class="step-num">1</div>
               <div class="step-content">
                 <h4>QRコードを読み取る</h4>
-                <p>
-                  開催者が表示するQRコードをスマホで読み取ります。
-                </p>
+                <p>開催者が表示するQRコードをスマホで読み取ります。</p>
               </div>
             </div>
             <div class="step">
               <div class="step-num">2</div>
               <div class="step-content">
                 <h4>選択肢を選んで投票</h4>
-                <p>
-                  表示された選択肢から選んで送信ボタンを押します。
-                </p>
+                <p>表示された選択肢から選んで送信ボタンを押します。</p>
               </div>
             </div>
             <div class="step">
               <div class="step-num">3</div>
               <div class="step-content">
                 <h4>結果を確認</h4>
-                <p>
-                  投票後、リアルタイムで結果を閲覧できます。
-                </p>
+                <p>投票後、リアルタイムで結果を閲覧できます。</p>
               </div>
             </div>
           </div>
@@ -733,9 +652,7 @@
     <!-- CTAセクション -->
     <section class="cta-section">
       <h2>さっそく始めてみよう</h2>
-      <p>
-        アカウント登録不要。今すぐ投票セッションを作成できます。
-      </p>
+      <p>アカウント登録不要。今すぐ投票セッションを作成できます。</p>
       <a href="/vote" class="cta-btn">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -746,11 +663,7 @@
           stroke="currentColor"
           stroke-width="2"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 4v16m8-8H4"
-          />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
         </svg>
         投票を作成する
       </a>

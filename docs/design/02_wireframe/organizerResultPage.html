@@ -104,15 +104,11 @@
       <header>
         <h1>/vote/:sessionId?view=organizer</h1>
         <div class="controls">
-          <button class="primary" type="button">
-            棒グラフ
-          </button>
+          <button class="primary" type="button">棒グラフ</button>
           <button type="button">円グラフ</button>
           <button type="button">CSV</button>
           <button type="button">JSON</button>
-          <button class="danger" type="button">
-            投票を終了
-          </button>
+          <button class="danger" type="button">投票を終了</button>
         </div>
       </header>
 
@@ -128,53 +124,32 @@
           >
             <div>
               <div class="meta">質問</div>
-              <div
-                style="font-size: 18px; font-weight: bold"
-              >
-                今日の昼食は何がいいですか？
-              </div>
+              <div style="font-size: 18px; font-weight: bold">今日の昼食は何がいいですか？</div>
             </div>
             <div>
               <div class="meta">総投票数</div>
-              <div
-                style="font-size: 18px; font-weight: bold"
-              >
-                35票
-              </div>
+              <div style="font-size: 18px; font-weight: bold">35票</div>
             </div>
           </div>
-          <div class="graph-area">
-            グラフ表示エリア（棒/円、SSEで更新）
-          </div>
+          <div class="graph-area">グラフ表示エリア（棒/円、SSEで更新）</div>
           <ul class="summary">
             <li>ラーメン: 15票 (42.9%)</li>
             <li>カレー: 8票 (22.9%)</li>
             <li>寿司: 12票 (34.3%)</li>
           </ul>
-          <div class="state">
-            終了後は「投票は終了しました」を重ねて表示し、新規投票は拒否。
-          </div>
+          <div class="state">終了後は「投票は終了しました」を重ねて表示し、新規投票は拒否。</div>
         </section>
 
         <aside class="panel">
           <div class="meta">QRコード（参加者用）</div>
           <div class="qr">QR</div>
-          <div class="meta">
-            URL: https://example.com/vote/:sessionId
-          </div>
+          <div class="meta">URL: https://example.com/vote/:sessionId</div>
           <hr style="margin: 16px 0" />
           <div class="meta">操作メモ</div>
           <ul class="summary">
-            <li>
-              グラフ切替は即時反映、現在の選択を強調。
-            </li>
-            <li>
-              エクスポートは別タブでダウンロード、完了通知を表示。
-            </li>
-            <li>
-              終了ボタンは確認モーダル後に status=closed
-              へ。
-            </li>
+            <li>グラフ切替は即時反映、現在の選択を強調。</li>
+            <li>エクスポートは別タブでダウンロード、完了通知を表示。</li>
+            <li>終了ボタンは確認モーダル後に status=closed へ。</li>
           </ul>
         </aside>
       </div>
