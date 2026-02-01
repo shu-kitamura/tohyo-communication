@@ -1,4 +1,4 @@
-import { TextDecoder, TextEncoder } from 'util';
+import { TextDecoder, TextEncoder } from "util";
 
 if (!globalThis.TextEncoder) {
   globalThis.TextEncoder = TextEncoder;

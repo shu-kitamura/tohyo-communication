@@ -2,22 +2,12 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TOHYO通信 | 投票（参加者）</title>
 
     <!-- Fonts -->
-    <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-    />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap"
       rel="stylesheet"
@@ -40,7 +30,7 @@
       body {
         margin: 0;
         font-family:
-          'Noto Sans JP',
+          "Noto Sans JP",
           system-ui,
           -apple-system,
           sans-serif;
@@ -49,14 +39,7 @@
         padding: 30px 16px 42px;
 
         /* organizerResultPage と同系のアニメーション背景 */
-        background: linear-gradient(
-          120deg,
-          #e0f2fe,
-          #eff6ff,
-          #ffffff,
-          #f0f9ff,
-          #eef2ff
-        );
+        background: linear-gradient(120deg, #e0f2fe, #eff6ff, #ffffff, #f0f9ff, #eef2ff);
         background-size: 400% 400%;
         animation: gradientFlow 16s ease-in-out infinite;
       }
@@ -217,96 +200,55 @@
     <div class="shell">
       <header>
         <span class="pill">リアルタイム更新</span>
-        <div class="meta">
-          未選択エラーや終了状態を即時で案内
-        </div>
+        <div class="meta">未選択エラーや終了状態を即時で案内</div>
       </header>
 
       <section class="card" aria-label="単一選択">
         <h1>今日の昼食は何がいいですか？</h1>
         <div class="meta">投票形式: 単一選択</div>
         <div class="options">
-          <label class="option"
-            ><input type="radio" name="vote-single" />
-            ラーメン</label
-          >
-          <label class="option"
-            ><input type="radio" name="vote-single" />
-            カレー</label
-          >
-          <label class="option"
-            ><input type="radio" name="vote-single" />
-            寿司</label
-          >
+          <label class="option"><input type="radio" name="vote-single" /> ラーメン</label>
+          <label class="option"><input type="radio" name="vote-single" /> カレー</label>
+          <label class="option"><input type="radio" name="vote-single" /> 寿司</label>
         </div>
-        <button class="primary" type="button">
-          投票する
-        </button>
+        <button class="primary" type="button">投票する</button>
         <div class="state warn">選択肢を選んでください</div>
-        <div class="state info">
-          送信中… ボタンにスピナー、二重送信を防止
-        </div>
+        <div class="state info">送信中… ボタンにスピナー、二重送信を防止</div>
       </section>
 
       <section class="card" aria-label="複数選択">
         <h1>発表で聞きたいトピックは？</h1>
         <div class="meta">投票形式: 複数選択</div>
         <div class="options">
-          <label class="option"
-            ><input type="checkbox" checked />
-            パフォーマンス</label
-          >
-          <label class="option"
-            ><input type="checkbox" /> セキュリティ</label
-          >
-          <label class="option"
-            ><input type="checkbox" checked />
-            デプロイ</label
-          >
+          <label class="option"><input type="checkbox" checked /> パフォーマンス</label>
+          <label class="option"><input type="checkbox" /> セキュリティ</label>
+          <label class="option"><input type="checkbox" checked /> デプロイ</label>
         </div>
-        <button class="primary" type="button">
-          投票する
-        </button>
+        <button class="primary" type="button">投票する</button>
         <div class="state warn">1つ以上選んでください</div>
       </section>
 
       <section class="card" aria-label="投票完了">
         <div class="state info">✓ 投票が完了しました</div>
-        <div style="margin-top: 8px">
-          あなたの投票: ラーメン
-        </div>
+        <div style="margin-top: 8px">あなたの投票: ラーメン</div>
         <div style="margin-top: 12px">
-          <a class="link" href="#"
-            >結果を見る → `/vote/:sessionId?view=result`</a
-          >
+          <a class="link" href="#">結果を見る → `/vote/:sessionId?view=result`</a>
         </div>
       </section>
 
       <section class="card" aria-label="既投票">
-        <div class="state info">
-          ⓘ この端末では投票済みです
-        </div>
+        <div class="state info">ⓘ この端末では投票済みです</div>
         <div style="margin-top: 10px">
-          <a class="link" href="#"
-            >結果を見る → `/vote/:sessionId?view=result`</a
-          >
+          <a class="link" href="#">結果を見る → `/vote/:sessionId?view=result`</a>
         </div>
       </section>
 
       <section class="card" aria-label="終了・404">
-        <div class="state warn">
-          投票は終了しました（結果のみ表示）
-        </div>
-        <div class="state error">
-          セッションが存在しません
-        </div>
+        <div class="state warn">投票は終了しました（結果のみ表示）</div>
+        <div class="state error">セッションが存在しません</div>
         <div class="divider"></div>
-        <div class="small">
-          通信が不安定です。再接続してください
-        </div>
-        <div class="small">
-          必要ならホームへのリンクを最小限で配置
-        </div>
+        <div class="small">通信が不安定です。再接続してください</div>
+        <div class="small">必要ならホームへのリンクを最小限で配置</div>
       </section>
     </div>
   </body>

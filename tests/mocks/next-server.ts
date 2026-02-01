@@ -1,24 +1,18 @@
 type CookieOptions = {
   httpOnly?: boolean;
-  sameSite?: 'strict' | 'lax' | 'none';
+  sameSite?: "strict" | "lax" | "none";
   maxAge?: number;
   path?: string;
 };
 
-const formatSameSite = (
-  value: CookieOptions['sameSite']
-) => {
-  if (!value) return '';
+const formatSameSite = (value: CookieOptions["sameSite"]) => {
+  if (!value) return "";
   return `SameSite=${value[0].toUpperCase()}${value.slice(1)}`;
 };
 
 export class NextResponse extends Response {
   cookies: {
-    set: (
-      name: string,
-      value: string,
-      options?: CookieOptions
-    ) => void;
+    set: (name: string, value: string, options?: CookieOptions) => void;
   };
 
   constructor(body?: BodyInit | null, init?: ResponseInit) {
@@ -26,25 +20,24 @@ export class NextResponse extends Response {
     this.cookies = {
       set: (name, value, options) => {
         const parts = [`${name}=${value}`];
-        if (options?.path)
-          parts.push(`Path=${options.path}`);
-        if (typeof options?.maxAge === 'number') {
+        if (options?.path) parts.push(`Path=${options.path}`);
+        if (typeof options?.maxAge === "number") {
           parts.push(`Max-Age=${options.maxAge}`);
         }
-        if (options?.httpOnly) parts.push('HttpOnly');
+        if (options?.httpOnly) parts.push("HttpOnly");
         if (options?.sameSite) {
           const sameSite = formatSameSite(options.sameSite);
           if (sameSite) parts.push(sameSite);
         }
-        this.headers.append('Set-Cookie', parts.join('; '));
+        this.headers.append("Set-Cookie", parts.join("; "));
       },
     };
   }
 
   static json(data: unknown, init: ResponseInit = {}) {
     const headers = new Headers(init.headers);
-    if (!headers.has('Content-Type')) {
-      headers.set('Content-Type', 'application/json');
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
     }
     return new NextResponse(JSON.stringify(data), {
       ...init,
@@ -56,15 +49,9 @@ export class NextResponse extends Response {
 export class NextRequest extends Request {
   nextUrl: URL;
 
-  constructor(
-    input: RequestInfo | URL,
-    init?: RequestInit
-  ) {
+  constructor(input: RequestInfo | URL, init?: RequestInit) {
     super(input, init);
-    const url =
-      typeof input === 'string' || input instanceof URL
-        ? input.toString()
-        : input.url;
+    const url = typeof input === "string" || input instanceof URL ? input.toString() : input.url;
     this.nextUrl = new URL(url);
   }
 }

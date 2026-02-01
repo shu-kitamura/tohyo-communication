@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "node_modules",
+    "coverage",
+    ".next",
+    ".open-next",
+    ".wrangler",
+    "package-lock.json"
+  ]
+}
