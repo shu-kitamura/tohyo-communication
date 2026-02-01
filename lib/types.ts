@@ -1,7 +1,7 @@
 // Data models for the voting application
 
-export type VoteType = 'single' | 'multiple';
-export type SessionStatus = 'active' | 'closed';
+export type VoteType = "single" | "multiple";
+export type SessionStatus = "active" | "closed";
 
 export interface Choice {
   choiceId: string;
@@ -52,7 +52,7 @@ export interface GetSessionResponse {
   sessionId: string;
   question: string;
   voteType: VoteType;
-  choices: Omit<Choice, 'voteCount'>[] | Choice[];
+  choices: Omit<Choice, "voteCount">[] | Choice[];
   status: SessionStatus;
   canVote: boolean;
   message?: string;
