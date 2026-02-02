@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
     };
 
     console.log({
+      message: "Vote session is created.",
+      level: "info",
       question: body.question,
       sessionId: sessionId,
     });
