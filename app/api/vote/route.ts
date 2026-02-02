@@ -59,6 +59,11 @@ export async function POST(request: NextRequest) {
       createdAt: session.createdAt as unknown as string,
     };
 
+    console.log({
+      question: body.question,
+      sessionId: sessionId,
+    });
+
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error("Error creating session:", error);
