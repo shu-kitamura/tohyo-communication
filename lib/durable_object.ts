@@ -1,19 +1,46 @@
 import { Session, Choice, CreateSessionRequest, SubmitVoteRequest } from "./types";
 
+/**
+ * Server-Sent Events (SSE) でブロードキャストするメッセージ型
+ */
 interface BroadcastMessage {
+  /** イベント種別（update, closedなど） */
   event: string;
+  /** イベントに付随するデータ */
   data: unknown;
 }
 
+/**
+ * Durable Objectとして動作する投票セッション管理クラス
+ *
+ * 各セッションごとに独立したインスタンスが立ち上がり、
+ * 投票データの整合性と永続化を担保します。
+ * SSEを使用してリアルタイムに投票結果を配信します。
+ */
 export class VoteSessionDO implements DurableObject {
   state: DurableObjectState;
+  /** SSEストリームのコントローラーを管理するセット */
   private sessions: Set<ReadableStreamDefaultController> = new Set();
 
+  /**
+   * Durable Objectのコンストラクタ
+   *
+   * @param state - Durable Objectのステート（ストレージとアラーム管理）
+   * @param env - 環境変数（現在未使用）
+   */
   constructor(state: DurableObjectState, env: unknown) {
     this.state = state;
     void env;
   }
 
+  /**
+   * Durable Objectへのリクエストを処理するメインハンドラ
+   *
+   * パスとHTTPメソッドに応じて適切なハンドラメソッドを呼び出します。
+   *
+   * @param request - クライアントからのHTTPリクエスト
+   * @returns HTTPレスポンス
+   */
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
@@ -52,6 +79,15 @@ export class VoteSessionDO implements DurableObject {
     return new Response("Not Found", { status: 404 });
   }
 
+  /**
+   * セッション初期化ハンドラ
+   *
+   * 新規投票セッションを作成し、Durable Objectストレージに保存します。
+   * 24時間後に自動削除されるアラームも設定します。
+   *
+   * @param request - セッション作成リクエスト（質問、投票タイプ、選択肢を含む）
+   * @returns 作成されたセッション情報
+   */
   async handleInit(request: Request): Promise<Response> {
     const body = (await request.json()) as CreateSessionRequest & {
       sessionId: string;
@@ -82,6 +118,15 @@ export class VoteSessionDO implements DurableObject {
     });
   }
 
+  /**
+   * セッション情報取得ハンドラ
+   *
+   * セッションの詳細情報を取得し、投票者の投票状況に応じて
+   * canVoteフラグとメッセージを付与します。
+   *
+   * @param request - セッション取得リクエスト（voterTokenをクエリパラメータに含む場合あり）
+   * @returns セッション情報、または404エラー
+   */
   async handleGetSession(request: Request): Promise<Response> {
     const session = await this.state.storage.get<Session>("session");
     if (!session) {
@@ -112,6 +157,16 @@ export class VoteSessionDO implements DurableObject {
     });
   }
 
+  /**
+   * 投票送信ハンドラ
+   *
+   * 投票リクエストを検証し、票数を更新します。
+   * バリデーション後、選択された選択肢の票数を増加させ、
+   * SSEで接続中のクライアントに更新を配信します。
+   *
+   * @param request - 投票リクエスト（choiceIdsとvoterTokenを含む）
+   * @returns 投票完了メッセージ、またはエラーレスポンス
+   */
   async handleVote(request: Request): Promise<Response> {
     const session = await this.state.storage.get<Session>("session");
     if (!session) {
@@ -188,6 +243,14 @@ export class VoteSessionDO implements DurableObject {
     });
   }
 
+  /**
+   * セッション終了ハンドラ
+   *
+   * セッションを終了状態にし、以降の投票を受け付けないようにします。
+   * SSEで接続中のクライアントに終了通知を配信します。
+   *
+   * @returns 更新されたセッション情報、または404エラー
+   */
   async handleClose(): Promise<Response> {
     const session = await this.state.storage.get<Session>("session");
     if (!session) {
@@ -208,6 +271,13 @@ export class VoteSessionDO implements DurableObject {
     });
   }
 
+  /**
+   * データエクスポートハンドラ
+   *
+   * セッションの現在の状態をJSON形式で返します。
+   *
+   * @returns セッションデータ、または404エラー
+   */
   async handleExport(): Promise<Response> {
     const session = await this.state.storage.get<Session>("session");
     if (!session) {
@@ -219,6 +289,14 @@ export class VoteSessionDO implements DurableObject {
     });
   }
 
+  /**
+   * Server-Sent Events (SSE) ストリームハンドラ
+   *
+   * クライアントとのSSE接続を確立し、リアルタイム更新を配信します。
+   * 接続時に現在のセッション状態を初期イベントとして送信します。
+   *
+   * @returns SSEストリームレスポンス
+   */
   handleStream(): Response {
     let controller: ReadableStreamDefaultController;
 
@@ -254,6 +332,11 @@ export class VoteSessionDO implements DurableObject {
     });
   }
 
+  /**
+   * 接続中のすべてのSSEクライアントにメッセージをブロードキャストします
+   *
+   * @param message - ブロードキャストするメッセージ（イベント名とデータを含む）
+   */
   broadcast(message: BroadcastMessage) {
     const data = `data: ${JSON.stringify(message)}\n\n`;
     const encoded = new TextEncoder().encode(data);
@@ -267,6 +350,12 @@ export class VoteSessionDO implements DurableObject {
     }
   }
 
+  /**
+   * アラームハンドラ（24時間後に自動実行）
+   *
+   * セッション作成時に設定されたアラームが発火すると、
+   * すべてのストレージデータを削除してリソースを開放します。
+   */
   async alarm() {
     // Delete all data
     await this.state.storage.deleteAll();
