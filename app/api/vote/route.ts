@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const body: CreateSessionRequest = await request.json();
 
-    // Validation
+    // バリデーション
     if (!body.question || body.question.trim().length === 0) {
       return NextResponse.json({ error: "質問を入力してください" }, { status: 400 });
     }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create session via Durable Object
+    // Durable Objectでセッションを作成
     const sessionId = uuidv4();
     const { env } = await getCloudflareContext();
     const id = env.VOTE_SESSION.idFromName(sessionId);

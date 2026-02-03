@@ -19,7 +19,7 @@ export default function VoteSessionPage() {
   const [error, setError] = useState<string>("");
   const [showResults, setShowResults] = useState(false);
 
-  // Fetch session info
+  // セッション情報を取得
   useEffect(() => {
     const fetchSession = async () => {
       try {
@@ -32,7 +32,7 @@ export default function VoteSessionPage() {
         }
 
         setSession(data);
-        setChoices(data.choices as Choice[]); // Initial choices
+        setChoices(data.choices as Choice[]);
         if (data.message) {
           setMessage(data.message);
         }
@@ -46,9 +46,9 @@ export default function VoteSessionPage() {
     fetchSession();
   }, [sessionId]);
 
-  // SSE for real-time updates
+  // リアルタイム更新用のSSE
   useEffect(() => {
-    // Only connect if organizer OR if voter explicitly wants to see results
+    // 主催者、または参加者が結果表示を選んだ場合のみ接続
     if (!isOrganizer && !showResults) return;
 
     const eventSource = new EventSource(`/api/vote/${sessionId}/stream`);
@@ -87,7 +87,7 @@ export default function VoteSessionPage() {
     };
   }, [sessionId, isOrganizer, showResults]);
 
-  // Handle vote submission
+  // 投票送信を処理
   const handleSubmit = async (selectedChoices: string[]) => {
     if (selectedChoices.length === 0) {
       setError("選択肢を選んでください");
@@ -114,14 +114,14 @@ export default function VoteSessionPage() {
       }
 
       setMessage(data.message);
-      // Update session state to reflect voted status
+      // 投票済み状態を反映
       setSession((prev) => (prev ? { ...prev, canVote: false } : null));
     } catch {
       setError("投票に失敗しました");
     }
   };
 
-  // Close session
+  // セッションを終了
   const handleCloseSession = async () => {
     try {
       await fetch(`/api/vote/${sessionId}/close`, {
@@ -133,7 +133,7 @@ export default function VoteSessionPage() {
     }
   };
 
-  // Export data
+  // データをエクスポート
   const handleExport = async (format: "json" | "csv") => {
     try {
       const res = await fetch(`/api/vote/${sessionId}/export?format=${format}`);
@@ -165,7 +165,7 @@ export default function VoteSessionPage() {
     );
   }
 
-  // Organizer view
+  // 主催者ビュー
   if (isOrganizer) {
     return (
       <OrganizerView
@@ -178,7 +178,7 @@ export default function VoteSessionPage() {
     );
   }
 
-  // Voter view
+  // 参加者ビュー
   return (
     <VoterView
       session={session}

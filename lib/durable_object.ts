@@ -46,32 +46,32 @@ export class VoteSessionDO implements DurableObject {
     const path = url.pathname;
     const method = request.method;
 
-    // Initialize session
+    // セッションを初期化
     if (method === "POST" && path === "/init") {
       return this.handleInit(request);
     }
 
-    // Get session info
+    // セッション情報を取得
     if (method === "GET" && path === "/") {
       return this.handleGetSession(request);
     }
 
-    // Submit vote
+    // 投票を送信
     if (method === "POST" && path === "/vote") {
       return this.handleVote(request);
     }
 
-    // Close session
+    // セッションを終了
     if (method === "POST" && path === "/close") {
       return this.handleClose();
     }
 
-    // SSE Stream
+    // SSEストリーム
     if (method === "GET" && path === "/stream") {
       return this.handleStream();
     }
 
-    // Export data
+    // データをエクスポート
     if (method === "GET" && path === "/export") {
       return this.handleExport();
     }
@@ -109,7 +109,7 @@ export class VoteSessionDO implements DurableObject {
     };
 
     await this.state.storage.put("session", session);
-    // Set alarm to delete after 24 hours
+    // 24時間後に削除するアラームを設定
     await this.state.storage.setAlarm(Date.now() + 24 * 60 * 60 * 1000);
 
     return new Response(JSON.stringify(session), {
@@ -133,7 +133,7 @@ export class VoteSessionDO implements DurableObject {
       return new Response(JSON.stringify({ error: "Session not found" }), { status: 404 });
     }
 
-    // Check if user has voted
+    // 投票済みか確認
     const url = new URL(request.url);
     const voterToken = url.searchParams.get("voterToken");
     let hasVoted = false;
@@ -222,7 +222,7 @@ export class VoteSessionDO implements DurableObject {
       return new Response(JSON.stringify({ error: "既に投票済みです" }), { status: 409 });
     }
 
-    // Update vote counts
+    // 票数を更新
     session.choices = session.choices.map((c) => {
       if (choiceIds.includes(c.choiceId)) {
         return { ...c, voteCount: c.voteCount + 1 };
@@ -230,11 +230,11 @@ export class VoteSessionDO implements DurableObject {
       return c;
     });
 
-    // Save session and voter record
+    // セッションと投票者記録を保存
     await this.state.storage.put("session", session);
     await this.state.storage.put(`voter:${voterToken}`, true);
 
-    // Broadcast update
+    // 更新をブロードキャスト
     this.broadcast({ event: "update", data: session });
 
     return new Response(JSON.stringify({ message: "投票が完了しました" }), {
@@ -310,7 +310,7 @@ export class VoteSessionDO implements DurableObject {
       },
     });
 
-    // Send initial data
+    // 初期データを送信
     this.state.storage.get<Session>("session").then((session: Session | undefined) => {
       if (session) {
         const payload = { event: "init", data: session };
@@ -318,7 +318,7 @@ export class VoteSessionDO implements DurableObject {
         try {
           controller.enqueue(new TextEncoder().encode(data));
         } catch {
-          // Ignore if stream is closed
+          // ストリームが閉じている場合は無視
         }
       }
     });
@@ -357,7 +357,7 @@ export class VoteSessionDO implements DurableObject {
    * すべてのストレージデータを削除してリソースを開放します。
    */
   async alarm() {
-    // Delete all data
+    // すべてのデータを削除
     await this.state.storage.deleteAll();
   }
 }

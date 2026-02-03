@@ -1,4 +1,4 @@
-// Data models for the voting application
+// 投票アプリケーションのデータモデル
 
 /**
  * 投票タイプ
@@ -51,7 +51,7 @@ export interface Session {
 /**
  * 投票記録を表すデータモデル
  *
- * NOTE: 現在のアーキテクチャではDurable Object内でvoterToken単位での
+ * 注記: 現在のアーキテクチャではDurable Object内でvoterToken単位での
  * 重複チェックのみ行っており、Vote型の完全な記録は保存していません。
  */
 export interface Vote {
@@ -65,7 +65,7 @@ export interface Vote {
   votedAt: Date;
 }
 
-// API request/response types
+// APIのリクエスト/レスポンス型
 
 /**
  * セッション作成APIのリクエスト型

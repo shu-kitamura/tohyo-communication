@@ -6,7 +6,7 @@ import { SubmitVoteRequest, SubmitVoteResponse } from "@/lib/types";
 
 const VOTER_TOKEN_COOKIE = "voter_token";
 
-// GET /vote/:sessionId - Get session info
+// GET /vote/:sessionId - セッション情報を取得
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> },
@@ -42,7 +42,7 @@ export async function GET(
   }
 }
 
-// POST /vote/:sessionId - Submit vote
+// POST /vote/:sessionId - 投票を送信
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> },
@@ -54,11 +54,11 @@ export async function POST(
     const id = env.VOTE_SESSION.idFromName(sessionId);
     const stub = env.VOTE_SESSION.get(id);
 
-    // Check if already voted
+    // 既に投票済みか確認
     const cookieStore = await cookies();
     let voterToken = cookieStore.get(VOTER_TOKEN_COOKIE)?.value || "";
 
-    // Generate voter token if not exists
+    // 投票者トークンが無ければ生成
     if (!voterToken) {
       voterToken = `voter_${uuidv4()}`;
     }
@@ -88,11 +88,11 @@ export async function POST(
       status: 201,
     });
 
-    // Set cookie
+    // Cookieを設定
     res.cookies.set(VOTER_TOKEN_COOKIE, voterToken, {
       httpOnly: true,
       sameSite: "strict",
-      maxAge: 86400, // 24 hours
+      maxAge: 86400, // 24時間
       path: "/",
     });
 

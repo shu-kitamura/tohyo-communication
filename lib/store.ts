@@ -1,18 +1,18 @@
-// In-memory data store for voting sessions and votes
+// 投票セッションと投票のインメモリストア
 import { Session, Vote } from "./types";
 
 /**
  * インメモリ投票データストアクラス
  *
- * NOTE: このストアは主に開発・テスト用です。
+ * 注記: このストアは主に開発・テスト用です。
  * 本番環境ではDurable Objectを使用してデータを永続化しています。
  */
 class VotingStore {
   private sessions = new Map<string, Session>();
-  private votes = new Map<string, Vote[]>(); // sessionId -> votes[]
-  private voterTokens = new Map<string, Set<string>>(); // sessionId -> Set of voterTokens
+  private votes = new Map<string, Vote[]>(); // sessionId -> 投票配列
+  private voterTokens = new Map<string, Set<string>>(); // sessionId -> 投票者トークンのセット
 
-  // Session management
+  // セッション管理
   /**
    * 新規セッションを作成し、ストアに登録します
    *
@@ -55,7 +55,6 @@ class VotingStore {
     this.voterTokens.delete(sessionId);
   }
 
-  // Vote management
   /**
    * 投票記録を追加し、投票者トークンを登録します
    *
@@ -93,7 +92,6 @@ class VotingStore {
     return this.votes.get(sessionId) || [];
   }
 
-  // Cleanup old sessions (24 hours timeout)
   /**
    * 24時間以上経過したセッションを自動削除します
    *
@@ -101,7 +99,7 @@ class VotingStore {
    */
   cleanupOldSessions(): void {
     const now = new Date();
-    const timeoutMs = 24 * 60 * 60 * 1000; // 24 hours
+    const timeoutMs = 24 * 60 * 60 * 1000; // 24時間
 
     for (const [sessionId, session] of this.sessions.entries()) {
       const age = now.getTime() - session.createdAt.getTime();
@@ -112,11 +110,10 @@ class VotingStore {
   }
 }
 
-// Singleton instance
 /** シングルトンのVotingStoreインスタンス */
 export const store = new VotingStore();
 
-// Cleanup old sessions every hour
+// 1時間ごとに古いセッションを自動削除
 setInterval(
   () => {
     store.cleanupOldSessions();
