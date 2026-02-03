@@ -30,7 +30,7 @@ export function VoterView({
 }: VoterViewProps) {
   const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
 
-  // Handle choice selection
+  // 選択肢の選択処理
   const handleChoiceChange = (choiceId: string) => {
     if (session?.voteType === "single") {
       setSelectedChoices([choiceId]);
@@ -47,7 +47,7 @@ export function VoterView({
     setSelectedChoices([]);
   };
 
-  // Show results view
+  // 結果表示ビュー
   if (showResults) {
     const totalVotes = choices.reduce((sum, c) => sum + c.voteCount, 0);
     return (
@@ -68,7 +68,7 @@ export function VoterView({
     );
   }
 
-  // Completed or Closed view
+  // 投票完了/終了ビュー
   if (message || !session.canVote) {
     return (
       <div className="min-h-[calc(100vh-4rem)] px-4 py-8">
@@ -96,7 +96,7 @@ export function VoterView({
     );
   }
 
-  // Voting Form view
+  // 投票フォームビュー
   return (
     <div className="min-h-[calc(100vh-4rem)] px-4 py-8">
       <div className="mx-auto max-w-xl space-y-4">

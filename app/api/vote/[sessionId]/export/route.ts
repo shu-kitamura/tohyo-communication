@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { ExportJsonResponse, Session } from "@/lib/types";
 
-// GET /vote/:sessionId/export - Export results
+// GET /vote/:sessionId/export - 結果をエクスポート
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> },
@@ -69,8 +69,8 @@ export async function GET(
     }
 
     if (format === "image") {
-      // For now, return a not implemented error
-      // Image export would require server-side canvas or screenshot library
+      // 現在は未実装エラーを返す
+      // 画像エクスポートにはサーバー側のキャンバス/スクリーンショットライブラリが必要
       return NextResponse.json({ error: "画像エクスポートは未実装です" }, { status: 501 });
     }
 

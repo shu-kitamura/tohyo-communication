@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-// POST /vote/:sessionId/close - Close voting session
+// POST /vote/:sessionId/close - 投票セッションを終了
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> },

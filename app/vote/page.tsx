@@ -76,7 +76,7 @@ export default function CreateVotePage() {
         return;
       }
 
-      // Redirect to organizer view
+      // 主催者ビューへ遷移
       router.push(`/vote/${data.sessionId}?view=organizer`);
     } catch {
       setError("投票セッションの作成に失敗しました");

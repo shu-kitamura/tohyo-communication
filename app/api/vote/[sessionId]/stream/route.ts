@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-// GET /vote/:sessionId/stream - SSE for real-time updates
+// GET /vote/:sessionId/stream - リアルタイム更新用のSSE
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> },
