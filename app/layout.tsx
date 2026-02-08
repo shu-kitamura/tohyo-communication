@@ -14,10 +14,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const DEFAULT_BASE_URL = "https://vote.shu-kita.net";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || DEFAULT_BASE_URL),
   title: "TOHYO通信 ~Vote Communication~",
   description: "プレゼンテーションやイベントで使用するリアルタイム投票Webアプリケーション",
+  twitter: {
+    card: "summary_large_image",
+    images: ["/twitter-image.png"],
+  },
 };
 
 export default function RootLayout({
