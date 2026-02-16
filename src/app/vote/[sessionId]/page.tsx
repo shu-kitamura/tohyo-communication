@@ -3,8 +3,8 @@
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Choice, GetSessionResponse, SubmitVoteRequest, SubmitVoteResponse } from "@/lib/types";
-import { OrganizerView } from "./components/organizer-view";
-import { VoterView } from "./components/voter-view";
+import { OrganizerView } from "@/components/vote-session/organizer-view";
+import { VoterView } from "@/components/vote-session/voter-view";
 
 export default function VoteSessionPage() {
   const params = useParams();
