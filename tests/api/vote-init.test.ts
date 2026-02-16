@@ -1,5 +1,5 @@
 import { POST } from "@/app/api/vote/route";
-import { createRequest } from "@/tests/helpers/request";
+import { createRequest } from "@tests/helpers/request";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { v4 as uuidv4 } from "uuid";
 

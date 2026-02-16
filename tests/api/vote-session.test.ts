@@ -1,5 +1,5 @@
 import { GET, POST } from "@/app/api/vote/[sessionId]/route";
-import { createRequest } from "@/tests/helpers/request";
+import { createRequest } from "@tests/helpers/request";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { cookies } from "next/headers";
 

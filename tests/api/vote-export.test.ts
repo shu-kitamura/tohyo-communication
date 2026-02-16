@@ -1,5 +1,5 @@
 import { GET } from "@/app/api/vote/[sessionId]/export/route";
-import { createRequest } from "@/tests/helpers/request";
+import { createRequest } from "@tests/helpers/request";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 jest.mock("@opennextjs/cloudflare", () => ({

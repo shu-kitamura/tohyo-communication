@@ -24,12 +24,12 @@
   - **現状**: `getCloudflareContext()` が型引数なしで使用されており、`env` が `any` (または `unknown`) になっている。
   - **対応**: `getCloudflareContext<CloudflareEnv>()` のようにジェネリクスを指定し、型安全性を確保する。
   - **対象ファイル**:
-    - `app/api/vote/route.ts`
-    - `app/api/vote/[sessionId]/route.ts`
-    - `app/api/vote/[sessionId]/stream/route.ts`
+    - `src/app/api/vote/route.ts`
+    - `src/app/api/vote/[sessionId]/route.ts`
+    - `src/app/api/vote/[sessionId]/stream/route.ts`
 
 - [ ] **Durable Object の型定義強化**
-  - **現状**: `lib/durable_object.ts` の `VoteSessionDO` コンストラクタで `_env: unknown` となっている。
+  - **現状**: `src/lib/durable_object.ts` の `VoteSessionDO` コンストラクタで `_env: unknown` となっている。
   - **対応**: `CloudflareEnv` 型をインポートして適用する。
 
 - [ ] **Durable Object 内のバリデーション強化**
