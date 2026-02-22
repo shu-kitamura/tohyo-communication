@@ -1,5 +1,10 @@
 // 投票アプリケーションのデータモデル
 
+/** セッション作成時の選択肢数の最小値 */
+export const MIN_SESSION_CHOICES = 2;
+/** セッション作成時の選択肢数の最大値 */
+export const MAX_SESSION_CHOICES = 100;
+
 /**
  * 投票タイプ
  * - single: 単一選択（1つだけ選択可能）

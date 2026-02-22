@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { CreateSessionRequest, CreateSessionResponse, Session } from "@/lib/types";
+import {
+  CreateSessionRequest,
+  CreateSessionResponse,
+  MAX_SESSION_CHOICES,
+  MIN_SESSION_CHOICES,
+  Session,
+} from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,12 +18,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "質問を入力してください" }, { status: 400 });
     }
 
-    if (!body.choices || body.choices.length < 2) {
-      return NextResponse.json({ error: "選択肢は2つ以上必要です" }, { status: 400 });
+    if (!body.choices || body.choices.length < MIN_SESSION_CHOICES) {
+      return NextResponse.json(
+        { error: `選択肢は${MIN_SESSION_CHOICES}つ以上必要です` },
+        { status: 400 },
+      );
     }
 
-    if (body.choices.length > 10) {
-      return NextResponse.json({ error: "選択肢は10個までです" }, { status: 400 });
+    if (body.choices.length > MAX_SESSION_CHOICES) {
+      return NextResponse.json(
+        { error: `選択肢は${MAX_SESSION_CHOICES}個までです` },
+        { status: 400 },
+      );
     }
 
     // INIT-08: 選択肢のtextが空/空白の場合は不正

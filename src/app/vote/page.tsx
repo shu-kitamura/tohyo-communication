@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CreateSessionRequest, CreateSessionResponse, VoteType } from "@/lib/types";
+import {
+  CreateSessionRequest,
+  CreateSessionResponse,
+  MAX_SESSION_CHOICES,
+  MIN_SESSION_CHOICES,
+  VoteType,
+} from "@/lib/types";
 
 import { AlertCircleIcon, Plus, X } from "lucide-react";
 
@@ -17,18 +23,20 @@ export default function CreateVotePage() {
   const router = useRouter();
   const [question, setQuestion] = useState("");
   const [voteType, setVoteType] = useState<VoteType>("single");
-  const [choices, setChoices] = useState(["", ""]);
+  const [choices, setChoices] = useState<string[]>(
+    Array.from({ length: MIN_SESSION_CHOICES }, () => ""),
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleAddChoice = () => {
-    if (choices.length < 10) {
+    if (choices.length < MAX_SESSION_CHOICES) {
       setChoices([...choices, ""]);
     }
   };
 
   const handleRemoveChoice = (index: number) => {
-    if (choices.length > 2) {
+    if (choices.length > MIN_SESSION_CHOICES) {
       setChoices(choices.filter((_, i) => i !== index));
     }
   };
@@ -49,8 +57,8 @@ export default function CreateVotePage() {
     }
 
     const validChoices = choices.filter((c) => c.trim());
-    if (validChoices.length < 2) {
-      setError("選択肢は2つ以上必要です");
+    if (validChoices.length < MIN_SESSION_CHOICES) {
+      setError(`選択肢は${MIN_SESSION_CHOICES}つ以上必要です`);
       return;
     }
 
@@ -144,7 +152,7 @@ export default function CreateVotePage() {
                       <Button
                         type="button"
                         variant="outline"
-                        disabled={choices.length <= 2}
+                        disabled={choices.length <= MIN_SESSION_CHOICES}
                         onClick={() => handleRemoveChoice(index)}
                         className="disabled:bg-slate-200"
                       >
@@ -153,7 +161,13 @@ export default function CreateVotePage() {
                     </div>
                   ))}
                   <div>
-                    <Button type="button" variant="ghost" size="sm" onClick={handleAddChoice}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleAddChoice}
+                      disabled={choices.length >= MAX_SESSION_CHOICES}
+                    >
                       <Plus className="mr-1 h-4 w-4" /> 選択肢を追加
                     </Button>
                   </div>

@@ -1,4 +1,5 @@
 import { POST } from "@/app/api/vote/route";
+import { MAX_SESSION_CHOICES } from "@/lib/types";
 import { createRequest } from "@tests/helpers/request";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { v4 as uuidv4 } from "uuid";
@@ -128,13 +129,13 @@ describe("POST /api/vote", () => {
     expect(res.status).toBe(400);
   });
 
-  it("INIT-05: choicesが11件以上なら400", async () => {
+  it("INIT-05: choicesが上限超過なら400", async () => {
     const req = createRequest("http://localhost/api/vote", {
       method: "POST",
       body: {
         question: "Q",
         voteType: "single",
-        choices: Array.from({ length: 11 }).map((_, i) => ({
+        choices: Array.from({ length: MAX_SESSION_CHOICES + 1 }).map((_, i) => ({
           text: `C${i}`,
         })),
       },
