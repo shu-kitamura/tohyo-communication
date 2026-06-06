@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | ランタイム | Cloudflare Workers | 画面配信、REST API、D1 操作、SSE endpoint |
 | データベース | Cloudflare D1 | rooms / host_sessions / questions / options / votes / vote_choices の永続化 |
-| リアルタイム通知ハブ | Durable Objects | room_id ごとの SSE 接続管理と broadcast |
+| リアルタイム配信ハブ | Durable Objects | room_id ごとの表示用スナップショット、SSE 接続管理、broadcast |
 | ブラウザ通知 | Server-Sent Events | サーバーからブラウザへの片方向更新通知 |
 
 Workers は基本的に 1 つで構成する。投票作成用、投票更新用のように Worker を分けるのではなく、1 つの Worker の中で API ルートを分ける。
@@ -28,7 +28,7 @@ Workers は基本的に 1 つで構成する。投票作成用、投票更新用
   └─ 投票データの永続化
 
 1 Durable Object class
-  └─ room_id ごとの SSE 通知ハブ
+  └─ room_id ごとのスナップショットキャッシュ + SSE 配信ハブ
 ```
 
 ## 全体アーキテクチャ
@@ -53,33 +53,97 @@ Cloudflare D1
 
 RoomEvents Durable Object
   ├─ room_id ごとに 1 インスタンス
+  ├─ 最新の表示用スナップショットを保持
   ├─ SSE 接続中のブラウザを保持
   └─ room 内の主催者・参加者へイベントを broadcast
 ```
 
 ## データの責務
 
-D1 を「真実のデータ」として扱う。SSE は最新状態そのものではなく、「更新されたので再取得してよい」という通知として扱う。
+D1 を唯一の Source of Truth として扱う。Durable Object は D1 から作成した最新の表示用スナップショットを保持し、SSE で接続中のブラウザへ配信する。
+
+DO の状態はキャッシュであり、消えても D1 から復元できるようにする。DO から D1 へ直接アクセスせず、D1 の読み書きとスナップショット生成は Worker が担当する。
 
 ```text
 D1:
   rooms, host_sessions, questions, options, votes, vote_choices
   集計結果の元データ
   ルーム状態
+  room 単位の state_version
   管理パスワードハッシュ
   主催者セッショントークンハッシュ
   投票者重複排除用ハッシュ
 
 Durable Object:
   room_id ごとの接続一覧
+  最新の表示用スナップショット
+  適用済み stateVersion
   SSE broadcast
-  必要なら短期的な event version 管理
 
 Browser:
   anonymous session Cookie
   host session Cookie
   画面表示用 state
+  最後に受信した stateVersion
 ```
+
+DO に保持するスナップショットはインメモリキャッシュを基本とする。DO ストレージへ投票データを二重保存しない。
+
+## スナップショットと version 管理
+
+D1 の表示状態を変更する処理では、room 単位の `state_version` を同じトランザクション内で1増やす。
+
+```text
+質問作成
+質問開始
+投票
+質問終了
+ルーム終了
+  ↓
+D1 のデータ更新 + rooms.state_version の更新
+```
+
+Worker は D1 の更新トランザクション内で、更新後の `state_version` と表示用スナップショットを取得する。その後、DO に絶対値のスナップショットを渡す。
+
+```ts
+type RoomSnapshot = {
+  roomId: string;
+  stateVersion: number;
+  roomStatus: "open" | "closed";
+  currentQuestion?: {
+    id: string;
+    title: string;
+    status: "draft" | "active" | "closed";
+    questionType: "single" | "multiple";
+    minChoices: number;
+    maxChoices: number;
+    options: Array<{
+      id: string;
+      label: string;
+      sortOrder: number;
+    }>;
+  };
+  results?: {
+    questionId: string;
+    voterCount: number;
+    counts: Record<string, number>;
+  };
+};
+```
+
+DO は保持中の version より新しいスナップショットだけを適用する。
+
+```text
+incoming.stateVersion <= current.stateVersion
+  -> 再送または古い通知として無視
+
+incoming.stateVersion > current.stateVersion
+  -> キャッシュを置き換えて SSE 配信
+```
+
+票数の差分だけを DO に渡して加算しない。絶対値を渡すことで、再送や通知順序の逆転があっても集計結果を壊さない。
+
+命名は、D1 のカラムでは `state_version`、TypeScript 型と JSON payload では `stateVersion` に統一する。
 
 ## ルーム作成フロー
 
@@ -91,7 +155,7 @@ Browser:
 Worker
   -> room_id を生成
   -> admin_password_hash を作成
-  -> D1 に rooms / questions / options を保存
+  -> D1 transaction で rooms / questions / options を保存
   -> 初回用 host_session_token を生成
   -> host_sessions に token_hash を保存
   -> host session Cookie を Set-Cookie
@@ -107,6 +171,8 @@ Worker
 `admin_password` の生値は DB に保存しない。D1 には `admin_password_hash` だけ保存する。
 
 主催者セッションは管理パスワードの検証に成功したときに発行する。`host_session_token` の生値は DB に保存せず、D1 には `host_sessions.token_hash` だけ保存する。
+
+ルーム作成時に DO を事前作成する必要はない。最初の SSE 接続または最初の状態更新時に、`room_id` から同じ DO を取得する。
 
 ## 参加者入室フロー
 
@@ -188,25 +254,36 @@ Max-Age=60日程度
 Worker
   -> Cookie から anonymous_session_id を取得
   -> voter_key_hash を作成
-  -> room が open か確認
-  -> question が active か確認
-  -> option が対象 question に属しているか確認
-  -> 選択数が min_choices / max_choices を満たすか確認
-  -> D1 transaction で votes / vote_choices を INSERT
+  -> D1 transaction 内で以下を実行
+     -> room が open か確認
+     -> question が active か確認
+     -> option が対象 question に属しているか確認
+     -> 選択数が min_choices / max_choices を満たすか確認
+     -> votes / vote_choices を INSERT
+     -> rooms.state_version を1増やす
+     -> 更新後の results と state_version を取得
   -> UNIQUE 違反なら 409 Conflict
 
 Worker
-  -> room_id の RoomEvents Durable Object に notify
+  -> room_id の RoomEvents Durable Object に
+     snapshot + stateVersion を通知
 
 RoomEvents Durable Object
-  -> SSE 接続中の主催者・参加者へ results.updated を broadcast
-
-各ブラウザ
-  -> GET /api/questions/:questionId/results
-  -> 最新集計を表示
+  -> 新しい stateVersion の場合だけキャッシュを置き換える
+  -> SSE 接続中の主催者・参加者へ snapshot を broadcast
 ```
 
-SSE イベントに集計結果を全部入れず、原則として再取得の合図にする。
+更新1回につき Worker が D1 からスナップショットを1回作り、DO が接続者全員へ配信する。接続者ごとの結果再取得は行わない。
+
+```text
+参加者100人
+投票1回
+  -> D1 更新・集計 1回
+  -> Worker から DO へ通知 1回
+  -> DO から100人へ SSE 配信
+```
+
+集計は D1 の更新トランザクション内で確定させる。コミット後に別の SELECT を行うと、後続更新を含む結果と古い `state_version` を組み合わせる可能性があるため避ける。
 
 ## SSE 設計
 
@@ -224,43 +301,104 @@ Browser
 
 Worker
   -> room の存在を確認
+  -> D1 から最新 snapshot + state_version を取得
   -> env.ROOM_EVENTS.idFromName(roomId) で Durable Object ID を取得
-  -> Durable Object に request を渡す
+  -> snapshot と接続者種別を付けて Durable Object に request を渡す
 
 RoomEvents Durable Object
+  -> Worker から渡された snapshot が新しければキャッシュを更新
   -> SSE stream を返す
   -> 接続を保持
+  -> 接続直後に現在の snapshot を送信
 ```
+
+SSE 接続ごとに D1 を1回読むが、更新イベントごとに接続者全員が D1 を読むことは避けられる。DO が再起動してインメモリ状態を失った場合も、次の接続時に D1 から復元される。
 
 通知フロー:
 
 ```text
 Worker
-  -> Durable Object に POST /notify
+  -> D1 更新後の snapshot + state_version を
+     stateVersion に変換して Durable Object に POST /snapshot
 
 RoomEvents Durable Object
-  -> 接続中の SSE clients に event を送信
+  -> 古い version を無視
+  -> キャッシュを置き換える
+  -> 接続中の SSE clients に snapshot を送信
 ```
 
 イベント例:
 
 ```text
-event: results.updated
-data: {"roomId":"room_xxx","questionId":"question_xxx","version":42}
+id: 42
+event: room.snapshot
+data: {
+  "roomId": "room_xxx",
+  "stateVersion": 42,
+  "roomStatus": "open",
+  "currentQuestion": {
+    "id": "question_xxx",
+    "title": "好きなクラウドは？",
+    "status": "active",
+    "questionType": "single",
+    "minChoices": 1,
+    "maxChoices": 1,
+    "options": [
+      {"id": "option_1", "label": "AWS", "sortOrder": 1},
+      {"id": "option_2", "label": "Azure", "sortOrder": 2}
+    ]
+  },
+  "results": {
+    "questionId": "question_xxx",
+    "voterCount": 15,
+    "counts": {
+      "option_1": 10,
+      "option_2": 5
+    }
+  }
+}
 ```
 
-想定イベント:
+基本イベント:
 
 ```text
-room.closed
-question.created
-question.activated
-question.closed
-options.updated
-results.updated
+room.snapshot
 ```
 
-SSE は通知専用とする。通知を取り逃した場合でも、ブラウザは再接続時に REST API で最新状態を取り直せば復旧できる。
+質問作成、投票開始、投票、質問終了、ルーム終了は、すべて `room.snapshot` の内容で表現する。必要になった場合だけ、操作完了通知などの個別イベントを追加する。
+
+### 主催者向けと参加者向けの配信
+
+Worker は SSE 接続時に Cookie から主催者セッションを検証し、DO に接続者種別を渡す。ブラウザから任意の種別を指定させない。
+
+```text
+host:
+  currentQuestion
+  active 中を含む results
+
+participant:
+  currentQuestion
+  公開設定で許可された場合だけ results
+```
+
+参加者に投票中結果を見せない場合、DO は参加者向け payload から `results` を除外する。画面で隠すだけではなく、SSE payload 自体に含めない。
+
+### 通知失敗と再接続
+
+D1 更新と DO 通知は単一トランザクションにできない。D1 更新成功後に DO 通知が失敗しても、D1 の更新は成功として扱う。
+
+```text
+D1 更新成功
+  -> DO 通知を短時間で再試行
+  -> 失敗した場合はログへ記録
+  -> 次回の更新通知、SSE 再接続、画面再表示で最新 snapshot に復旧
+```
+
+DO 通知失敗中は既存接続の表示が一時的に古くなる可能性がある。通知の確実な配信が必要になった場合は、D1 outbox または Cloudflare Queues の導入を別途検討する。
+
+EventSource の自動再接続時は、Worker が D1 から最新スナップショットを取得して DO に渡す。DO は `stateVersion` を比較してから接続直後のスナップショットを返すため、取り逃したイベントを個別に再生しなくても最新状態へ復旧できる。
+
+SSE 接続には定期的な heartbeat を送り、切断済み client は write 失敗または request abort を検知して接続一覧から削除する。
 
 ## 主催者操作
 
@@ -335,23 +473,26 @@ GET  /api/rooms/:roomId/events
 
 ## 画面更新の考え方
 
-ブラウザは初回表示時と SSE 再接続時に REST API で最新状態を取得する。
+ブラウザは初回表示用 API から参加者固有の状態を取得し、共有される room 状態は SSE のスナップショットで更新する。
 
 ```text
 初回表示:
   GET /api/rooms/:roomId
-  GET /api/questions/:questionId/results
   SSE 接続開始
+  room.snapshot を受信
 
 SSE 受信:
-  results.updated -> GET /api/questions/:questionId/results
-  question.activated -> GET /api/rooms/:roomId
-  room.closed -> GET /api/rooms/:roomId
+  stateVersion が現在値より新しい
+    -> 画面 state を snapshot で置き換える
+  stateVersion が現在値以下
+    -> 無視する
 
 SSE 再接続:
-  GET /api/rooms/:roomId
-  必要な results を再取得
+  Worker が D1 から最新 snapshot を取得
+  DO が接続直後に snapshot を送信
 ```
+
+`canVote` や自分が投票済みかどうかなど、接続者ごとに異なる状態は共有スナップショットへ含めない。投票 API のレスポンスと初回表示用 API で管理する。
 
 ## エラー方針
 

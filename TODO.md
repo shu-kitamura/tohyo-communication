@@ -41,11 +41,26 @@
 
 ### SSE イベント
 
-- [ ] event 名を確定する
-- [ ] payload 形式を決める
-- [ ] 通知を受けたときに再取得する API を決める
-- [ ] SSE 再接続時の最新状態取得フローを決める
-- [ ] host 専用イベントと参加者向けイベントを分けるか決める
+- [x] 基本 event 名を `room.snapshot` にする
+- [x] payload を `snapshot + stateVersion` 形式にする
+- [x] 通知ごとの D1 再取得は行わず、DO の snapshot で画面を更新する
+- [x] SSE 再接続時は Worker が D1 から最新 snapshot を取得して DO を復元する
+- [x] host と participant で配信 payload を分ける
+- [ ] host / participant の payload 型を確定する
+- [ ] DO 通知のリトライ回数とタイムアウトを決める
+- [ ] SSE heartbeat の間隔を決める
+- [ ] 通知失敗時のログ項目を決める
+
+### DO スナップショット
+
+- [x] D1 を唯一の Source of Truth とする
+- [x] DO は room 単位のインメモリ snapshot cache と SSE 配信を担当する
+- [x] DO は D1 に直接アクセスしない
+- [x] D1 の更新と同じトランザクションで `rooms.state_version` を増やす
+- [x] DO は新しい `stateVersion` の snapshot だけを適用する
+- [x] DO に票数の差分ではなく絶対値を渡す
+- [ ] `RoomSnapshot` の最終的な TypeScript 型を確定する
+- [ ] DO 通知失敗時に outbox / Queues が必要になる条件を決める
 
 ## 実装直前
 
@@ -53,7 +68,10 @@
 
 - [ ] D1 用の `schema.sql` を作る
 - [ ] index / unique 制約を確定する
+- [ ] `rooms.state_version INTEGER NOT NULL DEFAULT 1` を追加する
 - [ ] D1 で使える CHECK / FK / transaction の範囲を確認する
+- [ ] D1 `batch()` 内で更新後 snapshot を取得できることを検証する
+- [ ] question close と vote の競合を条件付き SQL で防ぐ
 - [ ] seed data が必要か決める
 
 ### 画面フロー
@@ -73,6 +91,7 @@
 - [ ] 投票者数を表示するか決める
 - [ ] 結果を参加者にも常時見せるか決める
 - [ ] active 中の質問の結果を見せるか決める
+- [ ] participant 用 snapshot から results を除外する条件を決める
 
 ## 後回しでよい
 
@@ -82,10 +101,11 @@
 - [ ] host session 強制失効
 - [ ] 管理パスワード変更
 - [ ] D1 read replication 対応
+- [ ] 通知の確実な配信が必要になった場合の outbox / Queues 対応
 - [ ] 本番運用時のログ / メトリクス
 - [ ] デプロイ手順
 
 ## 関連ドキュメント
 
-- `database-design.md`
-- `system-design.md`
+- `docs/database-design.md`
+- `docs/system-design.md`
