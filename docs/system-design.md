@@ -150,14 +150,13 @@ incoming.stateVersion > current.stateVersion
 ```text
 主催者ブラウザ
   -> POST /api/rooms
-     title, admin_password, questions, options
+     title, admin_password
 
 Worker
   -> room_id を生成
   -> admin_password_hash を作成
-  -> D1 transaction で rooms / questions / options を保存
+  -> D1 transaction で rooms / host_sessions を保存
   -> 初回用 host_session_token を生成
-  -> host_sessions に token_hash を保存
   -> host session Cookie を Set-Cookie
 
 Worker
@@ -173,6 +172,8 @@ Worker
 主催者セッションは管理パスワードの検証に成功したときに発行する。`host_session_token` の生値は DB に保存せず、D1 には `host_sessions.token_hash` だけ保存する。
 
 ルーム作成時に DO を事前作成する必要はない。最初の SSE 接続または最初の状態更新時に、`room_id` から同じ DO を取得する。
+
+ルーム作成と質問作成は分離する。ルーム作成時には質問を受け取らず、作成後の主催者画面から `POST /api/rooms/:roomId/questions` で追加する。これにより、ルーム作成トランザクションと質問の入力検証を独立させる。
 
 ## 参加者入室フロー
 
