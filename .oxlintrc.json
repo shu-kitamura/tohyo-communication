@@ -42,6 +42,9 @@
     ".next",
     ".open-next",
     ".wrangler",
+    "dist",
+    "drizzle",
+    "legacy",
     "package-lock.json"
   ]
 }
