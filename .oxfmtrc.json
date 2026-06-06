@@ -6,6 +6,11 @@
     ".next",
     ".open-next",
     ".wrangler",
-    "package-lock.json"
+    "dist",
+    "drizzle",
+    "docs",
+    "legacy",
+    "package-lock.json",
+    "worker-configuration.d.ts"
   ]
 }

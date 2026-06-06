@@ -1,71 +1,88 @@
-# TOHYO通信 \~Vote Communication\~
+# TOHYO通信
 
-サーバーレス・リアルタイム投票アプリケーション。  
-https://vote.shu-kita.net にて公開しています。
+イベントやワークショップ向けのリアルタイム投票アプリケーションです。
 
-## 概要
-
-イベントやワークショップで、参加者の意見をリアルタイムに収集・可視化するためのWebアプリケーションです。  
-既存の投票ツールにおける「リアルタイム性の欠如」や「視認性の低さ」を解決するために開発しました。
-
-**特徴:**
-
-- **ログイン不要**: QRコードを読み取るだけで即座に参加可能。
-- **リアルタイム更新**: 投票結果は主催者・参加者の画面に瞬時に反映。
-- **サーバーレス**: Cloudflare エッジネットワーク上で動作し、低遅延かつスケーラブル。
-
-### Demo
-
-← 参加者画面 主催者画面 →
-
-![Demo GIF](./docs/tohyo_demo.gif)
+現在、ルートディレクトリでは新アーキテクチャへの移行を進めています。旧 Next.js 実装は `legacy/` に退避してあり、公開中の https://vote.shu-kita.net は旧実装を基にしています。
 
 ## アーキテクチャ
 
-本プロジェクトでは、**「ステートフルなサーバーレス」** を実現するために以下のアーキテクチャを採用しています。
+- D1 を永続データの Source of Truth とする
+- Cloudflare Workers + Hono が API、認証、入力検証、D1 操作を担当する
+- Durable Objects が room 単位の snapshot cache と SSE 配信を担当する
+- React SPA が Worker API と EventSource API を利用する
 
-### 1. Cloudflare Durable Objects による状態管理
-
-通常、リアルタイム投票アプリにはデータベースとWebサーバーが必要ですが、本アプリでは **Cloudflare Durable Objects** を採用することで、これらを単一のコンポーネントで完結させています。
-
-- **整合性**: セッション（投票ルーム）ごとに独立した Durable Object が立ち上がり、投票データの整合性を担保します。
-- **低遅延**: エッジロケーションで動作するため、ユーザーに近い場所で処理が行われます。
-
-### 2. Server-Sent Events (SSE) によるリアルタイム配信
-
-双方向通信が必要なチャットアプリとは異なり、投票アプリは「サーバーからクライアントへの一方向の更新通知」が主です。そのため、WebSocket ではなく **Server-Sent Events (SSE)** を採用しました。
-
-- **軽量**: HTTPベースであるため、ファイアウォールやプロキシとの親和性が高く、実装もシンプルです。
-- **効率的**: 投票が行われたタイミングでのみイベントを配信し、無駄な通信を抑制しています。
+設計の詳細は [`docs/system-design.md`](./docs/system-design.md) と [`docs/database-design.md`](./docs/database-design.md) を参照してください。
 
 ## 技術スタック
 
-- **Framework**: Next.js(App Router)
-- **UI**: React / Tailwind CSS
-- **Language**: TypeScript
-- **Infrastructure**: Cloudflare Workers / Durable Objects
+### Frontend
 
-## 機能一覧
+- React 19
+- Vite 8
+- TypeScript
+- React Router
+- Tailwind CSS
+- EventSource API
 
-### 開催者向け
+### Backend / Realtime
 
-- **投票セッション作成**: 質問と選択肢（単一/複数選択）を設定して即座に開始。
-- **QRコード生成**: 参加者用のアクセスQRコードを自動生成。
-- **リアルタイムグラフ**: 棒グラフ・円グラフでのリアルタイム結果表示。
-- **データエクスポート**: 投票結果を CSV / JSON 形式でダウンロード。
+- Cloudflare Workers
+- Hono
+- Zod
+- Durable Objects
+- Server-Sent Events
 
-### 参加者向け
+### Database
 
-- **簡単アクセス**: QRコードスキャンで参加（アプリインストール不要）。
-- **リアルタイム結果閲覧**: 投票後、自分の端末でもリアルタイムに結果を確認可能。
+- Cloudflare D1
+- Drizzle ORM
+- Drizzle Kit
 
-### システム
+### Development / Test
 
-- **重複投票防止**: Cookie (`voter_token`) を使用した簡易的な重複チェック。
+- pnpm
+- Wrangler
+- Vitest Workers Pool
+- Playwright
+- Oxlint / Oxfmt
 
-## 今後の展望
+## セットアップ
 
-- **重複投票対策の強化**: IPアドレスベースのレートリミットや、より堅牢な重複投票防止策の導入。現状はプライベートモードなどで再投票できる。
-- **自動クリーンアップ**: 一定期間経過した投票セッションの削除。
-- **UI/UX改善**: グラフアニメーションの強化や、ダークモード対応。
-- **テスト拡充**: E2Eテストの導入による品質担保。
+Node.js 22 と pnpm 10 を使用します。
+
+```bash
+pnpm install
+pnpm db:migrate:local
+pnpm dev
+```
+
+開発サーバーは `http://localhost:5173` で起動します。
+
+## 主なコマンド
+
+```bash
+pnpm dev                # SPA + Worker の開発サーバー
+pnpm check              # lint + format + typecheck
+pnpm test               # Workers runtime のテスト
+pnpm test:e2e           # Playwright E2E
+pnpm build              # Worker + SPA の本番ビルド
+pnpm db:generate        # Drizzle migration 生成
+pnpm db:migrate:local   # ローカル D1 へ migration 適用
+pnpm cf-typegen         # Cloudflare binding/runtime 型生成
+```
+
+## ディレクトリ
+
+```text
+src/client/             React SPA
+src/server/             Hono Worker / D1
+src/durable-objects/    room 単位の SSE 配信
+src/shared/             共有 schema / 型
+drizzle/                D1 migration
+tests/                  Vitest / Playwright
+legacy/                 旧実装
+```
+
+## デプロイ前の設定
+
+`wrangler.jsonc` の D1 `database_id` はローカル開発用のプレースホルダーです。本番 D1 を作成し、実際の ID に差し替えてから migration と deploy を実行します。

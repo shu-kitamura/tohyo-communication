@@ -1,64 +1,102 @@
-# 実装計画: DO スナップショットキャッシュ
+# 実装計画: Vite + Hono 開発環境
 
 ## 概要
 
-D1 を Source of Truth とし、Durable Object は room 単位の表示用スナップショットと SSE 接続だけを保持する。D1 の更新時に `state_version` を進め、DO は新しい version のスナップショットだけを適用する。
+`legacy/` に退避した旧 Next.js 実装と分離し、ルートへ React SPA と Cloudflare Worker を同居させる。Cloudflare Vite Plugin を使い、フロントエンド、Hono API、D1、Durable Object を1つの開発サーバーで動かす。
 
 ## 要件
 
-- 書き込みと状態判定は D1 で完結させる。
-- 更新ごとの D1 読み取りを接続者数に比例させない。
-- DO の再起動や通知失敗後も D1 から復元できる。
-- 古い通知や再送で DO の状態を巻き戻さない。
-- 主催者向けと参加者向けで公開可能な情報を分ける。
+- React + Vite + TypeScript で SPA を構成する。
+- Hono + Zod で Worker API を構成する。
+- D1 を Drizzle ORM / Drizzle Kit で管理する。
+- Durable Object から SSE を配信できる土台を作る。
+- Vitest Workers Pool と Playwright を利用できるようにする。
+- `legacy/` をビルド、lint、test の対象外にする。
 
 ## アーキテクチャ変更
 
-- `docs/system-design.md`: SSE を通知専用から version 付きスナップショット配信へ変更する。
-- `docs/database-design.md`: `rooms.state_version` と更新トランザクションのルールを追加する。
-- `TODO.md`: payload、再同期、通知失敗、公開範囲の未確定事項を整理する。
+- `vite.config.ts`: React、Tailwind CSS、Cloudflare Vite Plugin を統合する。
+- `src/client/`: React SPA、画面ルーティング、API接続を配置する。
+- `src/server/`: Hono Worker、D1アクセス、APIルートを配置する。
+- `src/durable-objects/`: room単位のSSE配信DOを配置する。
+- `src/shared/`: APIとブラウザで共有するZod schemaと型を配置する。
+- `drizzle.config.ts` / `drizzle/`: D1 migrationを管理する。
 
 ## 実装手順
 
-### フェーズ1: 設計文書
+### フェーズ1: プロジェクト設定
 
-1. **データ責務と更新フローを更新する** (File: `docs/system-design.md`)
-   - Action: D1 更新、スナップショット生成、DO 適用、SSE 配信の順序を定義する。
-   - Why: キャッシュの整合性と復旧方法を明確にする。
+1. **Vite / Worker設定を作成する** (File: `package.json`, `vite.config.ts`, `wrangler.jsonc`)
+   - Action: dev、build、preview、deploy、typegenのコマンドとCloudflare bindingsを定義する。
+   - Why: フロントエンドとWorkerを同じ開発環境で動かすため。
    - Dependencies: なし
    - Risk: 中
 
-2. **version 管理を DB 設計へ追加する** (File: `docs/database-design.md`)
-   - Action: `rooms.state_version` と同一トランザクション内での更新ルールを記載する。
-   - Why: 並行更新の順序を D1 側で確定する。
-   - Dependencies: ステップ1
-   - Risk: 中
-
-3. **未確定事項を TODO に反映する** (File: `TODO.md`)
-   - Action: host/participant payload、通知失敗、再接続、SSE 運用を追加する。
-   - Why: 実装前に必要な判断を残す。
+2. **TypeScriptと品質設定を更新する** (File: `tsconfig.json`, `.oxlintrc.json`, `.oxfmtrc.json`)
+   - Action: Workers、Vite、Reactを型検査対象にし、`legacy/`を除外する。
+   - Why: 新旧コードを混在させず検証するため。
    - Dependencies: ステップ1
    - Risk: 低
 
+### フェーズ2: アプリケーション基盤
+
+3. **React SPAを作成する** (File: `src/client/*`)
+   - Action: React Router、Tailwind CSS、API health表示を実装する。
+   - Why: UI開発を開始できる最小画面を用意するため。
+   - Dependencies: ステップ1
+   - Risk: 低
+
+4. **Hono Workerを作成する** (File: `src/server/index.ts`)
+   - Action: health API、Zod validation、DOへのSSE転送を実装する。
+   - Why: APIとCloudflare bindingの動作確認を可能にするため。
+   - Dependencies: ステップ1
+   - Risk: 中
+
+5. **D1 / Drizzle基盤を作成する** (File: `src/server/db/*`, `drizzle.config.ts`)
+   - Action: 設計文書に沿ったテーブルschemaとmigration生成設定を作る。
+   - Why: D1をSource of Truthとして実装するため。
+   - Dependencies: ステップ1
+   - Risk: 中
+
+6. **Durable Object / SSE基盤を作成する** (File: `src/durable-objects/room-events.ts`)
+   - Action: version付きsnapshotの保持、SSE接続、broadcastを実装する。
+   - Why: リアルタイム配信を段階的に実装できるようにするため。
+   - Dependencies: ステップ4
+   - Risk: 中
+
+### フェーズ3: 検証
+
+7. **テスト環境を作成する** (File: `vitest.config.ts`, `tests/*`)
+   - Action: Workers runtime上でhealth APIを検証する。
+   - Why: Node.jsとの差異を含めてWorkerをテストするため。
+   - Dependencies: ステップ4
+   - Risk: 低
+
+8. **ローカル起動を検証する**
+   - Action: migration生成、typecheck、lint、test、build、dev serverへのHTTPアクセスを確認する。
+   - Why: 開発開始可能な状態を保証するため。
+   - Dependencies: ステップ3から7
+   - Risk: 中
+
 ## テスト戦略
 
-- 文書確認: D1、DO、ブラウザの責務に矛盾がないことを確認する。
-- 整合性確認: 投票、質問開始・終了、SSE 再接続、DO 再起動の各フローを追跡する。
-- 実装時テスト: 通知順序逆転、通知失敗、同時投票、close と vote の競合を追加する。
+- Unit / integration: Vitest Workers PoolでHono APIとDOを検証する。
+- Database: ローカルD1へmigrationを適用してschemaを確認する。
+- E2E: PlaywrightでSPAとAPIの主要導線を確認する。
 
 ## リスクと対策
 
-- **Risk**: D1 更新後に DO 通知が失敗する。
-  - Mitigation: 通知を短時間再試行し、次回更新または SSE 再接続時に最新スナップショットで復旧する。
-- **Risk**: 古い通知が後から届く。
-  - Mitigation: DO は保持中の `stateVersion` 以下を無視する。
-- **Risk**: 参加者に非公開の結果が漏れる。
-  - Mitigation: Worker で接続者種別を検証し、DO が payload を分けて配信する。
+- **Risk**: Cloudflare bindingsが通常のVite dev serverで再現されない。
+  - Mitigation: `@cloudflare/vite-plugin`を使い、Workerをworkerd上で実行する。
+- **Risk**: ORMが状態遷移SQLを隠蔽する。
+  - Mitigation: Drizzleの`sql`と`db.batch()`を利用し、重要な条件付き更新を明示する。
+- **Risk**: legacyコードがlintや型検査へ混入する。
+  - Mitigation: 各設定で`legacy/`を明示的に除外する。
 
 ## 成功基準
 
-- [x] D1 が唯一の Source of Truth と明記されている。
-- [x] DO の状態が D1 から復元可能になっている。
-- [x] `state_version` の更新・比較ルールが定義されている。
-- [x] 更新1回につき接続者数分の D1 SELECT が発生しない。
-- [x] 通知失敗と SSE 再接続時の復旧方針が定義されている。
+- [x] `pnpm dev`でSPAとAPIが同時に起動する。
+- [x] `GET /api/health`がD1 bindingを確認して成功する。
+- [x] Drizzle migrationを生成・ローカル適用できる。
+- [x] Durable ObjectのSSE endpointへ接続できる。
+- [x] `pnpm check`、`pnpm test`、`pnpm build`が成功する。

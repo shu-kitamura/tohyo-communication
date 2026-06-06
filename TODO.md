@@ -2,6 +2,14 @@
 
 今日は決めない。実装前に決めることだけを残す。
 
+## 開発環境
+
+- [x] pnpm をパッケージマネージャーにする
+- [x] React + Vite + Hono + Cloudflare Vite Plugin を導入する
+- [x] D1 / Drizzle schema と初期 migration を作成する
+- [x] Durable Object / SSE の基盤を作成する
+- [x] Vitest Workers Pool / Playwright を導入する
+
 ## 優先度高
 
 ### API 設計
