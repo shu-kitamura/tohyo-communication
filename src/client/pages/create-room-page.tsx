@@ -1,0 +1,195 @@
+import { type FormEvent, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { SiteHeader } from "../components/site-header";
+import type { RoomCreationNavigationState } from "../types/room";
+
+export function CreateRoomPage() {
+  const navigate = useNavigate();
+  const [roomTitle, setRoomTitle] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+
+    if (!roomTitle.trim() || !adminPassword.trim()) {
+      setError("ルーム名と管理パスワードを入力してください。");
+      return;
+    }
+
+    const roomId = `room-${crypto.randomUUID().slice(0, 8)}`;
+    const navigationState: RoomCreationNavigationState = {
+      roomTitle: roomTitle.trim(),
+    };
+
+    navigate(`/rooms/${roomId}/host`, { state: navigationState });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <SiteHeader showCreateLink={false} />
+
+      <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
+        <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-8 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-sm font-bold tracking-[0.14em] text-sky-700">CREATE A ROOM</p>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+              投票ルームを作成
+            </h1>
+            <p className="mt-3 max-w-2xl leading-7 text-slate-600">
+              まずはルームだけを作成します。質問は作成後の主催者画面から追加できます。
+            </p>
+          </div>
+          <p className="text-sm font-medium text-slate-500">入力時間の目安: 30秒</p>
+        </div>
+
+        <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <form
+            className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"
+            noValidate
+            onSubmit={handleSubmit}
+          >
+            <FormSection
+              description="参加者が何の投票なのか分かる名前を設定します。"
+              number="1"
+              title="ルーム情報"
+            >
+              <FormField label="ルーム名" hint="例: デザイン勉強会 2026" htmlFor="room-title">
+                <input
+                  className={inputClassName}
+                  id="room-title"
+                  name="roomTitle"
+                  onChange={(event) => setRoomTitle(event.target.value)}
+                  placeholder="イベントや会議の名前"
+                  required
+                  type="text"
+                  value={roomTitle}
+                />
+              </FormField>
+            </FormSection>
+
+            <FormSection
+              description="主催者画面を開くときに使用します。参加者には共有しないでください。"
+              number="2"
+              title="主催者設定"
+            >
+              <FormField
+                label="管理パスワード"
+                hint="紛失した場合は復旧できません。安全な場所に保管してください。"
+                htmlFor="admin-password"
+              >
+                <input
+                  autoComplete="new-password"
+                  className={inputClassName}
+                  id="admin-password"
+                  name="adminPassword"
+                  onChange={(event) => setAdminPassword(event.target.value)}
+                  placeholder="推測されにくいパスワード"
+                  required
+                  type="password"
+                  value={adminPassword}
+                />
+              </FormField>
+            </FormSection>
+
+            <div className="border-t border-slate-200 bg-slate-50/70 p-6 sm:p-8">
+              {error ? (
+                <p
+                  className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+                  role="alert"
+                >
+                  {error}
+                </p>
+              ) : null}
+              <button
+                className="inline-flex min-h-13 w-full items-center justify-center gap-3 rounded-xl bg-sky-600 px-7 py-3 font-bold text-white shadow-lg shadow-sky-200 transition hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 sm:w-auto"
+                type="submit"
+              >
+                ルームを作成
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </form>
+
+          <aside className="space-y-5 lg:sticky lg:top-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-bold tracking-[0.14em] text-sky-700">PREVIEW</p>
+              <h2 className="mt-3 font-bold text-slate-950">
+                {roomTitle.trim() || "ルーム名が表示されます"}
+              </h2>
+              <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
+                <p className="text-sm font-bold text-slate-700">質問は作成後に追加</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  主催者画面で質問や選択肢を準備します。
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-950 p-5 text-white">
+              <h2 className="font-bold">作成後の流れ</h2>
+              <ol className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+                <li>1. 質問と選択肢を追加</li>
+                <li>2. 参加者URLを共有</li>
+                <li>3. 準備ができたら投票開始</li>
+              </ol>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+const inputClassName =
+  "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-100";
+
+function FormSection({
+  children,
+  description,
+  number,
+  title,
+}: {
+  children: React.ReactNode;
+  description: string;
+  number: string;
+  title: string;
+}) {
+  return (
+    <section className="border-b border-slate-200 p-6 last:border-b-0 sm:p-8">
+      <div className="grid gap-6 sm:grid-cols-[2.75rem_1fr]">
+        <span className="flex size-11 items-center justify-center rounded-xl bg-sky-50 text-sm font-bold text-sky-700">
+          {number}
+        </span>
+        <div>
+          <h2 className="text-xl font-bold text-slate-950">{title}</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+          <div className="mt-6">{children}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FormField({
+  children,
+  hint,
+  htmlFor,
+  label,
+}: {
+  children: React.ReactNode;
+  hint: string;
+  htmlFor: string;
+  label: string;
+}) {
+  return (
+    <div>
+      <label className="text-sm font-bold text-slate-800" htmlFor={htmlFor}>
+        {label}
+      </label>
+      <div className="mt-2">{children}</div>
+      <p className="mt-2 text-xs leading-5 text-slate-500">{hint}</p>
+    </div>
+  );
+}
