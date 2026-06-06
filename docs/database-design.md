@@ -9,6 +9,8 @@
 - ユーザー登録やログインは作らない。重複投票制御は匿名セッション Cookie 由来の `voter_key_hash` で行う。
 - 匿名投票のため、IP address や user agent は保存しない。
 - `single` / `multiple` の両方を安全に扱うため、投票は「1回の投票提出」を表す `votes` と、「その投票で選ばれた選択肢」を表す `vote_choices` に分ける。
+- D1 を Source of Truth とし、Durable Object は D1 から生成した表示用スナップショットだけをキャッシュする。
+- room の表示状態に影響する更新順序は、`rooms.state_version` で管理する。
 
 ## ER 構造
 
@@ -31,6 +33,7 @@ rooms
 | title | text | NO | 投票ルーム名 |
 | status | text | NO | `open` / `closed` |
 | admin_password_hash | text | NO | 管理パスワードのハッシュ |
+| state_version | integer | NO | DO とブラウザへ配信するスナップショットの version |
 | created_at | datetime | NO | 作成日時 |
 | updated_at | datetime | NO | 更新日時 |
 | closed_at | datetime | YES | 終了日時 |
@@ -39,8 +42,29 @@ rooms
 
 - Primary key: `id`
 - `status IN ('open', 'closed')`
+- `state_version >= 1`
 - `status = 'open'` のとき `closed_at IS NULL`
 - `status = 'closed'` のとき `closed_at IS NOT NULL`
+
+`state_version` は room 作成時を `1` とし、共有画面に影響する更新と同じトランザクション内で1増やす。
+
+```sql
+UPDATE rooms
+SET
+  state_version = state_version + 1,
+  updated_at = :updated_at
+WHERE id = :room_id;
+```
+
+version を増やす操作:
+
+- 質問作成
+- 質問開始
+- 投票
+- 質問終了
+- ルーム終了
+
+host session の利用日時更新など、主催者・参加者の共有画面に影響しない操作では増やさない。
 
 ### インデックス
 
@@ -118,7 +142,7 @@ rooms
 - `question_type = 'single'` のとき `min_choices = 1 AND max_choices = 1`
 - 1ルームで同時に1問だけ投票中にする場合は、`room_id` ごとに `status = 'active'` の質問が1件だけになるように制約する。
 
-PostgreSQL の例:
+D1 / SQLite の例:
 
 ```sql
 CREATE UNIQUE INDEX uq_questions_one_active_per_room
@@ -185,7 +209,7 @@ CREATE UNIQUE INDEX uq_questions_one_active_per_room
 - `UNIQUE(id, question_id)` を追加しておくと、`vote_choices` 側の複合外部キーで整合性を保ちやすい。
 - 同じ投票者が同じ質問に1回だけ投票できるようにする。
 
-PostgreSQL の例:
+D1 / SQLite の例:
 
 ```sql
 CREATE UNIQUE INDEX uq_votes_one_per_voter_per_question
@@ -222,7 +246,7 @@ CREATE UNIQUE INDEX uq_votes_one_per_voter_per_question
 
 ## 投票時のバリデーション
 
-投票作成はトランザクションで行う。
+投票作成は D1 の `batch()` または同等のトランザクションで行う。状態確認と INSERT を別リクエストに分けない。
 
 1. `rooms.status = 'open'` を確認する。
 2. `questions.status = 'active'` を確認する。
@@ -231,6 +255,25 @@ CREATE UNIQUE INDEX uq_votes_one_per_voter_per_question
 5. 重複投票は、`votes(question_id, voter_key_hash)` のユニーク制約で防ぐ。
 6. `votes` を1件作成する。
 7. 選択された選択肢ごとに `vote_choices` を作成する。
+8. `rooms.state_version` を1増やす。
+9. 更新後の `state_version`、質問、選択肢、集計結果を取得する。
+
+状態確認後に別トランザクションで INSERT すると、確認と書き込みの間に質問が終了する可能性がある。条件付き SQL と affected rows を使い、無効な状態では投票行と version 更新が作成されないようにする。
+
+質問の状態遷移も条件付き UPDATE にする。
+
+```sql
+UPDATE questions
+SET
+  status = 'active',
+  opened_at = :opened_at,
+  updated_at = :updated_at
+WHERE id = :question_id
+  AND room_id = :room_id
+  AND status = 'draft';
+```
+
+affected rows が `0` の場合は、存在しない質問または許可されていない状態遷移として扱う。質問終了も `WHERE status = 'active'` を条件にする。
 
 ## 集計クエリの考え方
 
@@ -256,6 +299,37 @@ SELECT COUNT(*) AS voter_count
 FROM votes
 WHERE question_id = :question_id;
 ```
+
+## DO 配信用スナップショット
+
+Worker は D1 の更新トランザクション内で、更新後の表示用スナップショットを取得する。
+
+```text
+RoomSnapshot
+  roomId
+  stateVersion
+  roomStatus
+  currentQuestion
+  options
+  voterCount
+  option ごとの voteCount
+```
+
+更新をコミットした後に別の SELECT でスナップショットを作ると、その間に後続更新が入り、取得した `state_version` と集計結果が対応しない可能性がある。そのため、D1 の `batch()` の最後に必要な SELECT を含め、同じトランザクションの更新結果として取得する。
+
+Worker は取得した値を絶対値のスナップショットとして DO に渡す。DO は票数の差分を加算せず、保持中の version より新しい場合だけスナップショット全体を置き換える。
+
+```text
+incoming.stateVersion <= cached.stateVersion
+  -> 無視
+
+incoming.stateVersion > cached.stateVersion
+  -> 置き換え
+```
+
+SSE 接続時の復元では、Worker が D1 から最新スナップショットを読み取り、DO に渡す。D1 read replication を有効にする場合は、古い replica から復元しないよう Sessions API の `first-primary` または適切な bookmark を使用する。
+
+スナップショットは派生データであり、D1 に専用テーブルとして保存しない。将来、集計クエリ自体がボトルネックになった場合に限り、D1 内の集計テーブルをトランザクション更新する方式を検討する。
 
 ## 元案の4テーブル構成に寄せる場合
 
