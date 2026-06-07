@@ -9,7 +9,7 @@ export default defineConfig({
   },
   reporter: [["list"]],
   webServer: {
-    command: "pnpm dev",
+    command: "pnpm db:migrate:local && pnpm dev",
     url: "http://localhost:5173",
     reuseExistingServer: true,
   },

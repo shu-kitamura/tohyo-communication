@@ -88,9 +88,6 @@ export const questions = sqliteTable(
       sql`${table.questionType} != 'single'
           OR (${table.minChoices} = 1 AND ${table.maxChoices} = 1)`,
     ),
-    uniqueIndex("uq_questions_one_active_per_room")
-      .on(table.roomId)
-      .where(sql`${table.status} = 'active'`),
     uniqueIndex("uq_questions_room_sort_order").on(table.roomId, table.sortOrder),
     index("idx_questions_room_status").on(table.roomId, table.status),
   ],

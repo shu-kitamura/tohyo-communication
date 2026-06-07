@@ -1,0 +1,1 @@
+DROP INDEX `uq_questions_one_active_per_room`;
