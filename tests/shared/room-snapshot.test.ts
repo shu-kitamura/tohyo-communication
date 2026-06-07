@@ -10,10 +10,30 @@ const snapshot: RoomSnapshot = {
   roomId: "room-1",
   stateVersion: 1,
   roomStatus: "open",
-  results: {
-    questionId: "question-1",
-    voterCount: 1,
-    counts: { "option-1": 1 },
+  questions: [
+    {
+      id: "question-1",
+      title: "次のテーマは？",
+      status: "draft",
+      questionType: "single",
+      minChoices: 1,
+      maxChoices: 1,
+      sortOrder: 0,
+      options: [
+        {
+          id: "option-1",
+          label: "D1",
+          sortOrder: 0,
+        },
+      ],
+    },
+  ],
+  resultsByQuestion: {
+    "question-1": {
+      questionId: "question-1",
+      voterCount: 1,
+      counts: { "option-1": 1 },
+    },
   },
 };
 
@@ -22,8 +42,15 @@ describe("RoomSnapshot", () => {
     expect(roomSnapshotSchema.safeParse(snapshot).success).toBe(true);
   });
 
-  it("removes results from participant payloads", () => {
-    expect(snapshotForAudience(snapshot, "participant")).not.toHaveProperty("results");
-    expect(snapshotForAudience(snapshot, "host")).toHaveProperty("results");
+  it("limits participant results to voted questions", () => {
+    const participantSnapshot = snapshotForAudience(snapshot, "participant");
+    const votedParticipantSnapshot = snapshotForAudience(snapshot, "participant", ["question-1"]);
+
+    expect(participantSnapshot.resultsByQuestion).toEqual({});
+    expect(votedParticipantSnapshot.resultsByQuestion).toEqual(snapshot.resultsByQuestion);
+    expect(participantSnapshot.questions).toEqual(snapshot.questions);
+    expect(snapshotForAudience(snapshot, "host").resultsByQuestion).toEqual(
+      snapshot.resultsByQuestion,
+    );
   });
 });

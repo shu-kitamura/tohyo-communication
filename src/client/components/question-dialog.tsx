@@ -12,7 +12,7 @@ interface OptionInput {
 
 interface QuestionDialogProps {
   isOpen: boolean;
-  onAdd: (question: QuestionDraft) => void;
+  onAdd: (question: QuestionDraft) => Promise<void>;
   onClose: () => void;
 }
 
@@ -21,6 +21,7 @@ export function QuestionDialog({ isOpen, onAdd, onClose }: QuestionDialogProps) 
   const [questionType, setQuestionType] = useState<QuestionType>("single");
   const [options, setOptions] = useState<OptionInput[]>(createInitialOptions);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const nextOptionId = useRef(3);
   const titleInput = useRef<HTMLTextAreaElement>(null);
 
@@ -77,6 +78,7 @@ export function QuestionDialog({ isOpen, onAdd, onClose }: QuestionDialogProps) 
     setQuestionType("single");
     setOptions(createInitialOptions());
     setError("");
+    setIsSubmitting(false);
     nextOptionId.current = 3;
   };
 
@@ -85,7 +87,7 @@ export function QuestionDialog({ isOpen, onAdd, onClose }: QuestionDialogProps) 
     onClose();
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
@@ -99,12 +101,28 @@ export function QuestionDialog({ isOpen, onAdd, onClose }: QuestionDialogProps) 
       return;
     }
 
-    onAdd({
-      title: title.trim(),
-      questionType,
-      options: options.map((option) => option.value.trim()),
-    });
-    resetForm();
+    const normalizedOptions = options.map((option) => option.value.trim());
+
+    if (new Set(normalizedOptions).size !== normalizedOptions.length) {
+      setError("選択肢は重複しないようにしてください。");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await onAdd({
+        title: title.trim(),
+        questionType,
+        options: normalizedOptions,
+      });
+      resetForm();
+    } catch (submissionError) {
+      setError(
+        submissionError instanceof Error ? submissionError.message : "質問を追加できませんでした。",
+      );
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -234,6 +252,7 @@ export function QuestionDialog({ isOpen, onAdd, onClose }: QuestionDialogProps) 
           <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end">
             <button
               className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+              disabled={isSubmitting}
               onClick={closeDialog}
               type="button"
             >
@@ -241,9 +260,10 @@ export function QuestionDialog({ isOpen, onAdd, onClose }: QuestionDialogProps) 
             </button>
             <button
               className="rounded-xl bg-sky-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-sky-200 transition hover:bg-sky-700"
+              disabled={isSubmitting}
               type="submit"
             >
-              下書きとして追加
+              {isSubmitting ? "追加中..." : "下書きとして追加"}
             </button>
           </div>
         </form>

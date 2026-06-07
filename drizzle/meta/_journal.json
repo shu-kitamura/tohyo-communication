@@ -8,6 +8,13 @@
       "when": 1780746118748,
       "tag": "0000_perpetual_kid_colt",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1780802474136,
+      "tag": "0001_yielding_proteus",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { requestJson } from "../api";
 import { SiteHeader } from "../components/site-header";
 import type { RoomCreationNavigationState } from "../types/room";
 
@@ -9,22 +10,51 @@ export function CreateRoomPage() {
   const [roomTitle, setRoomTitle] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
-    if (!roomTitle.trim() || !adminPassword.trim()) {
+    if (!roomTitle.trim() || !adminPassword) {
       setError("ルーム名と管理パスワードを入力してください。");
       return;
     }
 
-    const roomId = `room-${crypto.randomUUID().slice(0, 8)}`;
-    const navigationState: RoomCreationNavigationState = {
-      roomTitle: roomTitle.trim(),
-    };
+    if (adminPassword.length < 8) {
+      setError("管理パスワードは8文字以上で入力してください。");
+      return;
+    }
 
-    navigate(`/rooms/${roomId}/host`, { state: navigationState });
+    setIsSubmitting(true);
+
+    try {
+      const response = await requestJson<{
+        roomId: string;
+        title: string;
+        hostUrl: string;
+      }>("/api/rooms", {
+        body: JSON.stringify({
+          title: roomTitle,
+          adminPassword,
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const navigationState: RoomCreationNavigationState = {
+        roomTitle: response.title,
+      };
+
+      navigate(response.hostUrl, { state: navigationState });
+    } catch (submissionError) {
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "ルームを作成できませんでした。",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -84,6 +114,7 @@ export function CreateRoomPage() {
                   autoComplete="new-password"
                   className={inputClassName}
                   id="admin-password"
+                  minLength={8}
                   name="adminPassword"
                   onChange={(event) => setAdminPassword(event.target.value)}
                   placeholder="推測されにくいパスワード"
@@ -105,9 +136,10 @@ export function CreateRoomPage() {
               ) : null}
               <button
                 className="inline-flex min-h-13 w-full items-center justify-center gap-3 rounded-xl bg-sky-600 px-7 py-3 font-bold text-white shadow-lg shadow-sky-200 transition hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 sm:w-auto"
+                disabled={isSubmitting}
                 type="submit"
               >
-                ルームを作成
+                {isSubmitting ? "作成中..." : "ルームを作成"}
                 <span aria-hidden="true">→</span>
               </button>
             </div>
