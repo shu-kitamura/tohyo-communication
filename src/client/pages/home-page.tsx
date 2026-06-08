@@ -6,7 +6,7 @@ const features = [
   {
     number: "01",
     title: "ログインなしで参加",
-    description: "参加者は共有されたURLやQRコードを開くだけ。アカウント登録は不要です。",
+    description: "ゲストは共有されたURLやQRコードを開くだけ。アカウント登録は不要です。",
   },
   {
     number: "02",
@@ -15,7 +15,7 @@ const features = [
   },
   {
     number: "03",
-    title: "シンプルな主催者操作",
+    title: "シンプルなホスト操作",
     description: "質問の作成、投票開始、終了までをひとつのルームで管理できます。",
   },
 ];
@@ -23,11 +23,11 @@ const features = [
 const steps = [
   {
     title: "投票ルームを作る",
-    description: "ルームを作成し、主催者画面で質問と選択肢を追加します。",
+    description: "ルームを作成し、ホスト画面で質問と選択肢を追加します。",
   },
   {
     title: "参加URLを共有する",
-    description: "会場のスクリーンやチャットで参加者へ案内します。",
+    description: "会場のスクリーンやチャットでゲストへ案内します。",
   },
   {
     title: "みんなで投票する",
@@ -55,7 +55,7 @@ export function HomePage() {
               </h1>
               <p className="mt-7 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
                 イベントやワークショップで使える、ログイン不要のリアルタイム投票。
-                参加者の意見をすぐに集めて、会場全体で共有できます。
+                ゲストの意見をすぐに集めて、会場全体で共有できます。
               </p>
 
               <div className="mt-9 flex flex-wrap items-center gap-4">
@@ -104,7 +104,7 @@ export function HomePage() {
                 3ステップで投票開始
               </h2>
               <p className="mt-5 leading-7 text-slate-400">
-                専用アプリのインストールや参加者登録は必要ありません。
+                専用アプリのインストールやゲスト登録は必要ありません。
               </p>
             </div>
 
@@ -159,7 +159,7 @@ function PollPreview() {
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div>
             <p className="text-xs font-bold tracking-[0.14em] text-slate-400">LIVE POLL</p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">参加者 32人</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">ゲスト 32人</p>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
             <span className="size-2 rounded-full bg-emerald-500" />

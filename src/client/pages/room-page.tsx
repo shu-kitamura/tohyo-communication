@@ -162,14 +162,10 @@ export function RoomPage() {
     }
   };
 
-  const activeQuestions =
-    snapshot?.questions.filter((question) => question.status === "active") ?? [];
-  const unansweredActiveQuestions = activeQuestions.filter(
-    (question) => !votedQuestionIds.includes(question.id),
-  );
-  const hasAnsweredActiveQuestion = activeQuestions.some((question) =>
-    votedQuestionIds.includes(question.id),
-  );
+  const hasAnsweredActiveQuestion =
+    snapshot?.questions.some(
+      (question) => question.status === "active" && votedQuestionIds.includes(question.id),
+    ) ?? false;
   const connectionLabel = {
     connected: "接続中",
     connecting: "接続準備中",
@@ -189,7 +185,7 @@ export function RoomPage() {
                 {connectionLabel}
               </span>
               <span className="text-xs font-semibold tracking-[0.12em] text-slate-400">
-                PARTICIPANT VIEW
+                GUEST VIEW
               </span>
             </div>
             <h1 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">{roomTitle}</h1>
@@ -200,36 +196,32 @@ export function RoomPage() {
             <MessagePanel eyebrow="LOADING" icon="…" message="ルーム情報を読み込んでいます" />
           ) : snapshot?.roomStatus === "closed" ? (
             <MessagePanel eyebrow="CLOSED" icon="✓" message="この投票ルームは終了しました" />
-          ) : activeQuestions.length > 0 ? (
-            <div className="space-y-6 bg-slate-50/70 px-5 py-6 sm:p-8">
-              {hasAnsweredActiveQuestion ? (
-                <p
-                  className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-800"
-                  role="status"
-                >
-                  投票を受け付けました。結果は質問一覧で確認できます。
-                </p>
-              ) : null}
-              {unansweredActiveQuestions.map((question) => (
-                <VoteForm
-                  isSubmitting={submittingQuestionId === question.id}
-                  key={question.id}
-                  onSubmit={(event) => submitVote(event, question)}
-                  onToggle={(optionId) => toggleOption(question, optionId)}
-                  question={question}
-                  selectedOptionIds={selectedOptionIds[question.id] ?? []}
-                />
-              ))}
-            </div>
+          ) : !snapshot || snapshot.questions.length === 0 ? (
+            <MessagePanel eyebrow="WAITING" icon="…" message="現在表示できる投票はありません" />
           ) : (
-            <MessagePanel eyebrow="WAITING" icon="…" message="現在受付中の質問はありません" />
+            <div className="bg-slate-50/70 px-6 py-5 text-sm font-medium text-slate-600 sm:px-8">
+              下の投票一覧から回答できます。
+            </div>
           )}
         </section>
 
+        {hasAnsweredActiveQuestion ? (
+          <p
+            className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-800"
+            role="status"
+          >
+            投票を受け付けました。結果は投票一覧で確認できます。
+          </p>
+        ) : null}
+
         {snapshot && snapshot.questions.length > 0 ? (
           <QuestionOverview
+            onSubmit={submitVote}
+            onToggle={toggleOption}
             questions={snapshot.questions}
             resultsByQuestion={snapshot.resultsByQuestion}
+            selectedOptionIds={selectedOptionIds}
+            submittingQuestionId={submittingQuestionId}
             votedQuestionIds={votedQuestionIds}
           />
         ) : null}
@@ -245,7 +237,7 @@ export function RoomPage() {
           <section className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 p-5">
             <h2 className="text-sm font-bold text-sky-950">この画面はそのままで大丈夫です</h2>
             <p className="mt-2 text-sm leading-6 text-sky-800">
-              質問の開始・終了や集計結果はリアルタイムで更新されます。
+              投票の開始・終了や集計結果はリアルタイムで更新されます。
             </p>
           </section>
         )}
@@ -254,187 +246,205 @@ export function RoomPage() {
   );
 }
 
-function VoteForm({
-  isSubmitting,
+function QuestionOverview({
   onSubmit,
   onToggle,
-  question,
-  selectedOptionIds,
-}: {
-  isSubmitting: boolean;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onToggle: (optionId: string) => void;
-  question: SnapshotQuestion;
-  selectedOptionIds: string[];
-}) {
-  return (
-    <form
-      aria-label={`${question.title}に回答`}
-      className="rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm sm:px-8"
-      onSubmit={onSubmit}
-    >
-      <p className="text-xs font-bold tracking-[0.14em] text-sky-700">NOW VOTING</p>
-      <h2 className="mt-3 text-2xl font-bold leading-9 tracking-tight text-slate-950">
-        {question.title}
-      </h2>
-      <p className="mt-3 text-sm text-slate-500">
-        {question.questionType === "single"
-          ? "選択肢を1つ選んでください。"
-          : `選択肢を${question.minChoices}〜${question.maxChoices}件選んでください。`}
-      </p>
-
-      <fieldset className="mt-7 space-y-3" disabled={isSubmitting}>
-        <legend className="sr-only">選択肢</legend>
-        {question.options.map((option) => {
-          const isChecked = selectedOptionIds.includes(option.id);
-          const reachedLimit =
-            question.questionType === "multiple" &&
-            !isChecked &&
-            selectedOptionIds.length >= question.maxChoices;
-
-          return (
-            <label
-              className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition ${
-                isChecked
-                  ? "border-sky-500 bg-sky-50 ring-2 ring-sky-100"
-                  : "border-slate-200 hover:border-sky-300"
-              }`}
-              key={option.id}
-            >
-              <input
-                checked={isChecked}
-                className="size-5 accent-sky-600"
-                disabled={reachedLimit}
-                name={`question-${question.id}`}
-                onChange={() => onToggle(option.id)}
-                type={question.questionType === "single" ? "radio" : "checkbox"}
-                value={option.id}
-              />
-              <span className="font-bold text-slate-800">{option.label}</span>
-            </label>
-          );
-        })}
-      </fieldset>
-
-      <button
-        className="mt-7 w-full rounded-xl bg-sky-600 px-6 py-3.5 font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
-        disabled={isSubmitting || selectedOptionIds.length === 0}
-        type="submit"
-      >
-        {isSubmitting ? "送信中..." : "投票する"}
-      </button>
-    </form>
-  );
-}
-
-function QuestionOverview({
   questions,
   resultsByQuestion,
+  selectedOptionIds,
+  submittingQuestionId,
   votedQuestionIds,
 }: {
+  onSubmit: (event: FormEvent<HTMLFormElement>, question: SnapshotQuestion) => void;
+  onToggle: (question: SnapshotQuestion, optionId: string) => void;
   questions: SnapshotQuestion[];
   resultsByQuestion: Record<string, QuestionResults>;
+  selectedOptionIds: Record<string, string[]>;
+  submittingQuestionId?: string;
   votedQuestionIds: string[];
 }) {
   return (
     <section className="mt-8">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-bold tracking-[0.14em] text-sky-700">QUESTION LIST</p>
-          <h2 className="mt-2 text-xl font-bold text-slate-950">質問一覧</h2>
+          <p className="text-xs font-bold tracking-[0.14em] text-sky-700">POLL LIST</p>
+          <h2 className="mt-2 text-xl font-bold text-slate-950">投票一覧</h2>
         </div>
         <p className="text-sm font-bold text-slate-500">{questions.length}件</p>
       </div>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-5">
         {questions.map((question, index) => {
           const hasVoted = votedQuestionIds.includes(question.id);
           const results = resultsByQuestion[question.id];
+          const isAnswerable = question.status === "active" && !hasVoted;
+          const isSubmitting = submittingQuestionId === question.id;
+          const questionOptionIds = selectedOptionIds[question.id] ?? [];
           const status = {
             active: {
-              label: "回答受付中",
+              eyebrow: "LIVE POLL",
+              label: hasVoted ? "回答済み" : "投票中",
+              summary: results ? `ゲスト ${results.voterCount}人` : "受付中",
               className: "bg-emerald-50 text-emerald-700",
+              dotClassName: "bg-emerald-500",
             },
             closed: {
+              eyebrow: "POLL RESULT",
               label: "終了",
+              summary: results ? `ゲスト ${results.voterCount}人` : "終了済み",
               className: "bg-slate-100 text-slate-600",
+              dotClassName: "bg-slate-400",
             },
             draft: {
+              eyebrow: "DRAFT POLL",
               label: "開始前",
+              summary: "待機中",
               className: "bg-amber-50 text-amber-700",
+              dotClassName: "bg-amber-500",
             },
           }[question.status];
+          const description =
+            question.status === "active"
+              ? hasVoted
+                ? "回答済みです。結果はリアルタイムで更新されます。"
+                : question.questionType === "single"
+                  ? "選択肢を1つ選んで回答してください。"
+                  : `${question.minChoices}〜${question.maxChoices}件を選んで回答してください。`
+              : question.status === "draft"
+                ? "ホストが開始するまで回答できません。"
+                : hasVoted
+                  ? "受付は終了しました。最終結果です。"
+                  : "この投票の受付は終了しています。";
+
+          const cardBody = (
+            <>
+              <div className="flex flex-col justify-between gap-4 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-start">
+                <div>
+                  <p className="text-xs font-bold tracking-[0.14em] text-slate-400">
+                    {status.eyebrow}
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-slate-700">{status.summary}</p>
+                </div>
+                <span
+                  className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${status.className}`}
+                >
+                  <span className={`size-2 rounded-full ${status.dotClassName}`} />
+                  {status.label}
+                </span>
+              </div>
+
+              <div className="px-6 py-7">
+                <p className="text-xs font-bold tracking-[0.14em] text-sky-700">
+                  QUESTION {String(index + 1).padStart(2, "0")}
+                </p>
+                <h3 className="mt-3 text-lg font-bold leading-7 text-slate-950">
+                  {question.title}
+                </h3>
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                  <span className="font-semibold text-slate-400">
+                    {question.questionType === "single" ? "単一選択" : "複数選択"}
+                  </span>
+                  <span className="text-slate-500">{description}</span>
+                </div>
+
+                <ol className="mt-7 space-y-5">
+                  {question.options.map((option) => {
+                    const isChecked = questionOptionIds.includes(option.id);
+                    const reachedLimit =
+                      question.questionType === "multiple" &&
+                      !isChecked &&
+                      questionOptionIds.length >= question.maxChoices;
+                    const voteCount = results?.counts[option.id] ?? 0;
+                    const percentage =
+                      results && results.voterCount > 0
+                        ? Math.round((voteCount / results.voterCount) * 100)
+                        : 0;
+
+                    if (isAnswerable) {
+                      return (
+                        <li
+                          className={`rounded-2xl border text-sm transition ${
+                            isChecked
+                              ? "border-sky-500 bg-sky-50 ring-2 ring-sky-100"
+                              : "border-slate-200 bg-white hover:border-sky-300"
+                          }`}
+                          key={option.id}
+                        >
+                          <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
+                            <input
+                              checked={isChecked}
+                              className="size-4 shrink-0 accent-sky-600"
+                              disabled={isSubmitting || reachedLimit}
+                              name={`question-${question.id}`}
+                              onChange={() => onToggle(question, option.id)}
+                              type={question.questionType === "single" ? "radio" : "checkbox"}
+                              value={option.id}
+                            />
+                            <span className="truncate font-semibold text-slate-800">
+                              {option.label}
+                            </span>
+                          </label>
+                        </li>
+                      );
+                    }
+
+                    return (
+                      <li key={option.id}>
+                        <div className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-800">
+                          <span className="min-w-0 truncate">{option.label}</span>
+                          {results ? (
+                            <span
+                              aria-label={`${option.label}: ${voteCount}票、${percentage}%`}
+                              className="shrink-0 tabular-nums"
+                            >
+                              {voteCount}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-500"
+                            style={{ width: results ? `${Math.min(percentage, 100)}%` : "0%" }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+
+                {isAnswerable ? (
+                  <button
+                    className="mt-7 w-full rounded-xl bg-sky-600 px-6 py-3 font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isSubmitting || questionOptionIds.length === 0}
+                    type="submit"
+                  >
+                    {isSubmitting ? "送信中..." : "投票する"}
+                  </button>
+                ) : null}
+              </div>
+            </>
+          );
 
           return (
             <article
               aria-label={`質問${index + 1}: ${question.title}`}
-              className={`rounded-2xl border bg-white p-5 shadow-sm ${
+              className={`overflow-hidden rounded-3xl border bg-white shadow-sm ${
                 question.status === "active"
                   ? "border-emerald-200 ring-2 ring-emerald-50"
                   : "border-slate-200"
               }`}
               key={question.id}
             >
-              <div className="flex items-start gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-500">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-bold ${status.className}`}
-                    >
-                      {status.label}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-400">
-                      {question.questionType === "single" ? "単一選択" : "複数選択"}
-                    </span>
-                  </div>
-                  <p className="mt-3 font-bold leading-7 text-slate-950">{question.title}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {question.status === "active"
-                      ? hasVoted
-                        ? "回答済みです。結果はリアルタイムで更新されます。"
-                        : "上の投票欄から回答できます。"
-                      : question.status === "draft"
-                        ? "主催者が開始するまで回答できません。"
-                        : hasVoted
-                          ? "受付は終了しました。最終結果です。"
-                          : "この質問の受付は終了しています。"}
-                  </p>
-                </div>
-              </div>
-
-              <ol className="mt-4 grid gap-2 sm:grid-cols-2">
-                {question.options.map((option, optionIndex) => {
-                  const voteCount = results?.counts[option.id] ?? 0;
-                  const percentage =
-                    results && results.voterCount > 0
-                      ? Math.round((voteCount / results.voterCount) * 100)
-                      : 0;
-
-                  return (
-                    <li
-                      aria-disabled="true"
-                      className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500"
-                      key={option.id}
-                    >
-                      <span className="min-w-0">
-                        <span className="mr-2 font-bold text-slate-400">{optionIndex + 1}.</span>
-                        <span>{option.label}</span>
-                      </span>
-                      {results ? (
-                        <span
-                          aria-label={`${option.label}: ${voteCount}票、${percentage}%`}
-                          className="shrink-0 font-bold text-slate-800"
-                        >
-                          {voteCount}票 <span className="text-slate-400">({percentage}%)</span>
-                        </span>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ol>
+              {isAnswerable ? (
+                <form
+                  aria-label={`${question.title}に回答`}
+                  onSubmit={(event) => onSubmit(event, question)}
+                >
+                  {cardBody}
+                </form>
+              ) : (
+                cardBody
+              )}
             </article>
           );
         })}

@@ -162,7 +162,7 @@ export function QuestionDialog({ isOpen, onAdd, onClose }: QuestionDialogProps) 
               className={`${inputClassName} mt-2 min-h-28 resize-y`}
               id="new-question-title"
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="参加者に聞きたいこと"
+              placeholder="ゲストに聞きたいこと"
               ref={titleInput}
               required
               value={title}
