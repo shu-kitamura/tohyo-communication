@@ -26,7 +26,7 @@ export function HostRoomPage() {
   const [closingQuestionId, setClosingQuestionId] = useState<string>();
   const [snapshot, setSnapshot] = useState<RoomSnapshot>();
 
-  const participantUrl = `${window.location.origin}/rooms/${roomId}`;
+  const guestUrl = `${window.location.origin}/rooms/${roomId}`;
   const activeQuestionCount = questions.filter((question) => question.status === "active").length;
   const responseCount = questions
     .filter((question) => question.status === "active")
@@ -152,10 +152,10 @@ export function HostRoomPage() {
     }
   };
 
-  const copyParticipantUrl = async () => {
+  const copyGuestUrl = async () => {
     try {
-      await navigator.clipboard.writeText(participantUrl);
-      setCopyStatus("参加者URLをコピーしました。");
+      await navigator.clipboard.writeText(guestUrl);
+      setCopyStatus("ゲストURLをコピーしました。");
     } catch {
       setCopyStatus("コピーできませんでした。URLを選択してコピーしてください。");
     }
@@ -214,7 +214,7 @@ export function HostRoomPage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-bold tracking-[0.14em] text-sky-700">QUESTIONS</p>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">質問一覧</h2>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">投票一覧</h2>
               </div>
               {questions.length > 0 ? (
                 <button
@@ -254,23 +254,20 @@ export function HostRoomPage() {
           <aside className="space-y-5 lg:sticky lg:top-6">
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-bold tracking-[0.14em] text-sky-700">SHARE</p>
-              <h2 className="mt-3 font-bold text-slate-950">参加者に共有</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">このURLを参加者へ案内します。</p>
-              <label
-                className="mt-5 block text-xs font-bold text-slate-500"
-                htmlFor="participant-url"
-              >
-                参加者URL
+              <h2 className="mt-3 font-bold text-slate-950">ゲストに共有</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">このURLをゲストへ案内します。</p>
+              <label className="mt-5 block text-xs font-bold text-slate-500" htmlFor="guest-url">
+                ゲストURL
               </label>
               <input
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600 outline-none focus:border-sky-500"
-                id="participant-url"
+                id="guest-url"
                 readOnly
-                value={participantUrl}
+                value={guestUrl}
               />
               <button
                 className="mt-3 w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-sky-700"
-                onClick={copyParticipantUrl}
+                onClick={copyGuestUrl}
                 type="button"
               >
                 URLをコピー
@@ -285,7 +282,7 @@ export function HostRoomPage() {
             <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5">
               <h2 className="text-sm font-bold text-sky-950">D1へ自動保存されます</h2>
               <p className="mt-2 text-xs leading-5 text-sky-800">
-                質問の追加、投票開始・終了は保存され、参加者画面へリアルタイム配信されます。
+                質問の追加、投票開始・終了は保存され、ゲスト画面へリアルタイム配信されます。
               </p>
             </section>
           </aside>
@@ -318,7 +315,7 @@ function EmptyQuestions({ onAdd }: { onAdd: () => void }) {
       </span>
       <h3 className="mt-5 text-lg font-bold text-slate-950">質問がまだありません</h3>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-        質問と選択肢を追加すると、参加者へ投票を案内できるようになります。
+        質問と選択肢を追加すると、ゲストへ投票を案内できるようになります。
       </p>
       <button
         className="mt-6 rounded-xl bg-sky-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-sky-700"
@@ -348,94 +345,108 @@ function QuestionCard({
   question: RoomQuestion;
   results?: QuestionResults;
 }) {
-  const statusLabel = {
-    active: "投票受付中",
-    closed: "終了",
-    draft: "下書き",
+  const status = {
+    active: {
+      eyebrow: "LIVE POLL",
+      label: "投票中",
+      className: "bg-emerald-50 text-emerald-700",
+      dotClassName: "bg-emerald-500",
+    },
+    closed: {
+      eyebrow: "POLL RESULT",
+      label: "終了",
+      className: "bg-slate-100 text-slate-600",
+      dotClassName: "bg-slate-400",
+    },
+    draft: {
+      eyebrow: "DRAFT POLL",
+      label: "開始前",
+      className: "bg-amber-50 text-amber-700",
+      dotClassName: "bg-amber-500",
+    },
   }[question.status];
+  const guestCount = results?.voterCount ?? 0;
 
   return (
     <article
       aria-label={`質問: ${question.title}`}
-      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+      className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"
     >
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <div className="flex gap-4">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-500">
-            {String(index + 1).padStart(2, "0")}
-          </span>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                  question.status === "active"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-amber-50 text-amber-700"
-                }`}
-              >
-                {statusLabel}
-              </span>
-              <span className="text-xs font-semibold text-slate-400">
-                {question.questionType === "single" ? "単一選択" : "複数選択"}
-              </span>
-            </div>
-            <h3 className="mt-3 text-lg font-bold leading-7 text-slate-950">{question.title}</h3>
-          </div>
+      <div className="flex flex-col justify-between gap-4 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-start">
+        <div>
+          <p className="text-xs font-bold tracking-[0.14em] text-slate-400">{status.eyebrow}</p>
+          <p className="mt-1 text-sm font-bold text-slate-700">ゲスト {guestCount}人</p>
         </div>
-        {question.status === "draft" ? (
-          <button
-            className="shrink-0 rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={isStarting}
-            onClick={onStart}
-            type="button"
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${status.className}`}
           >
-            {isStarting ? "開始中..." : "投票を開始"}
-          </button>
-        ) : question.status === "active" ? (
-          <button
-            className="shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={isClosing}
-            onClick={onClose}
-            type="button"
-          >
-            {isClosing ? "終了中..." : "投票を終了"}
-          </button>
-        ) : (
-          <span className="shrink-0 rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-500">
-            終了
+            <span className={`size-2 rounded-full ${status.dotClassName}`} />
+            {status.label}
           </span>
-        )}
+          {question.status === "draft" ? (
+            <button
+              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isStarting}
+              onClick={onStart}
+              type="button"
+            >
+              {isStarting ? "開始中..." : "投票を開始"}
+            </button>
+          ) : question.status === "active" ? (
+            <button
+              className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isClosing}
+              onClick={onClose}
+              type="button"
+            >
+              {isClosing ? "終了中..." : "投票を終了"}
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      <ol className="mt-5 grid gap-2 sm:grid-cols-2">
-        {question.options.map((option, optionIndex) => {
-          const voteCount = results?.counts[option.id] ?? 0;
-          const percentage =
-            results && results.voterCount > 0
-              ? Math.round((voteCount / results.voterCount) * 100)
-              : 0;
+      <div className="px-6 py-7">
+        <p className="text-xs font-bold tracking-[0.14em] text-sky-700">
+          QUESTION {String(index + 1).padStart(2, "0")}
+        </p>
+        <h3 className="mt-3 text-lg font-bold leading-7 text-slate-950">{question.title}</h3>
+        <p className="mt-2 text-xs font-semibold text-slate-400">
+          {question.questionType === "single" ? "単一選択" : "複数選択"}
+        </p>
 
-          return (
-            <li
-              className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
-              key={option.id}
-            >
-              <span className="min-w-0">
-                <span className="mr-2 font-bold text-slate-400">{optionIndex + 1}.</span>
-                {option.label}
-              </span>
-              {results ? (
-                <span
-                  aria-label={`${option.label}: ${voteCount}票、${percentage}%`}
-                  className="shrink-0 font-bold text-slate-800"
-                >
-                  {voteCount}票 <span className="text-slate-400">({percentage}%)</span>
-                </span>
-              ) : null}
-            </li>
-          );
-        })}
-      </ol>
+        <ol className="mt-7 space-y-5">
+          {question.options.map((option) => {
+            const voteCount = results?.counts[option.id] ?? 0;
+            const percentage =
+              results && results.voterCount > 0
+                ? Math.round((voteCount / results.voterCount) * 100)
+                : 0;
+
+            return (
+              <li key={option.id}>
+                <div className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-800">
+                  <span className="min-w-0 truncate">{option.label}</span>
+                  {results ? (
+                    <span
+                      aria-label={`${option.label}: ${voteCount}票、${percentage}%`}
+                      className="shrink-0 tabular-nums"
+                    >
+                      {voteCount}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 transition-[width] duration-500"
+                    style={{ width: results ? `${Math.min(percentage, 100)}%` : "0%" }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </article>
   );
 }

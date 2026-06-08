@@ -1,7 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
 test("shows the participant waiting view without host controls", async ({ browser, page }) => {
-  const roomId = await createRoom(page, "参加者表示テスト");
+  const roomId = await createRoom(page, "ゲスト表示テスト");
   const participantPage = await browser.newPage({
     baseURL: new URL(page.url()).origin,
   });
@@ -10,7 +10,7 @@ test("shows the participant waiting view without host controls", async ({ browse
 
   await expect(
     participantPage.getByRole("heading", {
-      name: "現在受付中の質問はありません",
+      name: "現在表示できる投票はありません",
     }),
   ).toBeVisible();
   await expect(participantPage.getByText(`Room ID: ${roomId}`)).toBeVisible();
@@ -27,7 +27,7 @@ test("starts a question and accepts a participant vote", async ({ browser, page 
   await participantPage.goto(`/rooms/${roomId}`);
   await expect(
     participantPage.getByRole("heading", {
-      name: "現在受付中の質問はありません",
+      name: "現在表示できる投票はありません",
     }),
   ).toBeVisible();
 
@@ -82,10 +82,16 @@ test("starts a question and accepts a participant vote", async ({ browser, page 
   await secondQuestionCard.getByRole("button", { name: "投票を開始" }).click();
   await expect(secondQuestionCard.getByRole("button", { name: "投票を終了" })).toBeVisible();
 
-  const firstVoteForm = participantPage.getByRole("form", {
+  const participantFirstQuestion = participantPage.getByRole("article", {
+    name: "質問1: 次に扱いたいテーマは？",
+  });
+  const participantSecondQuestion = participantPage.getByRole("article", {
+    name: "質問2: イベントの満足度は？",
+  });
+  const firstVoteForm = participantFirstQuestion.getByRole("form", {
     name: "次に扱いたいテーマは？に回答",
   });
-  const secondVoteForm = participantPage.getByRole("form", {
+  const secondVoteForm = participantSecondQuestion.getByRole("form", {
     name: "イベントの満足度は？に回答",
   });
 
@@ -96,12 +102,9 @@ test("starts a question and accepts a participant vote", async ({ browser, page 
   await firstVoteForm.getByRole("button", { name: "投票する" }).click();
 
   await expect(
-    participantPage.getByText("投票を受け付けました。結果は質問一覧で確認できます。"),
+    participantPage.getByText("投票を受け付けました。結果は投票一覧で確認できます。"),
   ).toBeVisible();
   await expect(secondVoteForm).toBeVisible();
-  const participantFirstQuestion = participantPage.getByRole("article", {
-    name: "質問1: 次に扱いたいテーマは？",
-  });
   await expect(participantFirstQuestion.getByLabel("プロトタイピング: 1票、100%")).toBeVisible();
   await expect(participantFirstQuestion.getByLabel("ユーザーリサーチ: 0票、0%")).toBeVisible();
   await expect(firstQuestionCard.getByLabel("プロトタイピング: 1票、100%")).toBeVisible();
@@ -119,9 +122,6 @@ test("starts a question and accepts a participant vote", async ({ browser, page 
 
   await secondVoteForm.getByLabel("満足").check();
   await secondVoteForm.getByRole("button", { name: "投票する" }).click();
-  const participantSecondQuestion = participantPage.getByRole("article", {
-    name: "質問2: イベントの満足度は？",
-  });
   await expect(participantSecondQuestion.getByLabel("満足: 1票、100%")).toBeVisible();
 
   await participantPage.close();

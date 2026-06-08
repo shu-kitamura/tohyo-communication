@@ -69,7 +69,7 @@ export function CreateRoomPage() {
               投票ルームを作成
             </h1>
             <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-              まずはルームだけを作成します。質問は作成後の主催者画面から追加できます。
+              まずはルームだけを作成します。質問は作成後のホスト画面から追加できます。
             </p>
           </div>
           <p className="text-sm font-medium text-slate-500">入力時間の目安: 30秒</p>
@@ -82,7 +82,7 @@ export function CreateRoomPage() {
             onSubmit={handleSubmit}
           >
             <FormSection
-              description="参加者が何の投票なのか分かる名前を設定します。"
+              description="ゲストが何の投票なのか分かる名前を設定します。"
               number="1"
               title="ルーム情報"
             >
@@ -101,9 +101,9 @@ export function CreateRoomPage() {
             </FormSection>
 
             <FormSection
-              description="主催者画面を開くときに使用します。参加者には共有しないでください。"
+              description="ホスト画面を開くときに使用します。ゲストには共有しないでください。"
               number="2"
-              title="主催者設定"
+              title="ホスト設定"
             >
               <FormField
                 label="管理パスワード"
@@ -154,7 +154,7 @@ export function CreateRoomPage() {
               <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
                 <p className="text-sm font-bold text-slate-700">質問は作成後に追加</p>
                 <p className="mt-2 text-xs leading-5 text-slate-500">
-                  主催者画面で質問や選択肢を準備します。
+                  ホスト画面で質問や選択肢を準備します。
                 </p>
               </div>
             </div>
@@ -163,7 +163,7 @@ export function CreateRoomPage() {
               <h2 className="font-bold">作成後の流れ</h2>
               <ol className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
                 <li>1. 質問と選択肢を追加</li>
-                <li>2. 参加者URLを共有</li>
+                <li>2. ゲストURLを共有</li>
                 <li>3. 準備ができたら投票開始</li>
               </ol>
             </div>
