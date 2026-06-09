@@ -1,56 +1,59 @@
-# 実装計画: ホスト・ゲストの投票一覧カード刷新
+# 実装計画: ホスト/ゲスト判別の統一ルート化
 
 ## 概要
 
-ホスト・ゲスト画面の質問一覧を「投票一覧」として扱い、画像のようなコンパクトなカード表示へ統一する。各カードは状態、質問番号、タイトル、選択肢、票数、横棒グラフを同じ構造で見せ、ゲストは受付中カード内でそのまま投票できるようにする。
+`/rooms/:roomId`を共通入口にして、ホストセッションCookieでホスト/ゲストを判別する構成へ移行する。ゲストは同じルーム画面から管理パスワードを入力してホストへ昇格できるようにする。
 
 ## 要件
 
-- 主催者/参加者の呼称は、画面上ではホスト/ゲストへ寄せる。
-- ホスト・ゲスト画面の一覧見出しを投票一覧にする。
-- 投票一覧カードは`LIVE POLL`、質問番号、状態バッジ、選択肢、票数、バーを表示する。
-- ゲストの未回答・受付中カードは、そのカード内で選択肢を選んで投票できる。
-- 未回答のゲストには集計を公開しない。
+- `/rooms/:roomId`でホスト/ゲストを自動判別する。
+- ゲスト画面から管理パスワードでホストセッションを作成できる。
+- API権限は引き続きホストセッションCookieで判定する。
+- 投票データや匿名投票セッションの扱いは変えない。
 
 ## アーキテクチャ変更
 
-- `src/client/pages/host-room-page.tsx`: ホストの投票一覧カードを画像風のヘッダー付き結果バー表示へ変更する。
-- `src/client/pages/room-page.tsx`: ゲストの投票一覧カードを同じ構造にし、未回答の受付中カードだけフォーム化する。
-- `tests/e2e/room.spec.ts`: 文言変更と一覧カード内投票導線に合わせる。
+- `src/server/auth.ts`: 保存済み管理パスワードハッシュを検証する関数を追加する。
+- `src/server/index.ts`: viewer判定APIとホストセッション作成APIを追加し、作成後URLを共通ルートにする。
+- `src/client/app.tsx`: `/rooms/:roomId`を統一入口コンポーネントへ変更する。
+- `src/client/pages/room-entry-page.tsx`: viewer判定結果に応じてホスト/ゲスト画面を出し分ける。
+- `src/client/pages/room-page.tsx`: ゲスト画面にホスト切り替えフォームを追加する。
+- `tests/e2e/*.spec.ts`: URL期待値と昇格導線を更新する。
 
 ## 実装手順
 
-### フェーズ1: 一覧カード刷新
+### フェーズ1: API追加
 
-1. **ホストカードを結果バー形式にする** (File: `src/client/pages/host-room-page.tsx`)
-   - Action: 状態ヘッダー、`QUESTION 01`、選択肢ごとの票数と横棒グラフを表示する。
-   - Why: 投票一覧の視認性を上げ、結果カードとの重複を避けるため。
+1. **管理パスワード検証を追加する** (File: `src/server/auth.ts`)
+   - Action: `verifyAdminPassword`を追加し、PBKDF2ハッシュを安全に比較する。
+   - Why: ゲストが管理パスワードでホストセッションを作成するため。
    - Dependencies: なし
-   - Risk: 低
+   - Risk: 中
 
-2. **ゲストカードを同じ構造にする** (File: `src/client/pages/room-page.tsx`)
-   - Action: 投票一覧カードへ状態ヘッダー、質問番号、選択肢、結果バーを表示し、active未回答だけinputと送信ボタンを出す。
-   - Why: ゲストも一覧の中で投票・結果確認を完結できるようにするため。
+2. **viewer/host-session APIを追加する** (File: `src/server/index.ts`)
+   - Action: `GET /api/rooms/:roomId/viewer`と`POST /api/rooms/:roomId/host-session`を追加する。
+   - Why: 共通ルートでの出し分けとホスト昇格に必要なため。
    - Dependencies: ステップ1
    - Risk: 中
 
-### フェーズ2: 文言と検証
+### フェーズ2: UI統合
 
-1. **ホスト/ゲスト文言へ置き換える** (File: `src/client/pages/host-room-page.tsx, src/client/pages/room-page.tsx`)
-   - Action: 参加者表示や共有文言をゲストへ変更し、一覧見出しを投票一覧にする。
-   - Why: 今後の用語を画面上で統一するため。
+1. **共通ルート入口を追加する** (File: `src/client/pages/room-entry-page.tsx`)
+   - Action: viewer APIを呼び、hostなら`HostRoomPage`、guestなら`RoomPage`を描画する。
+   - Why: URLではなくセッションで画面を切り替えるため。
    - Dependencies: フェーズ1
-   - Risk: 低
+   - Risk: 中
 
-2. **E2E期待値を更新する** (File: `tests/e2e/room.spec.ts`)
-   - Action: 変更後の表示文言とカード内投票導線に合わせる。
-   - Why: 主要フローの回帰確認を維持するため。
-   - Dependencies: フェーズ1
-   - Risk: 低
+2. **ゲストからホストへ切り替えるUIを追加する** (File: `src/client/pages/room-page.tsx`)
+   - Action: 管理パスワード入力フォームを追加し、成功時に共通入口へhost状態を伝える。
+   - Why: ゲストが同じURLからホストへ昇格できるようにするため。
+   - Dependencies: ステップ1
+   - Risk: 中
 
 ## テスト戦略
 
-- E2E: 投票一覧カード内で選択肢を選び、投票後に同カードへ結果が表示されることを確認する。
+- ユニット/Workerテスト: ホストセッション作成APIとパスワード不一致を確認する。
+- E2Eテスト: ルーム作成後に`/rooms/:roomId`でホスト表示になること、ゲストが同URLからホストへ昇格できることを確認する。
 - 静的検査: `pnpm check`
 - 回帰テスト: `pnpm test`
 - ブラウザテスト: `pnpm test:e2e`
@@ -58,17 +61,13 @@
 
 ## リスクと対策
 
-- **Risk**: ゲストの未回答カードで集計が見えてしまう。
-  - Mitigation: `resultsByQuestion`に該当結果がある場合だけ票数とバーを描画する。
-- **Risk**: 開始前や終了済みカードが回答可能に見える。
-  - Mitigation: activeかつ未回答の質問だけinputと送信ボタンを描画する。
-- **Risk**: 用語変更でテストのアクセシブル名がずれる。
-  - Mitigation: 既存のフォーム名と記事ラベルは必要最小限維持し、表示文言だけ更新する。
+- **Risk**: ホストCookieを持つユーザーが匿名ゲストとして扱われる。
+  - Mitigation: 共通入口で最初にviewer APIを呼び、hostならゲストAPIを呼ばない。
+- **Risk**: 管理パスワード検証の実装不備。
+  - Mitigation: 既存ハッシュ形式を解析して同じPBKDF2条件で再計算し、長さ差込みで比較する。
 
 ## 成功基準
 
-- [x] ホスト画面の投票一覧カードが画像風の結果バー表示になる。
-- [x] ゲスト画面の投票一覧カードが同じ構造になる。
-- [x] ゲストは受付中カード内で投票できる。
-- [x] ホスト/ゲスト文言へ置き換わる。
+- [x] `/rooms/:roomId`でホスト/ゲストを判別できる。
+- [x] ゲストが管理パスワードでホストへ切り替えられる。
 - [x] `pnpm check`、`pnpm test`、`pnpm test:e2e`、`pnpm build`が成功する。

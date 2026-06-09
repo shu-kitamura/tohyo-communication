@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import { participantRoomResponseSchema } from "../../shared/api";
+import { hostSessionResponseSchema, participantRoomResponseSchema } from "../../shared/api";
 import {
   roomSnapshotSchema,
   type QuestionResults,
@@ -13,7 +13,11 @@ import { SiteHeader } from "../components/site-header";
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
-export function RoomPage() {
+interface RoomPageProps {
+  onHostAuthenticated?: () => void;
+}
+
+export function RoomPage({ onHostAuthenticated }: RoomPageProps = {}) {
   const { roomId = "" } = useParams();
   const [roomTitle, setRoomTitle] = useState("投票ルーム");
   const [snapshot, setSnapshot] = useState<RoomSnapshot>();
@@ -22,6 +26,10 @@ export function RoomPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [isLoading, setIsLoading] = useState(true);
   const [submittingQuestionId, setSubmittingQuestionId] = useState<string>();
+  const [hostPassword, setHostPassword] = useState("");
+  const [hostAuthError, setHostAuthError] = useState("");
+  const [isHostAuthenticating, setIsHostAuthenticating] = useState(false);
+  const [isHostAccessOpen, setIsHostAccessOpen] = useState(false);
   const [error, setError] = useState("");
   const votedQuestionIdsRef = useRef<string[]>([]);
 
@@ -162,6 +170,40 @@ export function RoomPage() {
     }
   };
 
+  const authenticateHost = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!hostPassword) {
+      setHostAuthError("管理パスワードを入力してください。");
+      return;
+    }
+
+    setHostAuthError("");
+    setIsHostAuthenticating(true);
+
+    try {
+      const response = await requestJson<unknown>(`/api/rooms/${roomId}/host-session`, {
+        body: JSON.stringify({ adminPassword: hostPassword }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      hostSessionResponseSchema.parse(response);
+      setHostPassword("");
+
+      if (onHostAuthenticated) {
+        onHostAuthenticated();
+      } else {
+        window.location.reload();
+      }
+    } catch (authError) {
+      setHostAuthError(
+        authError instanceof Error ? authError.message : "ホスト認証に失敗しました。",
+      );
+    } finally {
+      setIsHostAuthenticating(false);
+    }
+  };
+
   const hasAnsweredActiveQuestion =
     snapshot?.questions.some(
       (question) => question.status === "active" && votedQuestionIds.includes(question.id),
@@ -241,7 +283,81 @@ export function RoomPage() {
             </p>
           </section>
         )}
+
+        <HostAccessPanel
+          adminPassword={hostPassword}
+          error={hostAuthError}
+          isOpen={isHostAccessOpen}
+          isSubmitting={isHostAuthenticating}
+          onChange={setHostPassword}
+          onOpen={() => setIsHostAccessOpen(true)}
+          onSubmit={authenticateHost}
+        />
       </main>
+    </div>
+  );
+}
+
+function HostAccessPanel({
+  adminPassword,
+  error,
+  isOpen,
+  isSubmitting,
+  onChange,
+  onOpen,
+  onSubmit,
+}: {
+  adminPassword: string;
+  error: string;
+  isOpen: boolean;
+  isSubmitting: boolean;
+  onChange: (value: string) => void;
+  onOpen: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <div className="mt-6 flex flex-col items-end gap-3">
+      {!isOpen ? (
+        <button
+          className="text-sm font-bold text-slate-500 underline-offset-4 transition hover:text-sky-700 hover:underline"
+          onClick={onOpen}
+          type="button"
+        >
+          ホストとして開く
+        </button>
+      ) : (
+        <form className="grid w-full gap-2 sm:max-w-md sm:grid-cols-[1fr_auto]" onSubmit={onSubmit}>
+          <label className="sr-only" htmlFor="host-admin-password">
+            管理パスワード
+          </label>
+          <input
+            autoComplete="current-password"
+            autoFocus
+            className="min-h-10 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+            id="host-admin-password"
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="管理パスワード"
+            type="password"
+            value={adminPassword}
+          />
+          <button
+            className="min-h-10 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isSubmitting}
+            type="submit"
+          >
+            {isSubmitting ? "確認中..." : "開く"}
+          </button>
+        </form>
+      )}
+
+      {error ? (
+        <p
+          className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 sm:max-w-md"
+          role="alert"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

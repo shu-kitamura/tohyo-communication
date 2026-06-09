@@ -31,8 +31,58 @@ describe("voting flow", () => {
     });
 
     expect(createRoomResponse.status).toBe(201);
-    const room = await createRoomResponse.json<{ roomId: string }>();
+    const room = await createRoomResponse.json<{
+      roomId: string;
+      hostUrl: string;
+      participantUrl: string;
+    }>();
     const hostCookie = readCookie(createRoomResponse);
+    expect(room.hostUrl).toBe(`/rooms/${room.roomId}`);
+    expect(room.participantUrl).toBe(`/rooms/${room.roomId}`);
+
+    const guestViewerResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/viewer`,
+    );
+    await expect(guestViewerResponse.json()).resolves.toEqual({ viewerRole: "guest" });
+
+    const hostViewerResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/viewer`,
+      {
+        headers: { Cookie: hostCookie },
+      },
+    );
+    await expect(hostViewerResponse.json()).resolves.toEqual({ viewerRole: "host" });
+
+    const invalidHostSessionResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/host-session`,
+      {
+        body: JSON.stringify({ adminPassword: "wrong-password" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    );
+    expect(invalidHostSessionResponse.status).toBe(401);
+    await expect(invalidHostSessionResponse.json()).resolves.toMatchObject({
+      code: "invalid_admin_password",
+    });
+
+    const promotedHostSessionResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/host-session`,
+      {
+        body: JSON.stringify({ adminPassword: "password123" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    );
+    expect(promotedHostSessionResponse.status).toBe(201);
+    const promotedHostCookie = readCookie(promotedHostSessionResponse);
+    const promotedViewerResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/viewer`,
+      {
+        headers: { Cookie: promotedHostCookie },
+      },
+    );
+    await expect(promotedViewerResponse.json()).resolves.toEqual({ viewerRole: "host" });
 
     const duplicateOptionsResponse = await SELF.fetch(
       `https://example.com/api/rooms/${room.roomId}/questions`,
