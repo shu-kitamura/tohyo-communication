@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { RoomEventsDO } from "../durable-objects/room-events";
 import {
+  createHostSessionRequestSchema,
   createQuestionRequestSchema,
   createRoomRequestSchema,
   submitVoteRequestSchema,
@@ -18,6 +19,7 @@ import {
   setAnonymousSessionCookie,
   setHostSessionCookie,
   sha256,
+  verifyAdminPassword,
 } from "./auth";
 import { getHostRoom, getRoomSnapshot, notifyRoomSnapshot } from "./rooms";
 
@@ -98,12 +100,31 @@ app.post("/api/rooms", zValidator("json", createRoomRequestSchema, validationHoo
     {
       roomId,
       title,
-      hostUrl: `/rooms/${roomId}/host`,
+      hostUrl: `/rooms/${roomId}`,
       participantUrl: `/rooms/${roomId}`,
     },
     201,
   );
 });
+
+app.get(
+  "/api/rooms/:roomId/viewer",
+  zValidator("param", roomParamsSchema, validationHook),
+  async (c) => {
+    const { roomId } = c.req.valid("param");
+    const room = await c.env.DB.prepare("SELECT id FROM rooms WHERE id = ?")
+      .bind(roomId)
+      .first<{ id: string }>();
+
+    if (!room) {
+      return c.json({ error: "ルームが見つかりません。", code: "room_not_found" }, 404);
+    }
+
+    return c.json({
+      viewerRole: (await isAuthorizedHost(c, roomId)) ? "host" : "guest",
+    });
+  },
+);
 
 app.get("/api/rooms/:roomId", zValidator("param", roomParamsSchema, validationHook), async (c) => {
   const { roomId } = c.req.valid("param");
@@ -128,6 +149,57 @@ app.get("/api/rooms/:roomId", zValidator("param", roomParamsSchema, validationHo
   });
 });
 
+app.post(
+  "/api/rooms/:roomId/host-session",
+  zValidator("param", roomParamsSchema, validationHook),
+  zValidator("json", createHostSessionRequestSchema, validationHook),
+  async (c) => {
+    const { roomId } = c.req.valid("param");
+    const { adminPassword } = c.req.valid("json");
+    const room = await c.env.DB.prepare(
+      `SELECT admin_password_hash AS adminPasswordHash
+       FROM rooms
+       WHERE id = ?`,
+    )
+      .bind(roomId)
+      .first<{ adminPasswordHash: string }>();
+
+    if (!room) {
+      return c.json({ error: "ルームが見つかりません。", code: "room_not_found" }, 404);
+    }
+
+    if (!(await verifyAdminPassword(adminPassword, room.adminPasswordHash))) {
+      return c.json(
+        {
+          error: "管理パスワードが違います。",
+          code: "invalid_admin_password",
+        },
+        401,
+      );
+    }
+
+    const hostSession = await createHostSession();
+
+    await c.env.DB.prepare(
+      `INSERT INTO host_sessions (
+         id, room_id, token_hash, created_at, expires_at
+       ) VALUES (?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        hostSession.id,
+        roomId,
+        hostSession.tokenHash,
+        hostSession.createdAt,
+        hostSession.expiresAt,
+      )
+      .run();
+
+    setHostSessionCookie(c, roomId, hostSession.token);
+
+    return c.json({ viewerRole: "host" }, 201);
+  },
+);
+
 app.get(
   "/api/rooms/:roomId/host",
   zValidator("param", roomParamsSchema, validationHook),
@@ -135,7 +207,7 @@ app.get(
     const { roomId } = c.req.valid("param");
 
     if (!(await isAuthorizedHost(c, roomId))) {
-      return c.json({ error: "主催者セッションが必要です。", code: "host_auth_required" }, 401);
+      return c.json({ error: "ホストセッションが必要です。", code: "host_auth_required" }, 401);
     }
 
     const room = await getHostRoom(c.env.DB, roomId);
@@ -156,7 +228,7 @@ app.post(
     const { roomId } = c.req.valid("param");
 
     if (!(await isAuthorizedHost(c, roomId))) {
-      return c.json({ error: "主催者セッションが必要です。", code: "host_auth_required" }, 401);
+      return c.json({ error: "ホストセッションが必要です。", code: "host_auth_required" }, 401);
     }
 
     const question = c.req.valid("json");
@@ -248,7 +320,7 @@ app.post(
     const { questionId, roomId } = c.req.valid("param");
 
     if (!(await isAuthorizedHost(c, roomId))) {
-      return c.json({ error: "主催者セッションが必要です。", code: "host_auth_required" }, 401);
+      return c.json({ error: "ホストセッションが必要です。", code: "host_auth_required" }, 401);
     }
 
     const now = new Date().toISOString();
@@ -305,7 +377,7 @@ app.post(
     const { questionId, roomId } = c.req.valid("param");
 
     if (!(await isAuthorizedHost(c, roomId))) {
-      return c.json({ error: "主催者セッションが必要です。", code: "host_auth_required" }, 401);
+      return c.json({ error: "ホストセッションが必要です。", code: "host_auth_required" }, 401);
     }
 
     const now = new Date().toISOString();

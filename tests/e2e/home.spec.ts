@@ -24,7 +24,7 @@ test("creates an empty room and moves to the host view", async ({ page }) => {
   await expect(page.getByText("デザイン勉強会", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "ルームを作成" }).click();
 
-  await expect(page).toHaveURL(/\/rooms\/room-[a-f0-9]{8}\/host$/);
+  await expect(page).toHaveURL(/\/rooms\/room-[a-f0-9]{8}$/);
   await expect(page.getByRole("heading", { name: "デザイン勉強会" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "質問がまだありません" })).toBeVisible();
   await expect(page.getByRole("button", { name: "最初の質問を追加" })).toBeVisible();

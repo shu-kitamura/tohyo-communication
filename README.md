@@ -2,7 +2,7 @@
 
 イベントやワークショップ向けのリアルタイム投票アプリケーションです。
 
-現在、ルートディレクトリでは新アーキテクチャへの移行を進めています。旧 Next.js 実装は `legacy/` に退避してあり、公開中の https://vote.shu-kita.net は旧実装を基にしています。
+現在、ルートディレクトリでは Cloudflare Workers + D1 + Durable Objects 構成の実装を進めています。旧 Next.js 実装は `legacy/` に退避してあります。
 
 ## アーキテクチャ
 
@@ -10,8 +10,16 @@
 - Cloudflare Workers + Hono が API、認証、入力検証、D1 操作を担当する
 - Durable Objects が room 単位の snapshot cache と SSE 配信を担当する
 - React SPA が Worker API と EventSource API を利用する
+- `/rooms/:roomId` をホスト/ゲスト共通入口にし、サーバーが `viewerRole` を返して表示を切り替える
+- ホスト専用操作は、常にホストセッション Cookie をサーバー側で検証する
 
-設計の詳細は [`docs/system-design.md`](./docs/system-design.md) と [`docs/database-design.md`](./docs/database-design.md) を参照してください。
+設計の詳細は以下を参照してください。
+
+- [`docs/system-design.md`](./docs/system-design.md): 全体構成
+- [`docs/api.md`](./docs/api.md): API
+- [`docs/auth-and-sessions.md`](./docs/auth-and-sessions.md): 認証とセッション
+- [`docs/database-design.md`](./docs/database-design.md): D1 schema
+- [`docs/realtime.md`](./docs/realtime.md): SSE / Durable Objects
 
 ## 技術スタック
 

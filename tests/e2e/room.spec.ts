@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
-test("shows the participant waiting view without host controls", async ({ browser, page }) => {
+test("shows the guest waiting view and can promote to host", async ({ browser, page }) => {
   const roomId = await createRoom(page, "ゲスト表示テスト");
   const participantPage = await browser.newPage({
     baseURL: new URL(page.url()).origin,
@@ -15,6 +15,18 @@ test("shows the participant waiting view without host controls", async ({ browse
   ).toBeVisible();
   await expect(participantPage.getByText(`Room ID: ${roomId}`)).toBeVisible();
   await expect(participantPage.getByRole("button", { name: "質問を追加" })).toHaveCount(0);
+  await expect(participantPage.getByPlaceholder("管理パスワード")).toHaveCount(0);
+
+  await participantPage.getByRole("button", { name: "ホストとして開く" }).click();
+  await expect(participantPage.getByPlaceholder("管理パスワード")).toBeVisible();
+  await participantPage.getByPlaceholder("管理パスワード").fill("wrong-password");
+  await participantPage.getByRole("button", { name: "開く" }).click();
+  await expect(participantPage.getByRole("alert")).toContainText("管理パスワードが違います。");
+
+  await participantPage.getByPlaceholder("管理パスワード").fill("example-password");
+  await participantPage.getByRole("button", { name: "開く" }).click();
+  await expect(participantPage.getByText("HOST VIEW")).toBeVisible();
+  await expect(participantPage.getByRole("button", { name: "質問を追加" })).toBeVisible();
 
   await participantPage.close();
 });
@@ -132,9 +144,9 @@ async function createRoom(page: Page, title: string): Promise<string> {
   await page.getByLabel("ルーム名").fill(title);
   await page.getByLabel("管理パスワード").fill("example-password");
   await page.getByRole("button", { name: "ルームを作成" }).click();
-  await expect(page).toHaveURL(/\/rooms\/room-[a-f0-9]{8}\/host$/);
+  await expect(page).toHaveURL(/\/rooms\/room-[a-f0-9]{8}$/);
 
-  const roomId = page.url().match(/\/rooms\/(room-[a-f0-9]{8})\/host$/)?.[1];
+  const roomId = page.url().match(/\/rooms\/(room-[a-f0-9]{8})$/)?.[1];
 
   if (!roomId) {
     throw new Error("Room ID was not found in the host URL");
