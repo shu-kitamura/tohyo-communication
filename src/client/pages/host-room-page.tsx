@@ -21,7 +21,9 @@ export function HostRoomPage() {
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
   const [error, setError] = useState("");
+  const [isClosingRoom, setIsClosingRoom] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [roomStatus, setRoomStatus] = useState<"open" | "closed">("open");
   const [startingQuestionId, setStartingQuestionId] = useState<string>();
   const [closingQuestionId, setClosingQuestionId] = useState<string>();
   const [snapshot, setSnapshot] = useState<RoomSnapshot>();
@@ -29,7 +31,7 @@ export function HostRoomPage() {
   const guestUrl = `${window.location.origin}/rooms/${roomId}`;
   const activeQuestionCount = questions.filter((question) => question.status === "active").length;
   const responseCount = questions
-    .filter((question) => question.status === "active")
+    .filter((question) => question.status !== "draft")
     .reduce(
       (total, question) => total + (snapshot?.resultsByQuestion[question.id]?.voterCount ?? 0),
       0,
@@ -38,6 +40,7 @@ export function HostRoomPage() {
   const applySnapshot = (nextSnapshot: RoomSnapshot) => {
     setSnapshot(nextSnapshot);
     setQuestions(nextSnapshot.questions);
+    setRoomStatus(nextSnapshot.roomStatus);
   };
 
   useEffect(() => {
@@ -51,6 +54,7 @@ export function HostRoomPage() {
 
         if (!isCancelled) {
           setRoomTitle(parsed.room.title);
+          setRoomStatus(parsed.room.status);
           setQuestions(parsed.questions);
         }
       } catch (loadError) {
@@ -152,6 +156,31 @@ export function HostRoomPage() {
     }
   };
 
+  const closeRoom = async () => {
+    if (
+      !window.confirm(
+        "このルームを終了しますか？受付中の投票もすべて終了し、元に戻せません。ルームと投票データは終了から30日後に削除されます。",
+      )
+    ) {
+      return;
+    }
+
+    setIsClosingRoom(true);
+    setError("");
+
+    try {
+      const response = await requestJson<{ snapshot: unknown }>(`/api/rooms/${roomId}/close`, {
+        method: "POST",
+      });
+      applySnapshot(roomSnapshotSchema.parse(response.snapshot));
+      setIsQuestionDialogOpen(false);
+    } catch (closeError) {
+      setError(closeError instanceof Error ? closeError.message : "ルームを終了できませんでした。");
+    } finally {
+      setIsClosingRoom(false);
+    }
+  };
+
   const copyGuestUrl = async () => {
     try {
       await navigator.clipboard.writeText(guestUrl);
@@ -171,8 +200,16 @@ export function HostRoomPage() {
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-2 rounded-full bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-300">
-                  <span className="size-2 rounded-full bg-emerald-400" />
-                  {activeQuestionCount > 0 ? `${activeQuestionCount}件受付中` : "待機中"}
+                  <span
+                    className={`size-2 rounded-full ${
+                      roomStatus === "closed" ? "bg-slate-400" : "bg-emerald-400"
+                    }`}
+                  />
+                  {roomStatus === "closed"
+                    ? "ルーム終了"
+                    : activeQuestionCount > 0
+                      ? `${activeQuestionCount}件受付中`
+                      : "待機中"}
                 </span>
                 <span className="text-xs font-semibold tracking-[0.12em] text-slate-400">
                   HOST VIEW
@@ -184,12 +221,12 @@ export function HostRoomPage() {
 
             <button
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-sky-500 px-6 py-3 font-bold text-white transition hover:bg-sky-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={isLoading}
+              disabled={isLoading || roomStatus === "closed"}
               onClick={() => setIsQuestionDialogOpen(true)}
               type="button"
             >
               <span aria-hidden="true">＋</span>
-              質問を追加
+              {roomStatus === "closed" ? "ルーム終了済み" : "質問を追加"}
             </button>
           </div>
 
@@ -216,7 +253,7 @@ export function HostRoomPage() {
                 <p className="text-xs font-bold tracking-[0.14em] text-sky-700">QUESTIONS</p>
                 <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">投票一覧</h2>
               </div>
-              {questions.length > 0 ? (
+              {questions.length > 0 && roomStatus === "open" ? (
                 <button
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-sky-400 hover:text-sky-700"
                   onClick={() => setIsQuestionDialogOpen(true)}
@@ -245,6 +282,7 @@ export function HostRoomPage() {
                     onStart={() => startQuestion(question.id)}
                     question={question}
                     results={snapshot?.resultsByQuestion[question.id]}
+                    roomStatus={roomStatus}
                   />
                 ))}
               </div>
@@ -285,12 +323,33 @@ export function HostRoomPage() {
                 質問の追加、投票開始・終了は保存され、ゲスト画面へリアルタイム配信されます。
               </p>
             </section>
+
+            <section className="rounded-2xl border border-red-200 bg-red-50 p-5">
+              <h2 className="text-sm font-bold text-red-950">
+                {roomStatus === "closed" ? "このルームは終了済みです" : "ルームを終了"}
+              </h2>
+              <p className="mt-2 text-xs leading-5 text-red-800">
+                {roomStatus === "closed"
+                  ? "質問と投票結果は終了から30日間保持した後、自動的に削除されます。"
+                  : "受付中の質問もすべて終了します。この操作は元に戻せません。"}
+              </p>
+              {roomStatus === "open" ? (
+                <button
+                  className="mt-4 w-full rounded-xl border border-red-300 bg-white px-4 py-3 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isClosingRoom || isLoading}
+                  onClick={closeRoom}
+                  type="button"
+                >
+                  {isClosingRoom ? "終了中..." : "ルームを終了"}
+                </button>
+              ) : null}
+            </section>
           </aside>
         </div>
       </main>
 
       <QuestionDialog
-        isOpen={isQuestionDialogOpen}
+        isOpen={isQuestionDialogOpen && roomStatus === "open"}
         onAdd={addQuestion}
         onClose={() => setIsQuestionDialogOpen(false)}
       />
@@ -336,6 +395,7 @@ function QuestionCard({
   onStart,
   question,
   results,
+  roomStatus,
 }: {
   index: number;
   isClosing: boolean;
@@ -344,6 +404,7 @@ function QuestionCard({
   onStart: () => void;
   question: RoomQuestion;
   results?: QuestionResults;
+  roomStatus: "open" | "closed";
 }) {
   const status = {
     active: {
@@ -384,7 +445,7 @@ function QuestionCard({
             <span className={`size-2 rounded-full ${status.dotClassName}`} />
             {status.label}
           </span>
-          {question.status === "draft" ? (
+          {roomStatus === "open" && question.status === "draft" ? (
             <button
               className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isStarting}
@@ -393,7 +454,7 @@ function QuestionCard({
             >
               {isStarting ? "開始中..." : "投票を開始"}
             </button>
-          ) : question.status === "active" ? (
+          ) : roomStatus === "open" && question.status === "active" ? (
             <button
               className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isClosing}

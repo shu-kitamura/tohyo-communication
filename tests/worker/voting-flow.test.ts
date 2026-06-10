@@ -1,6 +1,8 @@
 import { applyD1Migrations, env, SELF } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { mutationRequestHeaderName, mutationRequestHeaderValue } from "../../src/shared/api";
+
 interface TestEnv extends Env {
   TEST_MIGRATIONS: Array<{
     name: string;
@@ -14,6 +16,8 @@ interface CreatedQuestion {
 }
 
 const testEnv = env as TestEnv;
+const requestOrigin = "https://example.com";
+const roomIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 describe("voting flow", () => {
   beforeEach(async () => {
@@ -25,8 +29,9 @@ describe("voting flow", () => {
       body: JSON.stringify({
         title: "テスト投票",
         adminPassword: "password123",
+        turnstileToken: "test-token",
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: mutationHeaders({ "Content-Type": "application/json" }),
       method: "POST",
     });
 
@@ -37,6 +42,7 @@ describe("voting flow", () => {
       participantUrl: string;
     }>();
     const hostCookie = readCookie(createRoomResponse);
+    expect(room.roomId).toMatch(roomIdPattern);
     expect(room.hostUrl).toBe(`/rooms/${room.roomId}`);
     expect(room.participantUrl).toBe(`/rooms/${room.roomId}`);
 
@@ -57,7 +63,7 @@ describe("voting flow", () => {
       `https://example.com/api/rooms/${room.roomId}/host-session`,
       {
         body: JSON.stringify({ adminPassword: "wrong-password" }),
-        headers: { "Content-Type": "application/json" },
+        headers: mutationHeaders({ "Content-Type": "application/json" }),
         method: "POST",
       },
     );
@@ -70,7 +76,7 @@ describe("voting flow", () => {
       `https://example.com/api/rooms/${room.roomId}/host-session`,
       {
         body: JSON.stringify({ adminPassword: "password123" }),
-        headers: { "Content-Type": "application/json" },
+        headers: mutationHeaders({ "Content-Type": "application/json" }),
         method: "POST",
       },
     );
@@ -92,10 +98,10 @@ describe("voting flow", () => {
           questionType: "single",
           options: ["D1", "D1"],
         }),
-        headers: {
+        headers: mutationHeaders({
           "Content-Type": "application/json",
           Cookie: hostCookie,
-        },
+        }),
         method: "POST",
       },
     );
@@ -166,10 +172,10 @@ describe("voting flow", () => {
     });
     const firstVoteResponse = await SELF.fetch(firstVoteUrl, {
       body: firstVoteBody,
-      headers: {
+      headers: mutationHeaders({
         "Content-Type": "application/json",
         Cookie: participantCookie,
-      },
+      }),
       method: "POST",
     });
 
@@ -198,10 +204,10 @@ describe("voting flow", () => {
 
     const duplicateVoteResponse = await SELF.fetch(firstVoteUrl, {
       body: firstVoteBody,
-      headers: {
+      headers: mutationHeaders({
         "Content-Type": "application/json",
         Cookie: participantCookie,
-      },
+      }),
       method: "POST",
     });
 
@@ -213,30 +219,30 @@ describe("voting flow", () => {
     const closeResponse = await SELF.fetch(
       `https://example.com/api/rooms/${room.roomId}/questions/${firstQuestion.id}/close`,
       {
-        headers: { Cookie: hostCookie },
+        headers: mutationHeaders({ Cookie: hostCookie }),
         method: "POST",
       },
     );
 
     expect(closeResponse.status).toBe(200);
-    const closedRoom = await closeResponse.json<{
+    const closedQuestionResult = await closeResponse.json<{
       snapshot: {
         questions: Array<{ id: string; status: string }>;
         resultsByQuestion: Record<string, { voterCount: number }>;
       };
     }>();
-    expect(closedRoom.snapshot.questions).toEqual([
+    expect(closedQuestionResult.snapshot.questions).toEqual([
       expect.objectContaining({ id: firstQuestion.id, status: "closed" }),
       expect.objectContaining({ id: secondQuestion.id, status: "active" }),
     ]);
-    expect(closedRoom.snapshot.resultsByQuestion[firstQuestion.id]?.voterCount).toBe(1);
+    expect(closedQuestionResult.snapshot.resultsByQuestion[firstQuestion.id]?.voterCount).toBe(1);
 
     const voteAfterCloseResponse = await SELF.fetch(firstVoteUrl, {
       body: firstVoteBody,
-      headers: {
+      headers: mutationHeaders({
         "Content-Type": "application/json",
         Cookie: participantCookie,
-      },
+      }),
       method: "POST",
     });
     expect(voteAfterCloseResponse.status).toBe(409);
@@ -248,10 +254,10 @@ describe("voting flow", () => {
       `https://example.com/api/rooms/${room.roomId}/questions/${secondQuestion.id}/votes`,
       {
         body: JSON.stringify({ optionIds: [secondQuestion.options[0].id] }),
-        headers: {
+        headers: mutationHeaders({
           "Content-Type": "application/json",
           Cookie: participantCookie,
-        },
+        }),
         method: "POST",
       },
     );
@@ -270,6 +276,145 @@ describe("voting flow", () => {
       "SELECT COUNT(*) AS voteCount FROM votes WHERE voter_key_hash IS NOT NULL",
     ).first<{ voteCount: number }>();
     expect(storedVotes?.voteCount).toBe(2);
+
+    const closeRoomResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/close`,
+      {
+        headers: mutationHeaders({ Cookie: hostCookie }),
+        method: "POST",
+      },
+    );
+    expect(closeRoomResponse.status).toBe(200);
+    const closedRoom = await closeRoomResponse.json<{
+      snapshot: {
+        roomStatus: string;
+        stateVersion: number;
+        questions: Array<{ id: string; status: string }>;
+      };
+    }>();
+    expect(closedRoom.snapshot.roomStatus).toBe("closed");
+    expect(closedRoom.snapshot.questions).toEqual([
+      expect.objectContaining({ id: firstQuestion.id, status: "closed" }),
+      expect.objectContaining({ id: secondQuestion.id, status: "closed" }),
+    ]);
+
+    const participantAfterRoomCloseResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}`,
+      {
+        headers: { Cookie: participantCookie },
+      },
+    );
+    const participantAfterRoomClose = await participantAfterRoomCloseResponse.json<{
+      snapshot: { roomStatus: string };
+    }>();
+    expect(participantAfterRoomClose.snapshot.roomStatus).toBe("closed");
+
+    const createQuestionAfterCloseResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/questions`,
+      {
+        body: JSON.stringify({
+          title: "終了後の質問",
+          questionType: "single",
+          options: ["A", "B"],
+        }),
+        headers: mutationHeaders({
+          "Content-Type": "application/json",
+          Cookie: hostCookie,
+        }),
+        method: "POST",
+      },
+    );
+    expect(createQuestionAfterCloseResponse.status).toBe(409);
+    const versionAfterRejectedQuestion = await testEnv.DB.prepare(
+      "SELECT state_version AS stateVersion FROM rooms WHERE id = ?",
+    )
+      .bind(room.roomId)
+      .first<{ stateVersion: number }>();
+    expect(versionAfterRejectedQuestion?.stateVersion).toBe(closedRoom.snapshot.stateVersion);
+
+    const duplicateCloseResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/close`,
+      {
+        headers: mutationHeaders({ Cookie: hostCookie }),
+        method: "POST",
+      },
+    );
+    expect(duplicateCloseResponse.status).toBe(409);
+    await expect(duplicateCloseResponse.json()).resolves.toMatchObject({
+      code: "room_already_closed",
+    });
+  });
+
+  it("rejects unsafe requests without valid same-origin headers", async () => {
+    const requestBody = JSON.stringify({
+      title: "不正リクエスト",
+      adminPassword: "password123",
+    });
+    const crossOriginResponse = await SELF.fetch("https://example.com/api/rooms", {
+      body: requestBody,
+      headers: mutationHeaders({
+        "Content-Type": "application/json",
+        Origin: "https://attacker.example",
+      }),
+      method: "POST",
+    });
+    const missingFetchMetadataResponse = await SELF.fetch("https://example.com/api/rooms", {
+      body: requestBody,
+      headers: {
+        "Content-Type": "application/json",
+        Origin: requestOrigin,
+        [mutationRequestHeaderName]: mutationRequestHeaderValue,
+      },
+      method: "POST",
+    });
+    const missingMutationHeaderResponse = await SELF.fetch("https://example.com/api/rooms", {
+      body: requestBody,
+      headers: {
+        "Content-Type": "application/json",
+        Origin: requestOrigin,
+        "Sec-Fetch-Site": "same-origin",
+      },
+      method: "POST",
+    });
+
+    for (const response of [
+      crossOriginResponse,
+      missingFetchMetadataResponse,
+      missingMutationHeaderResponse,
+    ]) {
+      expect(response.status).toBe(403);
+      await expect(response.json()).resolves.toMatchObject({
+        code: "invalid_request_origin",
+      });
+    }
+  });
+
+  it("rejects oversized and non-JSON request bodies before validation", async () => {
+    const oversizedResponse = await SELF.fetch("https://example.com/api/rooms", {
+      body: JSON.stringify({
+        title: "x".repeat(20 * 1024),
+        adminPassword: "password123",
+      }),
+      headers: mutationHeaders({ "Content-Type": "application/json" }),
+      method: "POST",
+    });
+    const unsupportedMediaTypeResponse = await SELF.fetch("https://example.com/api/rooms", {
+      body: JSON.stringify({
+        title: "Content-Typeテスト",
+        adminPassword: "password123",
+      }),
+      headers: mutationHeaders({ "Content-Type": "text/plain" }),
+      method: "POST",
+    });
+
+    expect(oversizedResponse.status).toBe(413);
+    await expect(oversizedResponse.json()).resolves.toMatchObject({
+      code: "request_body_too_large",
+    });
+    expect(unsupportedMediaTypeResponse.status).toBe(415);
+    await expect(unsupportedMediaTypeResponse.json()).resolves.toMatchObject({
+      code: "unsupported_media_type",
+    });
   });
 });
 
@@ -284,10 +429,10 @@ async function createQuestion(
 ): Promise<CreatedQuestion> {
   const response = await SELF.fetch(`https://example.com/api/rooms/${roomId}/questions`, {
     body: JSON.stringify(question),
-    headers: {
+    headers: mutationHeaders({
       "Content-Type": "application/json",
       Cookie: hostCookie,
-    },
+    }),
     method: "POST",
   });
 
@@ -298,9 +443,18 @@ async function createQuestion(
 
 function startQuestion(roomId: string, questionId: string, hostCookie: string): Promise<Response> {
   return SELF.fetch(`https://example.com/api/rooms/${roomId}/questions/${questionId}/start`, {
-    headers: { Cookie: hostCookie },
+    headers: mutationHeaders({ Cookie: hostCookie }),
     method: "POST",
   });
+}
+
+function mutationHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    Origin: requestOrigin,
+    "Sec-Fetch-Site": "same-origin",
+    [mutationRequestHeaderName]: mutationRequestHeaderValue,
+    ...headers,
+  };
 }
 
 function readCookie(response: Response): string {

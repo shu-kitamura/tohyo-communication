@@ -1,3 +1,5 @@
+import { mutationRequestHeaderName, mutationRequestHeaderValue } from "../shared/api";
+
 export class ApiRequestError extends Error {
   constructor(
     message: string,
@@ -8,7 +10,7 @@ export class ApiRequestError extends Error {
 }
 
 export async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
+  const response = await fetch(input, withMutationHeader(init));
   const data: unknown = await response.json();
 
   if (!response.ok) {
@@ -16,6 +18,19 @@ export async function requestJson<T>(input: RequestInfo | URL, init?: RequestIni
   }
 
   return data as T;
+}
+
+function withMutationHeader(init?: RequestInit): RequestInit | undefined {
+  const method = init?.method?.toUpperCase() ?? "GET";
+
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+    return init;
+  }
+
+  const headers = new Headers(init?.headers);
+  headers.set(mutationRequestHeaderName, mutationRequestHeaderValue);
+
+  return { ...init, headers };
 }
 
 function readErrorMessage(data: unknown): string {

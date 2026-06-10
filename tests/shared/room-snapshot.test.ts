@@ -53,4 +53,14 @@ describe("RoomSnapshot", () => {
       snapshot.resultsByQuestion,
     );
   });
+
+  it("hides draft questions from participants after the room closes", () => {
+    const closedSnapshot: RoomSnapshot = {
+      ...snapshot,
+      roomStatus: "closed",
+    };
+
+    expect(snapshotForAudience(closedSnapshot, "participant").questions).toEqual([]);
+    expect(snapshotForAudience(closedSnapshot, "host").questions).toEqual(snapshot.questions);
+  });
 });

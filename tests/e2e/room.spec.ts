@@ -136,6 +136,16 @@ test("starts a question and accepts a participant vote", async ({ browser, page 
   await secondVoteForm.getByRole("button", { name: "投票する" }).click();
   await expect(participantSecondQuestion.getByLabel("満足: 1票、100%")).toBeVisible();
 
+  page.once("dialog", (confirmation) => confirmation.accept());
+  await page.getByRole("button", { name: "ルームを終了" }).click();
+
+  await expect(page.getByText("このルームは終了済みです")).toBeVisible();
+  await expect(page.getByRole("button", { name: "ルーム終了済み" })).toBeDisabled();
+  await expect(
+    participantPage.getByRole("heading", { name: "この投票ルームは終了しました" }),
+  ).toBeVisible();
+  await expect(secondVoteForm).toHaveCount(0);
+
   await participantPage.close();
 });
 
@@ -144,9 +154,13 @@ async function createRoom(page: Page, title: string): Promise<string> {
   await page.getByLabel("ルーム名").fill(title);
   await page.getByLabel("管理パスワード").fill("example-password");
   await page.getByRole("button", { name: "ルームを作成" }).click();
-  await expect(page).toHaveURL(/\/rooms\/room-[a-f0-9]{8}$/);
+  await expect(page).toHaveURL(
+    /\/rooms\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+  );
 
-  const roomId = page.url().match(/\/rooms\/(room-[a-f0-9]{8})$/)?.[1];
+  const roomId = page
+    .url()
+    .match(/\/rooms\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/)?.[1];
 
   if (!roomId) {
     throw new Error("Room ID was not found in the host URL");

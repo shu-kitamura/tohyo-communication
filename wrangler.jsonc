@@ -15,6 +15,64 @@
       "migrations_dir": "drizzle",
     },
   ],
+  "ratelimits": [
+    {
+      "name": "PUBLIC_API_RATE_LIMITER",
+      "namespace_id": "872400",
+      "simple": {
+        "limit": 1000,
+        "period": 60,
+      },
+    },
+    {
+      "name": "CREATE_ROOM_RATE_LIMITER",
+      "namespace_id": "872401",
+      "simple": {
+        "limit": 10,
+        "period": 60,
+      },
+    },
+    {
+      "name": "HOST_SESSION_RATE_LIMITER",
+      "namespace_id": "872402",
+      "simple": {
+        "limit": 10,
+        "period": 60,
+      },
+    },
+    {
+      "name": "HOST_MUTATION_RATE_LIMITER",
+      "namespace_id": "872403",
+      "simple": {
+        "limit": 60,
+        "period": 60,
+      },
+    },
+    {
+      "name": "VOTE_RATE_LIMITER",
+      "namespace_id": "872404",
+      "simple": {
+        "limit": 20,
+        "period": 60,
+      },
+    },
+    {
+      "name": "ROOM_READ_RATE_LIMITER",
+      "namespace_id": "872405",
+      "simple": {
+        "limit": 120,
+        "period": 60,
+      },
+    },
+    {
+      "name": "ROOM_EVENTS_RATE_LIMITER",
+      "namespace_id": "872406",
+      "simple": {
+        "limit": 20,
+        "period": 60,
+      },
+    },
+  ],
   "durable_objects": {
     "bindings": [
       {
@@ -29,6 +87,9 @@
       "new_sqlite_classes": ["RoomEventsDO"],
     },
   ],
+  "triggers": {
+    "crons": ["0 18 * * *"],
+  },
   "observability": {
     "enabled": true,
   },

@@ -21,7 +21,7 @@ rooms
 
 | カラム | 説明 |
 | --- | --- |
-| `id` | `room-xxxxxxxx`形式の公開ID |
+| `id` | UUID形式の公開ID |
 | `title` | ルーム名 |
 | `status` | `open` / `closed` |
 | `admin_password_hash` | 管理パスワードのPBKDF2ハッシュ |
@@ -30,10 +30,13 @@ rooms
 
 `state_version` は、ゲスト/ホスト画面に影響する更新時に増やします。
 
+新規ルームは128bitのUUIDを使います。移行前に作成した `room-xxxxxxxx` 形式のIDも、既存URLの互換性のため引き続き参照できます。
+
 - 質問作成
 - 質問開始
 - 投票
 - 質問終了
+- ルーム終了
 
 ## host_sessions
 
@@ -118,9 +121,25 @@ Cookieにはトークン生値を入れますが、D1には保存しません。
 6. `rooms.state_version` を増やす。
 7. 最新snapshotを生成し、Durable Objectへ通知する。
 
+## データ保持
+
+終了済みルームは `closed_at` から30日間保持します。日次Cronが以下の条件で `rooms` を削除します。
+
+```sql
+status = 'closed' AND closed_at <= 保持期限
+```
+
+`rooms` を親として削除し、外部キーの `ON DELETE CASCADE` により以下も同じ処理で削除します。
+
+- `host_sessions`
+- `questions`
+- `options`
+- `votes`
+- `vote_choices`
+
+終了していないルームは自動削除しません。期限検索には `rooms(status, closed_at)` indexを使用します。
+
 ## まだ実装していない運用機能
 
-- ルーム終了API
 - ホストセッションの一覧/失効
 - 管理パスワード変更
-- 古いデータの自動削除

@@ -142,6 +142,31 @@ export function HomePage() {
             投票ルームを作成
           </Link>
         </section>
+
+        <section
+          aria-labelledby="privacy-heading"
+          className="border-t border-slate-200 bg-sky-50/70"
+        >
+          <div className="mx-auto max-w-4xl px-5 py-12 sm:px-8 sm:py-14">
+            <p className="text-xs font-bold tracking-[0.16em] text-sky-700">PRIVACY</p>
+            <h2
+              className="mt-3 text-2xl font-bold tracking-tight text-slate-950"
+              id="privacy-heading"
+            >
+              プライバシーについて
+            </h2>
+            <div className="mt-5 space-y-3 text-sm leading-7 text-slate-600">
+              <p>
+                このサービスでは、重複投票の防止とホスト認証のためにCookieを使用し、
+                ルーム名、質問、選択肢、投票内容をCloudflare上に保存します。
+              </p>
+              <p>
+                終了したルームと関連データは終了から30日後に自動削除します。
+                氏名、連絡先、健康情報など、個人を特定できる情報や機微な情報は入力しないでください。
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer className="border-t border-slate-200 bg-white px-5 py-8 text-center text-sm text-slate-500">
