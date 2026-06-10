@@ -33,6 +33,7 @@ export const rooms = sqliteTable(
           OR (${table.status} = 'closed' AND ${table.closedAt} IS NOT NULL)`,
     ),
     index("idx_rooms_status").on(table.status),
+    index("idx_rooms_status_closed_at").on(table.status, table.closedAt),
     index("idx_rooms_created_at").on(table.createdAt),
   ],
 );

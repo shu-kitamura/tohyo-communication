@@ -2,11 +2,16 @@ import { z } from "zod";
 
 import { roomQuestionSchema, roomSnapshotSchema } from "./room-snapshot";
 
+export const mutationRequestHeaderName = "X-TOHYO-Request";
+export const mutationRequestHeaderValue = "1";
+export const createRoomTurnstileAction = "create_room";
+
 export const questionTypeSchema = z.enum(["single", "multiple"]);
 
 export const createRoomRequestSchema = z.object({
   title: z.string().trim().min(1).max(100),
   adminPassword: z.string().min(8).max(128),
+  turnstileToken: z.string().min(1).max(2048),
 });
 
 export const createHostSessionRequestSchema = z.object({
@@ -61,6 +66,10 @@ export const participantRoomResponseSchema = z.object({
   votedQuestionIds: z.array(z.string().min(1)),
 });
 
+export const publicConfigResponseSchema = z.object({
+  turnstileSiteKey: z.string().min(1),
+});
+
 export interface ApiError {
   error: string;
   code?: string;
@@ -76,3 +85,4 @@ export type RoomViewerResponse = z.infer<typeof roomViewerResponseSchema>;
 export type HostSessionResponse = z.infer<typeof hostSessionResponseSchema>;
 export type HostRoomResponse = z.infer<typeof hostRoomResponseSchema>;
 export type ParticipantRoomResponse = z.infer<typeof participantRoomResponseSchema>;
+export type PublicConfigResponse = z.infer<typeof publicConfigResponseSchema>;

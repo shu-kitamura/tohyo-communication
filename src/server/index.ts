@@ -7,6 +7,7 @@ import {
   createHostSessionRequestSchema,
   createQuestionRequestSchema,
   createRoomRequestSchema,
+  publicConfigResponseSchema,
   submitVoteRequestSchema,
 } from "../shared/api";
 import { snapshotForAudience } from "../shared/room-snapshot";
@@ -22,6 +23,17 @@ import {
   verifyAdminPassword,
 } from "./auth";
 import { getHostRoom, getRoomSnapshot, notifyRoomSnapshot } from "./rooms";
+import { deleteExpiredRooms } from "./retention";
+import {
+  createIpRateLimitKey,
+  createRoomActorRateLimitKey,
+  enforceRateLimit,
+  getClientAddress,
+  limitJsonBody,
+  requireJsonContentType,
+  requireSameOriginMutation,
+} from "./security";
+import { verifyCreateRoomTurnstile } from "./turnstile";
 
 type AppContext = Context<{ Bindings: Env }>;
 
@@ -56,7 +68,53 @@ const questionParamsSchema = roomParamsSchema.extend({
   questionId: z.string().uuid(),
 });
 
+app.use("/api/*", requireSameOriginMutation);
+app.use("/api/*", async (c, next) => {
+  const rateLimitedResponse = await enforceRateLimit(
+    c,
+    c.env.PUBLIC_API_RATE_LIMITER,
+    createIpRateLimitKey(c),
+    "public_api",
+  );
+
+  if (rateLimitedResponse) {
+    return rateLimitedResponse;
+  }
+
+  await next();
+});
+
+app.get("/api/public-config", (c) => {
+  const parsed = publicConfigResponseSchema.safeParse({
+    turnstileSiteKey: c.env.TURNSTILE_SITE_KEY,
+  });
+
+  if (!parsed.success) {
+    console.error("TURNSTILE_SITE_KEY is not configured");
+    return c.json(
+      {
+        error: "セキュリティ設定を読み込めませんでした。",
+        code: "security_config_unavailable",
+      },
+      503,
+    );
+  }
+
+  return c.json(parsed.data);
+});
+
 app.get("/api/health", async (c) => {
+  const rateLimitedResponse = await enforceRateLimit(
+    c,
+    c.env.ROOM_READ_RATE_LIMITER,
+    `health:${createIpRateLimitKey(c)}`,
+    "health",
+  );
+
+  if (rateLimitedResponse) {
+    return rateLimitedResponse;
+  }
+
   const database = await c.env.DB.prepare("SELECT 1 AS ok").first<{ ok: number }>();
 
   return c.json({
@@ -66,52 +124,124 @@ app.get("/api/health", async (c) => {
   });
 });
 
-app.post("/api/rooms", zValidator("json", createRoomRequestSchema, validationHook), async (c) => {
-  const { adminPassword, title } = c.req.valid("json");
-  const roomId = `room-${crypto.randomUUID().slice(0, 8)}`;
-  const now = new Date().toISOString();
-  const [adminPasswordHash, hostSession] = await Promise.all([
-    hashAdminPassword(adminPassword),
-    createHostSession(),
-  ]);
+app.post(
+  "/api/rooms",
+  limitJsonBody,
+  requireJsonContentType,
+  zValidator("json", createRoomRequestSchema, validationHook),
+  async (c) => {
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.CREATE_ROOM_RATE_LIMITER,
+      createIpRateLimitKey(c),
+      "create_room",
+    );
 
-  await c.env.DB.batch([
-    c.env.DB.prepare(
-      `INSERT INTO rooms (
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
+
+    const { adminPassword, title, turnstileToken } = c.req.valid("json");
+
+    if (c.env.TEST_BYPASS_TURNSTILE !== "true") {
+      if (!c.env.TURNSTILE_SECRET_KEY) {
+        console.error("TURNSTILE_SECRET_KEY is not configured");
+        return c.json(
+          {
+            error: "セキュリティ確認を利用できません。しばらく待ってから再度お試しください。",
+            code: "turnstile_unavailable",
+          },
+          503,
+        );
+      }
+
+      const turnstileResult = await verifyCreateRoomTurnstile(
+        c.env.TURNSTILE_SECRET_KEY,
+        turnstileToken,
+        getClientAddress(c),
+        new URL(c.req.url).hostname,
+      );
+
+      if (turnstileResult.status === "invalid") {
+        console.warn("Turnstile verification failed", {
+          errorCodes: turnstileResult.errorCodes,
+        });
+        return c.json(
+          {
+            error: "セキュリティ確認に失敗しました。もう一度お試しください。",
+            code: "turnstile_failed",
+          },
+          400,
+        );
+      }
+
+      if (turnstileResult.status === "unavailable") {
+        return c.json(
+          {
+            error: "セキュリティ確認を利用できません。しばらく待ってから再度お試しください。",
+            code: "turnstile_unavailable",
+          },
+          503,
+        );
+      }
+    }
+
+    const roomId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const [adminPasswordHash, hostSession] = await Promise.all([
+      hashAdminPassword(adminPassword),
+      createHostSession(),
+    ]);
+
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        `INSERT INTO rooms (
          id, title, status, admin_password_hash, state_version, created_at, updated_at
        ) VALUES (?, ?, 'open', ?, 1, ?, ?)`,
-    ).bind(roomId, title, adminPasswordHash, now, now),
-    c.env.DB.prepare(
-      `INSERT INTO host_sessions (
+      ).bind(roomId, title, adminPasswordHash, now, now),
+      c.env.DB.prepare(
+        `INSERT INTO host_sessions (
          id, room_id, token_hash, created_at, expires_at
        ) VALUES (?, ?, ?, ?, ?)`,
-    ).bind(
-      hostSession.id,
-      roomId,
-      hostSession.tokenHash,
-      hostSession.createdAt,
-      hostSession.expiresAt,
-    ),
-  ]);
+      ).bind(
+        hostSession.id,
+        roomId,
+        hostSession.tokenHash,
+        hostSession.createdAt,
+        hostSession.expiresAt,
+      ),
+    ]);
 
-  setHostSessionCookie(c, roomId, hostSession.token);
+    setHostSessionCookie(c, roomId, hostSession.token);
 
-  return c.json(
-    {
-      roomId,
-      title,
-      hostUrl: `/rooms/${roomId}`,
-      participantUrl: `/rooms/${roomId}`,
-    },
-    201,
-  );
-});
+    return c.json(
+      {
+        roomId,
+        title,
+        hostUrl: `/rooms/${roomId}`,
+        participantUrl: `/rooms/${roomId}`,
+      },
+      201,
+    );
+  },
+);
 
 app.get(
   "/api/rooms/:roomId/viewer",
   zValidator("param", roomParamsSchema, validationHook),
   async (c) => {
     const { roomId } = c.req.valid("param");
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.ROOM_READ_RATE_LIMITER,
+      `${roomId}:${await createRoomActorRateLimitKey(c, roomId)}`,
+      "room_viewer",
+    );
+
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
+
     const room = await c.env.DB.prepare("SELECT id FROM rooms WHERE id = ?")
       .bind(roomId)
       .first<{ id: string }>();
@@ -128,14 +258,31 @@ app.get(
 
 app.get("/api/rooms/:roomId", zValidator("param", roomParamsSchema, validationHook), async (c) => {
   const { roomId } = c.req.valid("param");
+  const anonymousSession = getOrCreateAnonymousSession(c, roomId);
+  const voterKeyHash = await createVoterKeyHash(roomId, anonymousSession.token);
+  const rateLimitedResponse = await enforceRateLimit(
+    c,
+    c.env.ROOM_READ_RATE_LIMITER,
+    anonymousSession.isNew
+      ? `${roomId}:${createIpRateLimitKey(c)}`
+      : `${roomId}:participant:${voterKeyHash}`,
+    "participant_room",
+  );
+
+  if (rateLimitedResponse) {
+    if (anonymousSession.isNew) {
+      setAnonymousSessionCookie(c, roomId, anonymousSession.token);
+    }
+
+    return rateLimitedResponse;
+  }
+
   const roomState = await getRoomSnapshot(c.env.DB, roomId);
 
   if (!roomState) {
     return c.json({ error: "ルームが見つかりません。", code: "room_not_found" }, 404);
   }
 
-  const anonymousSession = getOrCreateAnonymousSession(c, roomId);
-  const voterKeyHash = await createVoterKeyHash(roomId, anonymousSession.token);
   const votedQuestionIds = await getVotedQuestionIds(c.env.DB, roomId, voterKeyHash);
 
   if (anonymousSession.isNew) {
@@ -152,10 +299,23 @@ app.get("/api/rooms/:roomId", zValidator("param", roomParamsSchema, validationHo
 app.post(
   "/api/rooms/:roomId/host-session",
   zValidator("param", roomParamsSchema, validationHook),
+  limitJsonBody,
+  requireJsonContentType,
   zValidator("json", createHostSessionRequestSchema, validationHook),
   async (c) => {
     const { roomId } = c.req.valid("param");
     const { adminPassword } = c.req.valid("json");
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.HOST_SESSION_RATE_LIMITER,
+      `${roomId}:${createIpRateLimitKey(c)}`,
+      "host_session",
+    );
+
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
+
     const room = await c.env.DB.prepare(
       `SELECT admin_password_hash AS adminPasswordHash
        FROM rooms
@@ -205,6 +365,16 @@ app.get(
   zValidator("param", roomParamsSchema, validationHook),
   async (c) => {
     const { roomId } = c.req.valid("param");
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.ROOM_READ_RATE_LIMITER,
+      `${roomId}:${await createRoomActorRateLimitKey(c, roomId)}`,
+      "host_room",
+    );
+
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
 
     if (!(await isAuthorizedHost(c, roomId))) {
       return c.json({ error: "ホストセッションが必要です。", code: "host_auth_required" }, 401);
@@ -221,11 +391,94 @@ app.get(
 );
 
 app.post(
+  "/api/rooms/:roomId/close",
+  zValidator("param", roomParamsSchema, validationHook),
+  async (c) => {
+    const { roomId } = c.req.valid("param");
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.HOST_MUTATION_RATE_LIMITER,
+      `${roomId}:${createIpRateLimitKey(c)}`,
+      "close_room",
+    );
+
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
+
+    if (!(await isAuthorizedHost(c, roomId))) {
+      return c.json({ error: "ホストセッションが必要です。", code: "host_auth_required" }, 401);
+    }
+
+    const now = new Date().toISOString();
+    const results = await c.env.DB.batch([
+      c.env.DB.prepare(
+        `UPDATE questions
+         SET status = 'closed', closed_at = ?, updated_at = ?
+         WHERE room_id = ?
+           AND status = 'active'
+           AND EXISTS (
+             SELECT 1 FROM rooms WHERE id = ? AND status = 'open'
+           )`,
+      ).bind(now, now, roomId, roomId),
+      c.env.DB.prepare(
+        `UPDATE rooms
+         SET status = 'closed',
+             closed_at = ?,
+             state_version = state_version + 1,
+             updated_at = ?
+         WHERE id = ? AND status = 'open'`,
+      ).bind(now, now, roomId),
+    ]);
+
+    if (results[1].meta.changes !== 1) {
+      const room = await c.env.DB.prepare("SELECT status FROM rooms WHERE id = ?")
+        .bind(roomId)
+        .first<{ status: "open" | "closed" }>();
+
+      if (!room) {
+        return c.json({ error: "ルームが見つかりません。", code: "room_not_found" }, 404);
+      }
+
+      return c.json(
+        {
+          error: "このルームはすでに終了しています。",
+          code: "room_already_closed",
+        },
+        409,
+      );
+    }
+
+    const roomState = await getRoomSnapshot(c.env.DB, roomId);
+
+    if (!roomState) {
+      return c.json({ error: "ルームが見つかりません。", code: "room_not_found" }, 404);
+    }
+
+    await notifyRoomSnapshot(c.env, roomState.snapshot);
+
+    return c.json({ snapshot: roomState.snapshot });
+  },
+);
+
+app.post(
   "/api/rooms/:roomId/questions",
   zValidator("param", roomParamsSchema, validationHook),
+  limitJsonBody,
+  requireJsonContentType,
   zValidator("json", createQuestionRequestSchema, validationHook),
   async (c) => {
     const { roomId } = c.req.valid("param");
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.HOST_MUTATION_RATE_LIMITER,
+      `${roomId}:${createIpRateLimitKey(c)}`,
+      "create_question",
+    );
+
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
 
     if (!(await isAuthorizedHost(c, roomId))) {
       return c.json({ error: "ホストセッションが必要です。", code: "host_auth_required" }, 401);
@@ -277,14 +530,20 @@ app.post(
         c.env.DB.prepare(
           `INSERT INTO options (
              id, question_id, label, sort_order, is_enabled, created_at, updated_at
-           ) VALUES (?, ?, ?, ?, 1, ?, ?)`,
-        ).bind(crypto.randomUUID(), questionId, label, sortOrder, now, now),
+           )
+           SELECT ?, id, ?, ?, 1, ?, ?
+           FROM questions
+           WHERE id = ? AND room_id = ?`,
+        ).bind(crypto.randomUUID(), label, sortOrder, now, now, questionId, roomId),
       ),
       c.env.DB.prepare(
         `UPDATE rooms
          SET state_version = state_version + 1, updated_at = ?
-         WHERE id = ?`,
-      ).bind(now, roomId),
+         WHERE id = ?
+           AND EXISTS (
+             SELECT 1 FROM questions WHERE id = ? AND room_id = ?
+           )`,
+      ).bind(now, roomId, questionId, roomId),
     ];
 
     const results = await c.env.DB.batch(statements);
@@ -318,6 +577,16 @@ app.post(
   zValidator("param", questionParamsSchema, validationHook),
   async (c) => {
     const { questionId, roomId } = c.req.valid("param");
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.HOST_MUTATION_RATE_LIMITER,
+      `${roomId}:${createIpRateLimitKey(c)}`,
+      "start_question",
+    );
+
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
 
     if (!(await isAuthorizedHost(c, roomId))) {
       return c.json({ error: "ホストセッションが必要です。", code: "host_auth_required" }, 401);
@@ -375,6 +644,16 @@ app.post(
   zValidator("param", questionParamsSchema, validationHook),
   async (c) => {
     const { questionId, roomId } = c.req.valid("param");
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.HOST_MUTATION_RATE_LIMITER,
+      `${roomId}:${createIpRateLimitKey(c)}`,
+      "close_question",
+    );
+
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
 
     if (!(await isAuthorizedHost(c, roomId))) {
       return c.json({ error: "ホストセッションが必要です。", code: "host_auth_required" }, 401);
@@ -429,10 +708,31 @@ app.post(
 app.post(
   "/api/rooms/:roomId/questions/:questionId/votes",
   zValidator("param", questionParamsSchema, validationHook),
+  limitJsonBody,
+  requireJsonContentType,
   zValidator("json", submitVoteRequestSchema, validationHook),
   async (c) => {
     const { questionId, roomId } = c.req.valid("param");
     const { optionIds } = c.req.valid("json");
+    const anonymousSession = getOrCreateAnonymousSession(c, roomId);
+    const voterKeyHash = await createVoterKeyHash(roomId, anonymousSession.token);
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.VOTE_RATE_LIMITER,
+      anonymousSession.isNew
+        ? `${roomId}:${createIpRateLimitKey(c)}`
+        : `${roomId}:participant:${voterKeyHash}`,
+      "submit_vote",
+    );
+
+    if (rateLimitedResponse) {
+      if (anonymousSession.isNew) {
+        setAnonymousSessionCookie(c, roomId, anonymousSession.token);
+      }
+
+      return rateLimitedResponse;
+    }
+
     const question = await c.env.DB.prepare(
       `SELECT
          q.id,
@@ -495,8 +795,6 @@ app.post(
       );
     }
 
-    const anonymousSession = getOrCreateAnonymousSession(c, roomId);
-    const voterKeyHash = await createVoterKeyHash(roomId, anonymousSession.token);
     const voteId = crypto.randomUUID();
     const now = new Date().toISOString();
     const statements = [
@@ -579,6 +877,17 @@ app.get(
   zValidator("param", roomParamsSchema, validationHook),
   async (c) => {
     const { roomId } = c.req.valid("param");
+    const rateLimitedResponse = await enforceRateLimit(
+      c,
+      c.env.ROOM_EVENTS_RATE_LIMITER,
+      `${roomId}:${await createRoomActorRateLimitKey(c, roomId)}`,
+      "room_events",
+    );
+
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
+
     const roomState = await getRoomSnapshot(c.env.DB, roomId);
 
     if (!roomState) {
@@ -653,4 +962,10 @@ async function getVotedQuestionIds(
 }
 
 export { RoomEventsDO };
-export default app;
+
+export default {
+  fetch: app.fetch,
+  scheduled(controller, env, context) {
+    context.waitUntil(deleteExpiredRooms(env.DB, controller.scheduledTime));
+  },
+} satisfies ExportedHandler<Env>;

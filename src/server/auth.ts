@@ -109,6 +109,10 @@ export function getHostSessionToken(c: Context, roomId: string): string | undefi
   return getCookie(c, hostCookieName(roomId));
 }
 
+export function getAnonymousSessionToken(c: Context, roomId: string): string | undefined {
+  return getCookie(c, anonymousCookieName(roomId));
+}
+
 export function setHostSessionCookie(c: Context, roomId: string, token: string): void {
   setCookie(c, hostCookieName(roomId), token, {
     httpOnly: true,
@@ -123,8 +127,7 @@ export function getOrCreateAnonymousSession(
   c: Context,
   roomId: string,
 ): { token: string; isNew: boolean } {
-  const cookieName = anonymousCookieName(roomId);
-  const currentToken = getCookie(c, cookieName);
+  const currentToken = getAnonymousSessionToken(c, roomId);
 
   if (currentToken) {
     return { token: currentToken, isNew: false };

@@ -1,8 +1,10 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { publicConfigResponseSchema } from "../../shared/api";
 import { requestJson } from "../api";
 import { SiteHeader } from "../components/site-header";
+import { TurnstileWidget } from "../components/turnstile-widget";
 import type { RoomCreationNavigationState } from "../types/room";
 
 export function CreateRoomPage() {
@@ -11,6 +13,33 @@ export function CreateRoomPage() {
   const [adminPassword, setAdminPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [securityError, setSecurityError] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const [turnstileSiteKey, setTurnstileSiteKey] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    requestJson<unknown>("/api/public-config")
+      .then((response) => publicConfigResponseSchema.parse(response))
+      .then((config) => {
+        if (!isCancelled) {
+          setTurnstileSiteKey(config.turnstileSiteKey);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setSecurityError(
+            "セキュリティ確認を読み込めませんでした。ページを再読み込みしてください。",
+          );
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,6 +55,11 @@ export function CreateRoomPage() {
       return;
     }
 
+    if (!turnstileToken) {
+      setError("セキュリティ確認が完了するまでお待ちください。");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -37,6 +71,7 @@ export function CreateRoomPage() {
         body: JSON.stringify({
           title: roomTitle,
           adminPassword,
+          turnstileToken,
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -47,6 +82,8 @@ export function CreateRoomPage() {
 
       navigate(response.hostUrl, { state: navigationState });
     } catch (submissionError) {
+      setTurnstileToken("");
+      setTurnstileResetKey((current) => current + 1);
       setError(
         submissionError instanceof Error
           ? submissionError.message
@@ -125,6 +162,35 @@ export function CreateRoomPage() {
               </FormField>
             </FormSection>
 
+            <FormSection
+              description="自動操作による大量作成を防ぐための確認です。"
+              number="3"
+              title="セキュリティ確認"
+            >
+              {turnstileSiteKey ? (
+                <TurnstileWidget
+                  onError={() =>
+                    setSecurityError(
+                      "セキュリティ確認を読み込めませんでした。ページを再読み込みしてください。",
+                    )
+                  }
+                  onToken={(token) => {
+                    setSecurityError("");
+                    setTurnstileToken(token);
+                  }}
+                  resetKey={turnstileResetKey}
+                  siteKey={turnstileSiteKey}
+                />
+              ) : securityError ? null : (
+                <p className="text-sm text-slate-500">セキュリティ確認を読み込んでいます...</p>
+              )}
+              {securityError ? (
+                <p className="text-sm font-medium text-red-700" role="alert">
+                  {securityError}
+                </p>
+              ) : null}
+            </FormSection>
+
             <div className="border-t border-slate-200 bg-slate-50/70 p-6 sm:p-8">
               {error ? (
                 <p
@@ -136,7 +202,10 @@ export function CreateRoomPage() {
               ) : null}
               <button
                 className="inline-flex min-h-13 w-full items-center justify-center gap-3 rounded-xl bg-sky-600 px-7 py-3 font-bold text-white shadow-lg shadow-sky-200 transition hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 sm:w-auto"
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting ||
+                  (Boolean(roomTitle.trim()) && adminPassword.length >= 8 && !turnstileToken)
+                }
                 type="submit"
               >
                 {isSubmitting ? "作成中..." : "ルームを作成"}

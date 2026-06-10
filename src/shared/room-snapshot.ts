@@ -47,11 +47,15 @@ export function snapshotForAudience(
   }
 
   const visibleQuestionIds = new Set(visibleResultQuestionIds);
+  const questions =
+    snapshot.roomStatus === "closed"
+      ? snapshot.questions.filter((question) => question.status !== "draft")
+      : snapshot.questions;
   const resultsByQuestion = Object.fromEntries(
     Object.entries(snapshot.resultsByQuestion).filter(([questionId]) =>
       visibleQuestionIds.has(questionId),
     ),
   );
 
-  return { ...snapshot, resultsByQuestion };
+  return { ...snapshot, questions, resultsByQuestion };
 }

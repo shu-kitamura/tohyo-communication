@@ -10,6 +10,7 @@ TOHYO通信は、イベントやワークショップ向けのリアルタイム
 | --- | --- | --- |
 | フロントエンド | React / Vite / React Router / Tailwind CSS | ルーム作成、ホスト画面、ゲスト画面 |
 | API | Cloudflare Workers / Hono / Zod | 認証、入力検証、D1操作、SSE入口 |
+| 濫用対策 | Workers Rate Limiting / Turnstile | API回数制限、ルーム大量作成のbot対策 |
 | 永続化 | Cloudflare D1 / Drizzle | ルーム、質問、選択肢、投票、セッション |
 | リアルタイム | Durable Objects / SSE | room単位の接続管理とsnapshot配信 |
 
@@ -84,11 +85,12 @@ type RoomSnapshot = {
 
 ### ルーム作成
 
-1. ホストが `/rooms/` でルーム名と管理パスワードを入力する。
-2. `POST /api/rooms` が `rooms` と初回 `host_sessions` をD1へ保存する。
-3. WorkerがホストセッションCookieを発行する。
-4. フロントは `/rooms/:roomId` へ遷移する。
-5. `viewerRole: "host"` と判定され、ホスト画面が表示される。
+1. ホストが `/rooms/` でルーム名と管理パスワードを入力し、Turnstile確認を完了する。
+2. `POST /api/rooms` がrate limitとTurnstile tokenを検証する。
+3. `rooms` と初回 `host_sessions` をD1へ保存する。
+4. WorkerがホストセッションCookieを発行する。
+5. フロントは `/rooms/:roomId` へ遷移する。
+6. `viewerRole: "host"` と判定され、ホスト画面が表示される。
 
 ### ゲスト投票
 
@@ -104,6 +106,14 @@ type RoomSnapshot = {
 2. 管理パスワード入力欄が表示される。
 3. `POST /api/rooms/:roomId/host-session` が管理パスワードを検証する。
 4. 成功するとホストセッションCookieを発行し、同じURLでホスト画面へ切り替える。
+
+### ルーム終了と削除
+
+1. ホストが「ルームを終了」を実行する。
+2. Workerが受付中の質問をすべて終了し、ルームを `closed` にする。
+3. 終了snapshotをDurable Objectへ通知し、ゲスト画面へ配信する。
+4. 終了状態を30日間保持する。
+5. 日次Cronが保持期限を過ぎたルームを関連データごと削除する。
 
 ## 関連ドキュメント
 

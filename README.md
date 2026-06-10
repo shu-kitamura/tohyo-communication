@@ -37,6 +37,8 @@
 - Cloudflare Workers
 - Hono
 - Zod
+- Cloudflare Turnstile
+- Workers Rate Limiting
 - Durable Objects
 - Server-Sent Events
 
@@ -60,11 +62,13 @@ Node.js 22 と pnpm 10 を使用します。
 
 ```bash
 pnpm install
+cp .dev.vars.example .dev.vars
 pnpm db:migrate:local
 pnpm dev
 ```
 
 開発サーバーは `http://localhost:5173` で起動します。
+`.dev.vars.example` はCloudflare公式テストキーとローカル専用の検証迂回設定を使用します。
 
 ## 主なコマンド
 
@@ -94,3 +98,25 @@ legacy/                 旧実装
 ## デプロイ前の設定
 
 `wrangler.jsonc` の D1 `database_id` はローカル開発用のプレースホルダーです。本番 D1 を作成し、実際の ID に差し替えてから migration と deploy を実行します。
+
+Cloudflare Dashboardで本番用Turnstile widgetを作成し、site keyとsecret keyをWorker secretへ設定します。
+
+```bash
+pnpm wrangler secret put TURNSTILE_SITE_KEY
+pnpm wrangler secret put TURNSTILE_SECRET_KEY
+```
+
+`TEST_BYPASS_TURNSTILE` はローカルテスト専用です。本番環境には設定しません。
+
+`wrangler.jsonc` には終了済みルームを30日後に削除する日次Cronが含まれます。デプロイ前に最新のD1 migrationを本番へ適用してください。
+
+```bash
+pnpm db:migrate:remote
+```
+
+参考:
+
+- [Cloudflare Workers Rate Limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+- [Cloudflare Turnstile server-side validation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/)
+- [Cloudflare Turnstile test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)
+- [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)

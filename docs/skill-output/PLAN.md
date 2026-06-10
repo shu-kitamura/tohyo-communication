@@ -1,59 +1,81 @@
-# 実装計画: ホスト/ゲスト判別の統一ルート化
+# 実装計画: ルーム終了とデータ保持期限
 
 ## 概要
 
-`/rooms/:roomId`を共通入口にして、ホストセッションCookieでホスト/ゲストを判別する構成へ移行する。ゲストは同じルーム画面から管理パスワードを入力してホストへ昇格できるようにする。
+ホストがルーム全体を終了できる操作を追加し、終了時に受付中の質問もまとめて終了する。終了済みルームは30日間保持した後、Cloudflare Cron TriggerからD1の親レコードを削除し、関連する質問・投票・セッションをcascadeで削除する。
 
 ## 要件
 
-- `/rooms/:roomId`でホスト/ゲストを自動判別する。
-- ゲスト画面から管理パスワードでホストセッションを作成できる。
-- API権限は引き続きホストセッションCookieで判定する。
-- 投票データや匿名投票セッションの扱いは変えない。
+- ホスト画面に不可逆な「ルームを終了」操作を追加する。
+- ルーム終了時にactive質問をすべてclosedにする。
+- 終了後は質問追加・開始・投票を受け付けない。
+- 終了済みルームは最終状態を30日間参照できる。
+- 終了から30日経過したルームを日次Cronで完全削除する。
+- openルームは自動削除しない。
 
 ## アーキテクチャ変更
 
-- `src/server/auth.ts`: 保存済み管理パスワードハッシュを検証する関数を追加する。
-- `src/server/index.ts`: viewer判定APIとホストセッション作成APIを追加し、作成後URLを共通ルートにする。
-- `src/client/app.tsx`: `/rooms/:roomId`を統一入口コンポーネントへ変更する。
-- `src/client/pages/room-entry-page.tsx`: viewer判定結果に応じてホスト/ゲスト画面を出し分ける。
-- `src/client/pages/room-page.tsx`: ゲスト画面にホスト切り替えフォームを追加する。
-- `tests/e2e/*.spec.ts`: URL期待値と昇格導線を更新する。
+- `src/server/index.ts`: ルーム終了APIとscheduled handlerを追加する。
+- `src/server/retention.ts`: 保持期限の計算と終了済みルーム削除処理を追加する。
+- `src/client/pages/host-room-page.tsx`: ルーム終了操作と終了済み表示を追加する。
+- `src/server/db/schema.ts`, `drizzle/`: `status + closed_at` の削除検索用indexを追加する。
+- `wrangler.jsonc`: 日次Cron Triggerを追加する。
 
 ## 実装手順
 
-### フェーズ1: API追加
+### フェーズ1: ルーム終了
 
-1. **管理パスワード検証を追加する** (File: `src/server/auth.ts`)
-   - Action: `verifyAdminPassword`を追加し、PBKDF2ハッシュを安全に比較する。
-   - Why: ゲストが管理パスワードでホストセッションを作成するため。
+1. **ルーム終了APIを追加する** (File: `src/server/index.ts`)
+   - Action: ホスト認証とrate limit後、active質問をclosedへ変更し、roomをclosedへ変更してsnapshotを配信する。
+   - Why: ルーム全体の受付を一操作で確実に停止するため。
    - Dependencies: なし
    - Risk: 中
 
-2. **viewer/host-session APIを追加する** (File: `src/server/index.ts`)
-   - Action: `GET /api/rooms/:roomId/viewer`と`POST /api/rooms/:roomId/host-session`を追加する。
-   - Why: 共通ルートでの出し分けとホスト昇格に必要なため。
+2. **ホスト画面に終了操作を追加する** (File: `src/client/pages/host-room-page.tsx`)
+   - Action: 確認ダイアログ付きの終了ボタン、処理中表示、終了後の操作無効化を追加する。
+   - Why: 誤操作を抑えながらホスト自身が受付を停止できるようにするため。
    - Dependencies: ステップ1
    - Risk: 中
 
-### フェーズ2: UI統合
+### フェーズ2: 自動削除
 
-1. **共通ルート入口を追加する** (File: `src/client/pages/room-entry-page.tsx`)
-   - Action: viewer APIを呼び、hostなら`HostRoomPage`、guestなら`RoomPage`を描画する。
-   - Why: URLではなくセッションで画面を切り替えるため。
-   - Dependencies: フェーズ1
-   - Risk: 中
+1. **保持期限削除処理を追加する** (File: `src/server/retention.ts`)
+   - Action: `closed_at` が30日前以前のclosedルームを削除し、削除件数を構造化ログへ出す。
+   - Why: 投票データと認証情報を必要以上に保持しないため。
+   - Dependencies: なし
+   - Risk: 高
 
-2. **ゲストからホストへ切り替えるUIを追加する** (File: `src/client/pages/room-page.tsx`)
-   - Action: 管理パスワード入力フォームを追加し、成功時に共通入口へhost状態を伝える。
-   - Why: ゲストが同じURLからホストへ昇格できるようにするため。
+2. **Cron Triggerを追加する** (File: `wrangler.jsonc`, `src/server/index.ts`)
+   - Action: 毎日UTC 18:00にscheduled handlerから保持期限削除処理を実行する。
+   - Why: 日本時間03:00に定期的な削除を自動実行するため。
    - Dependencies: ステップ1
    - Risk: 中
+
+3. **削除検索用indexを追加する** (File: `src/server/db/schema.ts`, `drizzle/*.sql`)
+   - Action: `rooms(status, closed_at)` indexを追加する。
+   - Why: 保存データが増えた場合も期限対象の検索を安定させるため。
+   - Dependencies: なし
+   - Risk: 低
+
+### フェーズ3: テストと文書
+
+1. **API・cascade削除テストを追加する** (File: `tests/worker/*.test.ts`)
+   - Action: active質問の一括終了、終了後の投票拒否、期限経過ルームと関連行の削除を検証する。
+   - Why: 不可逆操作と削除処理の回帰を防ぐため。
+   - Dependencies: フェーズ1、2
+   - Risk: 中
+
+2. **E2Eと仕様書を更新する** (File: `tests/e2e/room.spec.ts`, `docs/*.md`, `TODO.md`)
+   - Action: ホスト操作からゲスト終了表示までを検証し、30日保持と完全削除を記録する。
+   - Why: UI導線と運用ルールを一致させるため。
+   - Dependencies: 全実装
+   - Risk: 低
 
 ## テスト戦略
 
-- ユニット/Workerテスト: ホストセッション作成APIとパスワード不一致を確認する。
-- E2Eテスト: ルーム作成後に`/rooms/:roomId`でホスト表示になること、ゲストが同URLからホストへ昇格できることを確認する。
+- Workerテスト: ルーム終了、active質問の一括終了、終了後の投票拒否
+- 保持期限テスト: 30日経過したclosedルームだけ削除し、全子テーブルがcascade削除されること
+- E2Eテスト: ホストがルームを終了し、ゲストに終了状態が配信されること
 - 静的検査: `pnpm check`
 - 回帰テスト: `pnpm test`
 - ブラウザテスト: `pnpm test:e2e`
@@ -61,13 +83,20 @@
 
 ## リスクと対策
 
-- **Risk**: ホストCookieを持つユーザーが匿名ゲストとして扱われる。
-  - Mitigation: 共通入口で最初にviewer APIを呼び、hostならゲストAPIを呼ばない。
-- **Risk**: 管理パスワード検証の実装不備。
-  - Mitigation: 既存ハッシュ形式を解析して同じPBKDF2条件で再計算し、長さ差込みで比較する。
+- **Risk**: ホストが誤ってルームを終了する。
+  - Mitigation: 不可逆であることと30日後の削除を確認ダイアログに明記する。
+- **Risk**: 削除対象の条件ミスでopenルームを消す。
+  - Mitigation: `status = 'closed' AND closed_at <= cutoff` を必須条件とし、境界テストを追加する。
+- **Risk**: 一部テーブルだけ残りデータ不整合になる。
+  - Mitigation: roomsを親として削除し、既存のON DELETE CASCADEを利用して全関連行を削除する。
+- **Risk**: 7日では確認・復旧期間が短い。
+  - Mitigation: export未実装の現段階では30日保持とし、export提供後に短縮を再検討する。
 
 ## 成功基準
 
-- [x] `/rooms/:roomId`でホスト/ゲストを判別できる。
-- [x] ゲストが管理パスワードでホストへ切り替えられる。
+- [x] ホストがルーム全体を終了できる。
+- [x] 受付中の質問が同時に終了する。
+- [x] 終了後の質問追加・開始・投票が拒否される。
+- [x] 終了後30日以内のルームは保持される。
+- [x] 終了後30日を超えたルームと全関連データが削除される。
 - [x] `pnpm check`、`pnpm test`、`pnpm test:e2e`、`pnpm build`が成功する。
