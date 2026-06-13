@@ -11,7 +11,7 @@
     {
       "binding": "DB",
       "database_name": "tohyo-communication",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "9dafb7b9-520d-4a87-86f4-1f6d1dc4dac3",
       "migrations_dir": "drizzle",
     },
   ],
