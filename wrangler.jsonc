@@ -84,7 +84,12 @@
   "migrations": [
     {
       "tag": "v1",
+      "new_sqlite_classes": ["VoteSessionDO"],
+    },
+    {
+      "tag": "v2",
       "new_sqlite_classes": ["RoomEventsDO"],
+      "deleted_classes": ["VoteSessionDO"],
     },
   ],
   "triggers": {
