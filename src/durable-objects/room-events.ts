@@ -116,7 +116,9 @@ export class RoomEventsDO implements DurableObject {
   }
 
   private sendSnapshot(client: SseClient, snapshot: RoomSnapshot): void {
-    const payload = snapshotForAudience(snapshot, client.audience);
+    const visibleResultQuestionIds =
+      client.audience === "participant" ? Object.keys(snapshot.resultsByQuestion) : [];
+    const payload = snapshotForAudience(snapshot, client.audience, visibleResultQuestionIds);
     const message = [
       `id: ${snapshot.stateVersion}`,
       "event: room.snapshot",

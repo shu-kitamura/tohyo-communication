@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { hostSessionResponseSchema, participantRoomResponseSchema } from "../../shared/api";
 import {
   roomSnapshotSchema,
+  snapshotForAudience,
   type QuestionResults,
   type RoomSnapshot,
   type SnapshotQuestion,
@@ -74,11 +75,13 @@ export function RoomPage({ onHostAuthenticated }: RoomPageProps = {}) {
             const snapshotResult = roomSnapshotSchema.safeParse(JSON.parse(message.data));
 
             if (snapshotResult.success) {
-              if (votedQuestionIdsRef.current.length > 0) {
-                void refreshRoom();
-              } else {
-                setSnapshot(snapshotResult.data);
-              }
+              setSnapshot(
+                snapshotForAudience(
+                  snapshotResult.data,
+                  "participant",
+                  votedQuestionIdsRef.current,
+                ),
+              );
             }
           } catch {
             setConnectionStatus("disconnected");
