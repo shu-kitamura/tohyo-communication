@@ -1,102 +1,86 @@
-# 実装計画: ルーム終了とデータ保持期限
+# 実装計画: V1実装と旧構成参照の削除
 
 ## 概要
 
-ホストがルーム全体を終了できる操作を追加し、終了時に受付中の質問もまとめて終了する。終了済みルームは30日間保持した後、Cloudflare Cron TriggerからD1の親レコードを削除し、関連する質問・投票・セッションをcascadeで削除する。
+現行のCloudflare Workers + Hono + React/Vite + D1構成だけでリポジトリを理解できるようにする。旧Next.js/OpenNext実装を削除し、ドキュメントとツール設定を現行構成へ統一する。
 
 ## 要件
 
-- ホスト画面に不可逆な「ルームを終了」操作を追加する。
-- ルーム終了時にactive質問をすべてclosedにする。
-- 終了後は質問追加・開始・投票を受け付けない。
-- 終了済みルームは最終状態を30日間参照できる。
-- 終了から30日経過したルームを日次Cronで完全削除する。
-- openルームは自動削除しない。
+- `legacy/` 配下のV1実装を削除する
+- `AGENTS.md` と `README.md` を現行仕様へ更新する
+- Next.js/OpenNext/V1専用の設定とAI向けガイドを整理する
+- `wrangler.jsonc` のDurable Object migration履歴は維持する
+- 現行実装のcheck、test、E2E、buildが成功することを確認する
 
 ## アーキテクチャ変更
 
-- `src/server/index.ts`: ルーム終了APIとscheduled handlerを追加する。
-- `src/server/retention.ts`: 保持期限の計算と終了済みルーム削除処理を追加する。
-- `src/client/pages/host-room-page.tsx`: ルーム終了操作と終了済み表示を追加する。
-- `src/server/db/schema.ts`, `drizzle/`: `status + closed_at` の削除検索用indexを追加する。
-- `wrangler.jsonc`: 日次Cron Triggerを追加する。
+- `legacy/`: 旧Next.js/OpenNext実装一式を削除する
+- `AGENTS.md`: React/Vite/Hono/D1/RoomEventsDO構成と現行ルート・機能へ更新する
+- `README.md`: 旧実装の退避説明とディレクトリ項目を削除する
+- `.gitignore`, `.oxlintrc.json`, `.oxfmtrc.json`, `tsconfig.json`: V1専用除外を削除する
+- `.codex/skills/code-review/SKILL.md`: レビュー対象と観点を現行技術スタックへ更新する
 
 ## 実装手順
 
-### フェーズ1: ルーム終了
+### フェーズ1: 旧実装と参照の整理
 
-1. **ルーム終了APIを追加する** (File: `src/server/index.ts`)
-   - Action: ホスト認証とrate limit後、active質問をclosedへ変更し、roomをclosedへ変更してsnapshotを配信する。
-   - Why: ルーム全体の受付を一操作で確実に停止するため。
+1. **V1実装を削除する** (File: `legacy/`)
+   - Action: 旧Next.js/OpenNextのコード、設定、依存関係、テストを削除する
+   - Why: 現行実装との誤認を防ぐため
    - Dependencies: なし
-   - Risk: 中
+   - Risk: 低（削除対象が明示されている）
 
-2. **ホスト画面に終了操作を追加する** (File: `src/client/pages/host-room-page.tsx`)
-   - Action: 確認ダイアログ付きの終了ボタン、処理中表示、終了後の操作無効化を追加する。
-   - Why: 誤操作を抑えながらホスト自身が受付を停止できるようにするため。
+2. **プロジェクトガイドを更新する** (File: `AGENTS.md`, `README.md`)
+   - Action: 現行のルーム、認証、D1永続化、RoomEventsDOによるSSE配信を説明する
+   - Why: 開発者とAIが現行仕様だけを参照できるようにするため
+   - Dependencies: 現行ドキュメントと実装の確認
+   - Risk: 中（仕様記述の不一致）
+
+3. **V1専用設定を削除する** (File: `.gitignore`, `.oxlintrc.json`, `.oxfmtrc.json`, `tsconfig.json`)
+   - Action: Next.js、OpenNext、legacy向けの除外設定を削除する
+   - Why: 不要な設定を残さず、検索やチェック対象を明確にするため
    - Dependencies: ステップ1
-   - Risk: 中
+   - Risk: 低
 
-### フェーズ2: 自動削除
-
-1. **保持期限削除処理を追加する** (File: `src/server/retention.ts`)
-   - Action: `closed_at` が30日前以前のclosedルームを削除し、削除件数を構造化ログへ出す。
-   - Why: 投票データと認証情報を必要以上に保持しないため。
-   - Dependencies: なし
-   - Risk: 高
-
-2. **Cron Triggerを追加する** (File: `wrangler.jsonc`, `src/server/index.ts`)
-   - Action: 毎日UTC 18:00にscheduled handlerから保持期限削除処理を実行する。
-   - Why: 日本時間03:00に定期的な削除を自動実行するため。
-   - Dependencies: ステップ1
-   - Risk: 中
-
-3. **削除検索用indexを追加する** (File: `src/server/db/schema.ts`, `drizzle/*.sql`)
-   - Action: `rooms(status, closed_at)` indexを追加する。
-   - Why: 保存データが増えた場合も期限対象の検索を安定させるため。
+4. **コードレビュースキルを更新する** (File: `.codex/skills/code-review/SKILL.md`)
+   - Action: Next.js固有の対象・観点をReact/Vite/Hono/D1へ置き換える
+   - Why: AI向けガイドが旧構成を前提にしないようにするため
    - Dependencies: なし
    - Risk: 低
 
-### フェーズ3: テストと文書
+### フェーズ2: 検証
 
-1. **API・cascade削除テストを追加する** (File: `tests/worker/*.test.ts`)
-   - Action: active質問の一括終了、終了後の投票拒否、期限経過ルームと関連行の削除を検証する。
-   - Why: 不可逆操作と削除処理の回帰を防ぐため。
-   - Dependencies: フェーズ1、2
-   - Risk: 中
-
-2. **E2Eと仕様書を更新する** (File: `tests/e2e/room.spec.ts`, `docs/*.md`, `TODO.md`)
-   - Action: ホスト操作からゲスト終了表示までを検証し、30日保持と完全削除を記録する。
-   - Why: UI導線と運用ルールを一致させるため。
-   - Dependencies: 全実装
+1. **残存参照を検索する** (File: repository-wide)
+   - Action: V1ルート、Next.js、OpenNext、legacy参照を検索し、migration履歴と生成型以外が残っていないことを確認する
+   - Why: 削除漏れを防ぐため
+   - Dependencies: フェーズ1
    - Risk: 低
+
+2. **品質チェックを実行する** (File: repository-wide)
+   - Action: `pnpm check`, `pnpm test`, `pnpm test:e2e`, `pnpm build` を実行する
+   - Why: 現行実装へ影響がないことを確認するため
+   - Dependencies: フェーズ1
+   - Risk: 中（ブラウザやローカル環境依存）
 
 ## テスト戦略
 
-- Workerテスト: ルーム終了、active質問の一括終了、終了後の投票拒否
-- 保持期限テスト: 30日経過したclosedルームだけ削除し、全子テーブルがcascade削除されること
-- E2Eテスト: ホストがルームを終了し、ゲストに終了状態が配信されること
-- 静的検査: `pnpm check`
-- 回帰テスト: `pnpm test`
-- ブラウザテスト: `pnpm test:e2e`
-- ビルド: `pnpm build`
+- 静的検査: lint、format、TypeScript typecheck
+- ユニット/結合テスト: Vitest Workers Poolの全テスト
+- E2Eテスト: Playwrightでルーム作成・投票フロー
+- ビルド: Vite + Cloudflare Worker本番ビルド
+- 残存参照: `rg` による旧構成キーワード検索
 
 ## リスクと対策
 
-- **Risk**: ホストが誤ってルームを終了する。
-  - Mitigation: 不可逆であることと30日後の削除を確認ダイアログに明記する。
-- **Risk**: 削除対象の条件ミスでopenルームを消す。
-  - Mitigation: `status = 'closed' AND closed_at <= cutoff` を必須条件とし、境界テストを追加する。
-- **Risk**: 一部テーブルだけ残りデータ不整合になる。
-  - Mitigation: roomsを親として削除し、既存のON DELETE CASCADEを利用して全関連行を削除する。
-- **Risk**: 7日では確認・復旧期間が短い。
-  - Mitigation: export未実装の現段階では30日保持とし、export提供後に短縮を再検討する。
+- **Risk**: migration履歴の `VoteSessionDO` を誤って削除する
+  - Mitigation: `wrangler.jsonc` のv1/v2 migrationは変更せず、差分と検索結果で確認する
+- **Risk**: 現行機能を旧実装と誤認して削除する
+  - Mitigation: `src/`, `docs/`, `tests/` の現行ルームAPIとSSE設計を基準に判定する
 
 ## 成功基準
 
-- [x] ホストがルーム全体を終了できる。
-- [x] 受付中の質問が同時に終了する。
-- [x] 終了後の質問追加・開始・投票が拒否される。
-- [x] 終了後30日以内のルームは保持される。
-- [x] 終了後30日を超えたルームと全関連データが削除される。
-- [x] `pnpm check`、`pnpm test`、`pnpm test:e2e`、`pnpm build`が成功する。
+- [x] `legacy/` が削除されている
+- [x] 現行ドキュメントとAI向けガイドに旧構成の説明が残っていない
+- [x] Next.js/OpenNext/V1専用設定が削除されている
+- [x] `wrangler.jsonc` の `VoteSessionDO` migration履歴が維持されている
+- [ ] `pnpm check`, `pnpm test`, `pnpm test:e2e`, `pnpm build` が成功する

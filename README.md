@@ -2,7 +2,7 @@
 
 イベントやワークショップ向けのリアルタイム投票アプリケーションです。
 
-現在、ルートディレクトリでは Cloudflare Workers + D1 + Durable Objects 構成の実装を進めています。旧 Next.js 実装は `legacy/` に退避してあります。
+Cloudflare Workers + Hono + React/Vite + D1 + Durable Objects で構成しています。
 
 ## アーキテクチャ
 
@@ -92,7 +92,6 @@ src/durable-objects/    room 単位の SSE 配信
 src/shared/             共有 schema / 型
 drizzle/                D1 migration
 tests/                  Vitest / Playwright
-legacy/                 旧実装
 ```
 
 ## デプロイ前の設定

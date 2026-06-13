@@ -9,9 +9,6 @@
       "components": {},
       "attributes": {}
     },
-    "next": {
-      "rootDir": []
-    },
     "react": {
       "formComponents": [],
       "linkComponents": [],
@@ -36,15 +33,5 @@
     "builtin": true
   },
   "globals": {},
-  "ignorePatterns": [
-    "node_modules",
-    "coverage",
-    ".next",
-    ".open-next",
-    ".wrangler",
-    "dist",
-    "drizzle",
-    "legacy",
-    "package-lock.json"
-  ]
+  "ignorePatterns": ["node_modules", "coverage", ".wrangler", "dist", "drizzle"]
 }
