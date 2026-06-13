@@ -3,14 +3,10 @@
   "ignorePatterns": [
     "node_modules",
     "coverage",
-    ".next",
-    ".open-next",
     ".wrangler",
     "dist",
     "drizzle",
     "docs",
-    "legacy",
-    "package-lock.json",
     "worker-configuration.d.ts"
   ]
 }

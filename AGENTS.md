@@ -2,49 +2,51 @@
 
 ## Project Overview
 
-- Real-Time Polling App: A serverless real-time voting web application for events and workshops, currently live at https://vote.shu-kita.net. It allows hosts to create questions and participants to vote via QR code, with instant visualization of results.
-- Purpose: Developed to collect and display audience opinions instantly, addressing the lack of real-time feedback and poor visibility in traditional polling tools. Participants can see voting results update live, fostering engagement in the venue.
-- Key Features:
-  - Session creation with a question, 2–10 choices, and single/multiple selection. Organizer view is accessed via `/vote/:sessionId?view=organizer`.
-  - QR code + shareable URL, voter-friendly UI, and optional result view for participants after voting or after session closure.
-  - Real-time updates via SSE, with bar/pie chart visualization on the organizer and result screens.
-  - Data export in CSV/JSON formats (`format=image` is currently unimplemented).
-  - Duplicate vote prevention via `voter_token` HttpOnly cookie (24h) and Durable Object storage checks.
-- Architecture: Built as a stateful serverless system. Next.js App Router is deployed on Cloudflare Workers via OpenNext, while a Durable Object handles per-session state, validation, and vote counting. API routes proxy to the Durable Object (`/init`, `/`, `/vote`, `/close`, `/stream`, `/export`), and SSE streams push live updates to clients.
-- Tech Stack: Frontend is built with Next.js (App Router) using React and Tailwind CSS, all written in TypeScript. Backend logic runs on Cloudflare Workers with Durable Objects for persistence. This modern stack enables scalability and edge deployment.
-- Status: This project is a personal portfolio piece aimed at demonstrating real-time web technology. It is already deployed for use in small-scale events, so stability is important, though the user load is relatively low.
+- TOHYO通信は、イベントやワークショップ向けのサーバーレスなリアルタイム投票アプリケーションです。
+- ホストはルームを作成し、ルーム内に単一選択または複数選択の質問を追加して、受付開始・終了を操作できます。
+- ゲストは共有された `/rooms/:roomId` を開き、受付中の質問へ投票できます。同じURLで、サーバーがセッションCookieを検証してホスト/ゲスト表示を切り替えます。
+- 投票結果はServer-Sent Eventsでリアルタイム配信されます。ホストは全結果を確認でき、ゲストは回答済み質問の結果だけを確認できます。
+- 管理パスワードとCloudflare Turnstileでルーム作成・ホスト権限を保護し、匿名セッションCookieとD1のunique制約で同一ブラウザからの重複投票を防ぎます。
+- 終了済みルームと関連データは30日間保持し、日次Cronで削除します。
+
+## Architecture
+
+- Frontend: React 19、Vite、React Router、Tailwind CSSで構成するSPAです。
+- API: Cloudflare Workers上のHonoがルーティング、Zod入力検証、認証、rate limit、D1操作を担当します。
+- Persistence: Cloudflare D1を唯一のSource of Truthとし、Drizzle ORMとmigrationでschemaを管理します。
+- Realtime: `RoomEventsDO` がルーム単位のSSE接続、最新snapshotのインメモリキャッシュ、broadcastを担当します。Durable Objectは投票データを永続化せず、D1へ直接アクセスしません。
+- Auth: ホストセッションと匿名セッションをルーム単位のHttpOnly Cookieで管理します。ホスト専用APIは必ずサーバー側でCookieを検証します。
+- Main routes: `/` はランディングページ、`/rooms/` はルーム作成、`/rooms/:roomId` はホスト/ゲスト共通入口です。
+- Main API groups: `/api/rooms`, `/api/rooms/:roomId`, `/api/rooms/:roomId/questions`, `/api/rooms/:roomId/events` です。詳細は `docs/api.md` を参照してください。
 
 ## Design Philosophy
 
-- Readability First: Prioritize code clarity and readability over premature optimization or overly abstract design. The codebase favors straightforward, explicit implementations rather than complex abstractions, so that it’s easy to understand and maintain.
-- Maintainable & Simple: Ensure that solutions remain simple and maintainable. It's acceptable to sacrifice some performance or elegance if it makes the code easier to read and modify. Avoid clever one-liners or deep nesting that could confuse contributors.
-- Type Safety and Clarity: Leverage TypeScript to maintain strict types and catch errors early. Eliminate unnecessary any or unknown types by defining proper interfaces (e.g. adding generic types to Cloudflare context instead of using any). Clear, strong typing improves reliability and serves as documentation for the code.
-- Robustness Over Optimization: Focus on correctness and handling edge cases gracefully rather than micro-optimizing. Include basic validation and error handling for inputs (for example, validate request bodies in the Durable Object even if front-end already does). The goal is a robust application that works reliably for its intended use, rather than squeezing out maximum performance.
-- Consistent Style: Follow a consistent coding style throughout the project. Use descriptive names for variables and functions, keep functions focused on single tasks, and organize code into logical modules when it improves clarity. The emphasis is on a clean codebase reflecting best practices without over-engineering.
+- Readability First: 可読性を最優先し、過度な抽象化や巧妙な短縮記法を避けます。
+- Maintainable & Simple: 現行構成を保った小さく明示的な変更を選び、不要な依存関係や大規模な再設計を持ち込みません。
+- Type Safety and Clarity: TypeScriptの厳格な型を活用し、適切なinterfaceやschemaを定義します。不要な`any`や`unknown`を避けます。
+- Robustness Over Optimization: フロントエンドだけに依存せず、Workerで入力、権限、状態遷移を検証します。性能の微調整より正しさとエッジケースを優先します。
+- Consistent Style: 既存の命名、ファイル構成、フォーマット、UI文言の日本語表記に合わせます。
 
 ## Scope of Changes
 
-- Incremental Improvements: Make changes in a conservative, incremental fashion. Focus on bug fixes, small feature enhancements, refactoring for clarity, and addressing known issues, rather than sweeping rewrites. Large architectural changes or introducing new major dependencies are out of scope unless explicitly requested.
-- Preserve Existing Behavior: The application is already live and working; any modifications should preserve core functionality (real-time voting, result display, data consistency). Before changing a behavior, consider backward compatibility and whether existing users (even if few) might be relying on it. When in doubt, prefer a solution that maintains the current expected behavior.
-- No Unnecessary Config Changes: Do not modify configuration or build files (such as package.json, build settings, or Cloudflare config) unless it is required to fix a known problem. Avoid dependency updates or config tweaks that are not directly related to a given task, as they might introduce deployment or compatibility issues. The deployment setup should remain stable.
-- Follow Project Priorities: Align with the project's current priorities and to-do list when picking or executing tasks. Address high-priority issues (e.g. critical bugs or obvious errors) before low-priority enhancements. For instance, type definition improvements and bug fixes take precedence over nice-to-have features like UI polish or tests.
-- Performance Considerations: Optimizations should only be undertaken if there's a clear need. Given the likely low traffic, the current performance is sufficient; focus instead on reliability and code quality. If performance improvements are made, ensure they do not complicate the code or reduce readability significantly.
-- Testing Changes: Since the project currently lacks automated tests, be diligent in testing your changes manually. Verify that new code works as expected by simulating typical usage (creating a session, voting, viewing results, etc.) and that no new errors are introduced. Ensure that improvements solve the intended problem without breaking other parts of the system.
+- Incremental Improvements: バグ修正、小規模な機能追加、型や可読性の改善を中心にします。明示的な依頼なしに大規模なアーキテクチャ変更を行いません。
+- Preserve Existing Behavior: リアルタイム投票、D1上のデータ整合性、ホスト権限、重複投票防止を壊さないようにします。
+- No Unnecessary Config Changes: 問題の解決に必要でない限り、`package.json`、ビルド設定、Cloudflare設定、依存関係を変更しません。
+- Data Ownership: 永続データはD1に保存し、Durable Objectは再生成可能なsnapshotとSSE接続だけを保持します。
+- Security Boundaries: `viewerRole` は表示用です。ホスト専用操作ではホストセッションCookieを再検証し、更新APIではsame-originと専用ヘッダーを検証します。
+- Migration History: `wrangler.jsonc` のDurable Object migrationはCloudflareへ適用済みの履歴です。現在使わないclass名を含んでいても、履歴を削除・書き換えません。
+
+## Testing Changes
+
+- 変更後は原則として `pnpm check`、`pnpm test`、`pnpm test:e2e`、`pnpm build` を実行します。
+- 投票フローに関わる変更では、ルーム作成、ホスト表示、質問追加・開始、ゲスト投票、SSE更新、質問・ルーム終了を確認します。
+- D1 schemaを変更する場合はmigrationを追加し、既存migrationを編集しません。
+- 自動テストで扱いにくいUIやCloudflare固有動作は、実施した手動確認と環境上の制約を明記します。
 
 ## AI Behavior Guidelines
 
-- Language Use: Communicate with the project maintainer in Japanese, as the maintainer is Japanese and project documentation is primarily in Japanese. All explanations, discussions, and user-facing messages should be given in clear and concise Japanese (丁寧すぎる表現は不要ですが、分かりやすく簡潔に). Code (identifiers, comments) remains in English where appropriate, but UI text and comments follow the project's language convention.
-- Clarity and Brevity: Keep explanations and reasoning concise and focused. Avoid overly verbose descriptions. When explaining a change or answering a question, get to the point quickly, using simple language (in Japanese) so the maintainer can easily grasp the intent.
-- Adhere to Style Conventions: Follow the established style of the repository in both code and communication. For example, code comments in the React frontend are written in Japanese, so use Japanese for new UI-related comments or text to match. Commit messages should be informative and typically in English (unless the maintainer prefers Japanese), written in present-tense imperative (e.g., "Fix ...", "Add ..."). Maintain consistency with existing naming, formatting, and commenting styles.
-- Respect Project Philosophy: Always uphold the "readability first" principle when suggesting or making changes. Do not introduce overly complex solutions that conflict with the simplicity goal. If a user request or task pushes for a solution that would sacrifice clarity for minor gains, politely explain the trade-off (in Japanese) and suggest a clearer alternative if possible.
-- Ask When Unsure: If a requirement or issue is unclear, or if there's a risk that a change might have unintended consequences, seek clarification from the maintainer (in Japanese) rather than making assumptions. It's better to confirm intent or details than to implement a wrong or unwanted solution.
-- No Unauthorized Actions: The agent should not perform actions outside the scope of assigned tasks. Do not delete files, change licenses, or alter critical settings unless explicitly directed. All changes should be relevant to the task at hand and compliant with the guidelines in this document.
-
-## Output Expectations
-
-- Code Delivery: Provide code changes that are well-formatted and ready to integrate. Use proper Markdown syntax for any code blocks in chat or documentation (including language tags for syntax highlighting). The code should conform to the project's linting and formatting conventions, so it fits naturally into the codebase.
-- Explanation of Changes: Along with any code submission, include a brief explanation of what was done and why, written in Japanese. Keep it to a few sentences. For example, if fixing a bug, you might write: "投票済みチェックのバグを修正しました。重複投票を防ぐためのトークン確認ロジックに誤りがあったため、正しく判定するよう修正しています。" This provides context without unnecessary detail.
-- Structured Responses: Organize information in responses or documentation for easy reading. When describing steps, listing features, or summarizing changes, use bullet points or numbered lists (as demonstrated in this document) instead of long paragraphs. This formatting helps the maintainer quickly grasp key points.
-- Commit Messages: Write clear and concise commit messages (or PR titles/descriptions) if committing code. Use an imperative tone and state the core change. For example: "Fix UUID version in package.json to valid v11.x" or "Add validation for Durable Object requests". You can add a second brief sentence for reasoning if needed. Stick to English for commit messages unless instructed otherwise.
-- No Extraneous Output: Stay on topic and provide only relevant information in any response. Avoid including irrelevant commentary, apologies, or the agent’s internal thought process. The maintainer expects a solution or answer, not a conversation about the solution. For instance, rather than saying "I have fixed the bug and it should work now," simply present the fix and a short note about the resolution.
-- Quality Assurance: Double-check any final outputs for accuracy and completeness before presenting them. Ensure code compiles and aligns with the intended functionality. Review explanations for clarity and correctness. The output should be compact yet meaningful, giving the maintainer confidence that the changes address the request without introducing new issues.
+- メンテナーとの説明、議論、ユーザー向け文言は簡潔な日本語で記述します。識別子は英語を使い、コメントは周辺コードの規約に合わせます。
+- 不明確な要件や互換性リスクがある場合は、推測で大きな変更をせず確認します。
+- 指定範囲外のファイル削除、ライセンス変更、重要設定の変更は行いません。
+- コミットメッセージとPRタイトルは、現在形の命令形を使った簡潔な英語を基本とします。
+- 最終回答では、変更内容と検証結果をMarkdownの箇条書きで簡潔にまとめます。

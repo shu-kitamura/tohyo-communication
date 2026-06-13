@@ -29,5 +29,5 @@
     "playwright.config.ts",
     "worker-configuration.d.ts"
   ],
-  "exclude": ["node_modules", "dist", "legacy"]
+  "exclude": ["node_modules", "dist"]
 }
