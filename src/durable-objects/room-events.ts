@@ -11,6 +11,7 @@ const HEARTBEAT_INTERVAL_MS = 15_000;
 interface SseClient {
   audience: SnapshotAudience;
   controller: ReadableStreamDefaultController<Uint8Array>;
+  visibleResultQuestionIds: string[];
 }
 
 export class RoomEventsDO implements DurableObject {
@@ -30,7 +31,11 @@ export class RoomEventsDO implements DurableObject {
     const url = new URL(request.url);
 
     if (request.method === "GET" && url.pathname === "/events") {
-      return this.createEventStream(request, this.readAudience(url));
+      return this.createEventStream(
+        request,
+        this.readAudience(url),
+        url.searchParams.getAll("visibleResultQuestionId"),
+      );
     }
 
     if (request.method === "POST" && url.pathname === "/snapshot") {
@@ -44,12 +49,16 @@ export class RoomEventsDO implements DurableObject {
     return url.searchParams.get("audience") === "host" ? "host" : "participant";
   }
 
-  private createEventStream(request: Request, audience: SnapshotAudience): Response {
+  private createEventStream(
+    request: Request,
+    audience: SnapshotAudience,
+    visibleResultQuestionIds: string[],
+  ): Response {
     let client: SseClient | undefined;
 
     const stream = new ReadableStream<Uint8Array>({
       start: (controller) => {
-        client = { audience, controller };
+        client = { audience, controller, visibleResultQuestionIds };
         this.clients.add(client);
         this.startHeartbeat();
 
@@ -116,7 +125,7 @@ export class RoomEventsDO implements DurableObject {
   }
 
   private sendSnapshot(client: SseClient, snapshot: RoomSnapshot): void {
-    const payload = snapshotForAudience(snapshot, client.audience);
+    const payload = snapshotForAudience(snapshot, client.audience, client.visibleResultQuestionIds);
     const message = [
       `id: ${snapshot.stateVersion}`,
       "event: room.snapshot",

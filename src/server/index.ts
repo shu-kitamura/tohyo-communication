@@ -14,6 +14,7 @@ import { snapshotForAudience } from "../shared/room-snapshot";
 import {
   createHostSession,
   createVoterKeyHash,
+  getAnonymousSessionToken,
   getHostSessionToken,
   getOrCreateAnonymousSession,
   hashAdminPassword,
@@ -897,9 +898,17 @@ app.get(
     await notifyRoomSnapshot(c.env, roomState.snapshot);
 
     const audience = (await isAuthorizedHost(c, roomId)) ? "host" : "participant";
+    const visibleResultQuestionIds =
+      audience === "participant" ? await getParticipantVotedQuestionIds(c, roomId) : [];
     const roomEvents = c.env.ROOM_EVENTS.getByName(roomId);
+    const eventsUrl = new URL("https://room-events/events");
+    eventsUrl.searchParams.set("audience", audience);
 
-    return roomEvents.fetch(`https://room-events/events?audience=${audience}`, {
+    for (const questionId of visibleResultQuestionIds) {
+      eventsUrl.searchParams.append("visibleResultQuestionId", questionId);
+    }
+
+    return roomEvents.fetch(eventsUrl, {
       headers: c.req.raw.headers,
       signal: c.req.raw.signal,
     });
@@ -959,6 +968,17 @@ async function getVotedQuestionIds(
     .all<{ questionId: string }>();
 
   return votes.results.map((vote) => vote.questionId);
+}
+
+async function getParticipantVotedQuestionIds(c: AppContext, roomId: string): Promise<string[]> {
+  const anonymousToken = getAnonymousSessionToken(c, roomId);
+
+  if (!anonymousToken) {
+    return [];
+  }
+
+  const voterKeyHash = await createVoterKeyHash(roomId, anonymousToken);
+  return getVotedQuestionIds(c.env.DB, roomId, voterKeyHash);
 }
 
 export { RoomEventsDO };

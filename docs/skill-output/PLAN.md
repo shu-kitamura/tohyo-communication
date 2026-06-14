@@ -1,86 +1,87 @@
-# 実装計画: V1実装と旧構成参照の削除
+# 実装計画: 参加者別SSE snapshot配信
 
 ## 概要
 
-現行のCloudflare Workers + Hono + React/Vite + D1構成だけでリポジトリを理解できるようにする。旧Next.js/OpenNext実装を削除し、ドキュメントとツール設定を現行構成へ統一する。
+回答済み参加者が `room.snapshot` を受信するたびにルームAPIを再取得する挙動を廃止する。Workerが匿名セッションから回答済み質問を判定し、Durable Objectが接続ごとの公開範囲でsnapshotを配信する。
 
 ## 要件
 
-- `legacy/` 配下のV1実装を削除する
-- `AGENTS.md` と `README.md` を現行仕様へ更新する
-- Next.js/OpenNext/V1専用の設定とAI向けガイドを整理する
-- `wrangler.jsonc` のDurable Object migration履歴は維持する
-- 現行実装のcheck、test、E2E、buildが成功することを確認する
+- 投票済み参加者のSSE受信による `GET /api/rooms/:roomId` 増幅をなくす
+- 回答済み質問の結果はリアルタイム更新する
+- 未回答質問の結果は参加者へ公開しない
+- ホスト向け全結果配信と未投票参加者向け配信を維持する
 
 ## アーキテクチャ変更
 
-- `legacy/`: 旧Next.js/OpenNext実装一式を削除する
-- `AGENTS.md`: React/Vite/Hono/D1/RoomEventsDO構成と現行ルート・機能へ更新する
-- `README.md`: 旧実装の退避説明とディレクトリ項目を削除する
-- `.gitignore`, `.oxlintrc.json`, `.oxfmtrc.json`, `tsconfig.json`: V1専用除外を削除する
-- `.codex/skills/code-review/SKILL.md`: レビュー対象と観点を現行技術スタックへ更新する
+- `src/server/index.ts`: SSE接続時にCookieとD1から回答済み質問IDを取得し、DOへ渡す
+- `src/durable-objects/room-events.ts`: 接続ごとに回答済み質問IDを保持してsnapshotを絞り込む
+- `src/client/pages/room-page.tsx`: SSE payloadを直接反映し、投票成功後だけ接続を張り直す
+- `docs/realtime.md`: 参加者別公開範囲と投票後再接続を記録する
+- `tests/worker/voting-flow.test.ts`: SSEの結果公開範囲とリアルタイム更新を検証する
+- `tests/e2e/room.spec.ts`: SSE更新でルームAPIが再取得されないことを検証する
 
 ## 実装手順
 
-### フェーズ1: 旧実装と参照の整理
+### フェーズ1: 配信経路
 
-1. **V1実装を削除する** (File: `legacy/`)
-   - Action: 旧Next.js/OpenNextのコード、設定、依存関係、テストを削除する
-   - Why: 現行実装との誤認を防ぐため
+1. **Workerで公開範囲を決定する** (File: `src/server/index.ts`)
+   - Action: 参加者の匿名セッションCookieから回答済み質問IDを取得し、DO内部リクエストへ付与する
+   - Why: ブラウザ申告による未回答結果の取得を防ぐため
    - Dependencies: なし
-   - Risk: 低（削除対象が明示されている）
+   - Risk: 中
 
-2. **プロジェクトガイドを更新する** (File: `AGENTS.md`, `README.md`)
-   - Action: 現行のルーム、認証、D1永続化、RoomEventsDOによるSSE配信を説明する
-   - Why: 開発者とAIが現行仕様だけを参照できるようにするため
-   - Dependencies: 現行ドキュメントと実装の確認
-   - Risk: 中（仕様記述の不一致）
-
-3. **V1専用設定を削除する** (File: `.gitignore`, `.oxlintrc.json`, `.oxfmtrc.json`, `tsconfig.json`)
-   - Action: Next.js、OpenNext、legacy向けの除外設定を削除する
-   - Why: 不要な設定を残さず、検索やチェック対象を明確にするため
+2. **接続別snapshotを生成する** (File: `src/durable-objects/room-events.ts`)
+   - Action: SSEクライアントごとに回答済み質問IDを保持し、`snapshotForAudience` へ渡す
+   - Why: 同じroomの参加者ごとに異なる結果公開範囲を適用するため
    - Dependencies: ステップ1
-   - Risk: 低
+   - Risk: 中
 
-4. **コードレビュースキルを更新する** (File: `.codex/skills/code-review/SKILL.md`)
-   - Action: Next.js固有の対象・観点をReact/Vite/Hono/D1へ置き換える
-   - Why: AI向けガイドが旧構成を前提にしないようにするため
-   - Dependencies: なし
-   - Risk: 低
+3. **クライアント再取得を廃止する** (File: `src/client/pages/room-page.tsx`)
+   - Action: SSE snapshotを直接反映し、投票成功後のみEventSourceを再接続する
+   - Why: 参加者数と投票数に比例するルームAPI再取得を除去するため
+   - Dependencies: ステップ1、2
+   - Risk: 中
 
 ### フェーズ2: 検証
 
-1. **残存参照を検索する** (File: repository-wide)
-   - Action: V1ルート、Next.js、OpenNext、legacy参照を検索し、migration履歴と生成型以外が残っていないことを確認する
-   - Why: 削除漏れを防ぐため
+1. **Workerテストを追加する** (File: `tests/worker/voting-flow.test.ts`)
+   - Action: 回答済み結果だけがSSE配信され、その後の投票でリアルタイム更新されることを検証する
+   - Why: サーバー側の公開範囲を保証するため
    - Dependencies: フェーズ1
-   - Risk: 低
+   - Risk: 中
 
-2. **品質チェックを実行する** (File: repository-wide)
-   - Action: `pnpm check`, `pnpm test`, `pnpm test:e2e`, `pnpm build` を実行する
-   - Why: 現行実装へ影響がないことを確認するため
+2. **E2Eテストを追加する** (File: `tests/e2e/room.spec.ts`)
+   - Action: 投票後のSSE通知で参加者ルームAPIのGET回数が増えないことを検証する
+   - Why: 再取得増幅の回帰を防ぐため
    - Dependencies: フェーズ1
-   - Risk: 中（ブラウザやローカル環境依存）
+   - Risk: 中
+
+3. **全品質チェックを実行する** (File: repository-wide)
+   - Action: `pnpm check`, `pnpm test`, `pnpm test:e2e`, `pnpm build` を実行する
+   - Why: 型、配信、投票フロー、ビルドへの回帰がないことを確認するため
+   - Dependencies: フェーズ2
+   - Risk: 中
 
 ## テスト戦略
 
-- 静的検査: lint、format、TypeScript typecheck
-- ユニット/結合テスト: Vitest Workers Poolの全テスト
-- E2Eテスト: Playwrightでルーム作成・投票フロー
-- ビルド: Vite + Cloudflare Worker本番ビルド
-- 残存参照: `rg` による旧構成キーワード検索
+- ユニットテスト: 既存の `snapshotForAudience` 公開範囲テストを維持する
+- Workerテスト: Cookie由来の回答済み質問だけをSSEで公開し、票数更新を受信する
+- E2Eテスト: 投票後のSSE更新でルームAPI再取得が発生しないことを数える
+- 全体検証: check、test、E2E、build
 
 ## リスクと対策
 
-- **Risk**: migration履歴の `VoteSessionDO` を誤って削除する
-  - Mitigation: `wrangler.jsonc` のv1/v2 migrationは変更せず、差分と検索結果で確認する
-- **Risk**: 現行機能を旧実装と誤認して削除する
-  - Mitigation: `src/`, `docs/`, `tests/` の現行ルームAPIとSSE設計を基準に判定する
+- **Risk**: 投票直後に古い公開範囲のSSEがPOSTレスポンスを上書きする
+  - Mitigation: 古いEventSourceを無効化してからPOST snapshotを反映し、新しい公開範囲で再接続する
+- **Risk**: 回答済み質問IDをクエリ改ざんされる
+  - Mitigation: 公開URLの入力を使わず、WorkerがCookieとD1から決定してDO内部URLへ渡す
+- **Risk**: host接続で結果が欠落する
+  - Mitigation: host audienceは従来どおり全snapshotを返し、Workerテストで確認する
 
 ## 成功基準
 
-- [x] `legacy/` が削除されている
-- [x] 現行ドキュメントとAI向けガイドに旧構成の説明が残っていない
-- [x] Next.js/OpenNext/V1専用設定が削除されている
-- [x] `wrangler.jsonc` の `VoteSessionDO` migration履歴が維持されている
-- [ ] `pnpm check`, `pnpm test`, `pnpm test:e2e`, `pnpm build` が成功する
+- [x] SSE受信時に参加者ルームAPIを再取得しない
+- [x] 回答済み質問の結果がSSEで更新される
+- [x] 未回答質問の結果がSSEに含まれない
+- [x] ホストのリアルタイム更新が維持される
+- [x] `pnpm check`, `pnpm test`, `pnpm test:e2e`, `pnpm build` が成功する
