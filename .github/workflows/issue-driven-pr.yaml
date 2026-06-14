@@ -27,11 +27,11 @@ jobs:
         env:
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
-            if [ -n "${CODEX_AUTH_JSON:-}" ]; then
-              mkdir -p "$HOME/.codex"
-              echo "$CODEX_AUTH_JSON" | tr -d '\n' | base64 -d > "$HOME/.codex/auth.json"
-              chmod 600 "$HOME/.codex/auth.json"
-            fi
+          if [ -n "${CODEX_AUTH_JSON:-}" ]; then
+            mkdir -p "$HOME/.codex"
+            echo "$CODEX_AUTH_JSON" | tr -d '\n' | base64 -d > "$HOME/.codex/auth.json"
+            chmod 600 "$HOME/.codex/auth.json"
+          fi
 
       - name: Install Codex CLI
         run: |
