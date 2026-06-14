@@ -39,21 +39,24 @@ jobs:
 
       - name: Run Codex
         id: run_codex
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
           PROMPT_FILE="$RUNNER_TEMP/codex-prompt.txt"
           FINAL_MESSAGE_FILE="$RUNNER_TEMP/codex-final-message.txt"
 
-          cat > "$PROMPT_FILE" <<'EOF'
-          次のIssue内容を元に、Branchの作成、コードの変更、Commitとpushを行ってPull Requestを作成してください。
-
-          # Issue情報
-          - Number: #${{ github.event.issue.number }}
-          - Title: ${{ github.event.issue.title }}
-          - URL: ${{ github.event.issue.html_url }}
-
-          # Issue本文
-          ${{ github.event.issue.body }}
-          EOF
+          {
+            printf '%s\n\n' '次のIssue内容を元に、Branchの作成、コードの変更、Commitとpushを行ってPull Requestを作成してください。'
+            printf '%s\n' '# Issue情報'
+            printf -- '- Number: #%s\n' "$ISSUE_NUMBER"
+            printf -- '- Title: %s\n' "$ISSUE_TITLE"
+            printf -- '- URL: %s\n\n' "$ISSUE_URL"
+            printf '%s\n' '# Issue本文'
+            printf '%s\n' "$ISSUE_BODY"
+          } > "$PROMPT_FILE"
 
           codex exec \
             --dangerously-bypass-approvals-and-sandbox \
