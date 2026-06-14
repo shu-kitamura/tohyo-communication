@@ -1,0 +1,93 @@
+name: "Codex Issue-Driven PR"
+on:
+  issues:
+    types:
+      - labeled
+
+jobs:
+  codex:
+    if: github.event.label.name == 'codex-autofix'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Set Codex auth.json from secret
+        env:
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        run: |
+          if [ -n "${CODEX_AUTH_JSON:-}" ]; then
+            mkdir -p "$HOME/.codex"
+            echo "$CODEX_AUTH_JSON" | tr -d '\n' | base64 -d > "$HOME/.codex/auth.json"
+            chmod 600 "$HOME/.codex/auth.json"
+          fi
+
+      - name: Install Codex CLI
+        run: |
+          npm install -g @openai/codex@latest
+
+      - name: Run Codex
+        id: run_codex
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          PROMPT_FILE="$RUNNER_TEMP/codex-prompt.txt"
+          FINAL_MESSAGE_FILE="$RUNNER_TEMP/codex-final-message.txt"
+
+          {
+            printf '%s\n\n' '次のIssue内容を元に、Branchの作成、コードの変更、Commitとpushを行ってPull Requestを作成してください。'
+            printf '%s\n' '# Issue情報'
+            printf -- '- Number: #%s\n' "$ISSUE_NUMBER"
+            printf -- '- Title: %s\n' "$ISSUE_TITLE"
+            printf -- '- URL: %s\n\n' "$ISSUE_URL"
+            printf '%s\n' '# Issue本文'
+            printf '%s\n' "$ISSUE_BODY"
+          } > "$PROMPT_FILE"
+
+          codex exec \
+            --dangerously-bypass-approvals-and-sandbox \
+            --output-last-message "$FINAL_MESSAGE_FILE" \
+            < "$PROMPT_FILE"
+
+          delimiter="codex-$(cat /proc/sys/kernel/random/uuid)"
+          while grep -Fqx "$delimiter" "$FINAL_MESSAGE_FILE"; do
+            delimiter="codex-$(cat /proc/sys/kernel/random/uuid)"
+          done
+
+          {
+            printf 'final-message<<%s\n' "$delimiter"
+            cat "$FINAL_MESSAGE_FILE"
+            printf '\n%s\n' "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comment result to issue
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+        with:
+          script: |
+            const body = process.env.FINAL_MESSAGE
+              ? `Codex completed the task.\n\n${process.env.FINAL_MESSAGE}`
+              : 'Codex did not return a final message. Please check the workflow logs.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body,
+            });
