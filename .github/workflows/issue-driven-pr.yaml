@@ -40,6 +40,7 @@ jobs:
       - name: Run Codex
         id: run_codex
         env:
+          GH_TOKEN: ${{ github.token }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
