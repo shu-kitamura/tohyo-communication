@@ -64,10 +64,15 @@ jobs:
             --output-last-message "$FINAL_MESSAGE_FILE" \
             < "$PROMPT_FILE"
 
+          delimiter="codex-$(cat /proc/sys/kernel/random/uuid)"
+          while grep -Fqx "$delimiter" "$FINAL_MESSAGE_FILE"; do
+            delimiter="codex-$(cat /proc/sys/kernel/random/uuid)"
+          done
+
           {
-            echo "final-message<<EOF"
+            printf 'final-message<<%s\n' "$delimiter"
             cat "$FINAL_MESSAGE_FILE"
-            printf '\nEOF\n'
+            printf '\n%s\n' "$delimiter"
           } >> "$GITHUB_OUTPUT"
 
       - name: Comment result to issue
