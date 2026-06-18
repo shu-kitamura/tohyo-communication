@@ -15,15 +15,52 @@ jobs:
     outputs:
       final_message: ${{ steps.run_codex.outputs.final-message }}
     steps:
+      - name: Check issue readiness
+        id: readiness
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+            const hasRequirements = /(^|\n)#{1,6}\s*(要件|Requirements)\s*(\n|$)/i.test(body);
+            const hasAcceptanceCriteria = /(^|\n)#{1,6}\s*(受入条件|Acceptance Criteria)\s*(\n|$)/i.test(body);
+
+            if (hasRequirements && hasAcceptanceCriteria) {
+              core.setOutput('ready', 'true');
+              return;
+            }
+
+            const missing = [
+              hasRequirements ? null : '要件',
+              hasAcceptanceCriteria ? null : '受入条件',
+            ].filter(Boolean);
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: [
+                'Codex did not start implementation because the Issue is missing required planning sections.',
+                '',
+                `Missing: ${missing.join(', ')}`,
+                '',
+                'Add the missing sections or apply the `codex-plan` label to generate a requirements and acceptance criteria draft before using `codex-autofix`.',
+              ].join('\n'),
+            });
+
+            core.setOutput('ready', 'false');
+
       - name: Checkout repository
+        if: steps.readiness.outputs.ready == 'true'
         uses: actions/checkout@v5
 
       - name: Setup Node.js
+        if: steps.readiness.outputs.ready == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "24"
 
       - name: Set Codex auth.json from secret
+        if: steps.readiness.outputs.ready == 'true'
         env:
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
@@ -34,10 +71,12 @@ jobs:
           fi
 
       - name: Install Codex CLI
+        if: steps.readiness.outputs.ready == 'true'
         run: |
           npm install -g @openai/codex@latest
 
       - name: Run Codex
+        if: steps.readiness.outputs.ready == 'true'
         id: run_codex
         env:
           GH_TOKEN: ${{ github.token }}
@@ -76,7 +115,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Comment result to issue
-        if: always()
+        if: always() && steps.readiness.outputs.ready == 'true'
         uses: actions/github-script@v7
         env:
           FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}

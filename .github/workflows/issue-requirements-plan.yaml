@@ -1,0 +1,99 @@
+name: "Codex Issue Requirements Plan"
+
+on:
+  issues:
+    types:
+      - labeled
+
+jobs:
+  codex-plan:
+    if: github.event.label.name == 'codex-plan'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Set Codex auth.json from secret
+        env:
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        run: |
+          if [ -n "${CODEX_AUTH_JSON:-}" ]; then
+            mkdir -p "$HOME/.codex"
+            echo "$CODEX_AUTH_JSON" | tr -d '\n' | base64 -d > "$HOME/.codex/auth.json"
+            chmod 600 "$HOME/.codex/auth.json"
+          fi
+
+      - name: Install Codex CLI
+        run: |
+          npm install -g @openai/codex@latest
+
+      - name: Run Codex requirements plan
+        id: run_codex
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          PROMPT_FILE="$RUNNER_TEMP/codex-plan-prompt.txt"
+          FINAL_MESSAGE_FILE="$RUNNER_TEMP/codex-plan-final-message.txt"
+
+          {
+            printf '%s\n\n' '次のIssue内容を元に、実装前に必要な要件と受入条件を整理してください。'
+            printf '%s\n' 'コード変更、ブランチ作成、コミット、push、Pull Request作成は行わないでください。'
+            printf '%s\n' '処理結果はIssueコメントとしてそのまま投稿できるMarkdownで出力してください。'
+            printf '%s\n' '以下を必ず含めてください。'
+            printf '%s\n' '- 整理された要件'
+            printf '%s\n' '- チェック可能な受入条件'
+            printf '%s\n' '- 実装前に確認が必要な不足点や曖昧な点'
+            printf '%s\n\n' '- 不足点がない場合は、その旨'
+            printf '%s\n' '# Issue情報'
+            printf -- '- Number: #%s\n' "$ISSUE_NUMBER"
+            printf -- '- Title: %s\n' "$ISSUE_TITLE"
+            printf -- '- URL: %s\n\n' "$ISSUE_URL"
+            printf '%s\n' '# Issue本文'
+            printf '%s\n' "$ISSUE_BODY"
+          } > "$PROMPT_FILE"
+
+          codex exec \
+            --dangerously-bypass-approvals-and-sandbox \
+            --output-last-message "$FINAL_MESSAGE_FILE" \
+            < "$PROMPT_FILE"
+
+          delimiter="codex-plan-$(cat /proc/sys/kernel/random/uuid)"
+          while grep -Fqx "$delimiter" "$FINAL_MESSAGE_FILE"; do
+            delimiter="codex-plan-$(cat /proc/sys/kernel/random/uuid)"
+          done
+
+          {
+            printf 'final-message<<%s\n' "$delimiter"
+            cat "$FINAL_MESSAGE_FILE"
+            printf '\n%s\n' "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comment requirements plan to issue
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+        with:
+          script: |
+            const body = process.env.FINAL_MESSAGE
+              ? `Codex requirements plan completed.\n\n${process.env.FINAL_MESSAGE}`
+              : 'Codex requirements plan did not return a final message. Please check the workflow logs.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body,
+            });
