@@ -3,12 +3,11 @@ name: "Codex Issue Requirements Plan"
 on:
   issues:
     types:
-      - opened
       - labeled
 
 jobs:
   codex-plan:
-    if: github.event.action == 'opened' || (github.event.action == 'labeled' && github.event.label.name == 'codex-plan')
+    if: github.event.label.name == 'codex-plan'
     runs-on: ubuntu-latest
     permissions:
       contents: read
