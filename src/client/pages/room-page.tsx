@@ -176,6 +176,7 @@ export function RoomPage({ onHostAuthenticated }: RoomPageProps = {}) {
         try {
           const response = await requestJson<unknown>(`/api/rooms/${roomId}`);
           const parsed = participantRoomResponseSchema.parse(response);
+          reconnectEventSourceRef.current();
           setVotedQuestionIds(parsed.votedQuestionIds);
           setSnapshot(parsed.snapshot);
         } catch {
