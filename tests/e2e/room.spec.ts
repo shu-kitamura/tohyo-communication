@@ -36,6 +36,14 @@ test("starts a question and accepts a participant vote", async ({ browser, page 
   const participantPage = await browser.newPage({
     baseURL: new URL(page.url()).origin,
   });
+  let participantRoomRequestCount = 0;
+  participantPage.on("request", (request) => {
+    const url = new URL(request.url());
+
+    if (request.method() === "GET" && url.pathname === `/api/rooms/${roomId}`) {
+      participantRoomRequestCount += 1;
+    }
+  });
   await participantPage.goto(`/rooms/${roomId}`);
   await expect(
     participantPage.getByRole("heading", {
@@ -121,6 +129,8 @@ test("starts a question and accepts a participant vote", async ({ browser, page 
   await expect(participantFirstQuestion.getByLabel("ユーザーリサーチ: 0票、0%")).toBeVisible();
   await expect(firstQuestionCard.getByLabel("プロトタイピング: 1票、100%")).toBeVisible();
   await expect(firstQuestionCard.getByLabel("ユーザーリサーチ: 0票、0%")).toBeVisible();
+  const participantRoomRequestsAfterVote = participantRoomRequestCount;
+  expect(participantRoomRequestsAfterVote).toBeGreaterThan(0);
 
   page.once("dialog", (confirmation) => confirmation.accept());
   await firstQuestionCard.getByRole("button", { name: "投票を終了" }).click();
@@ -131,6 +141,7 @@ test("starts a question and accepts a participant vote", async ({ browser, page 
   await expect(
     participantFirstQuestion.getByText("受付は終了しました。最終結果です。"),
   ).toBeVisible();
+  expect(participantRoomRequestCount).toBe(participantRoomRequestsAfterVote);
 
   await secondVoteForm.getByLabel("満足").check();
   await secondVoteForm.getByRole("button", { name: "投票する" }).click();
@@ -145,6 +156,7 @@ test("starts a question and accepts a participant vote", async ({ browser, page 
     participantPage.getByRole("heading", { name: "この投票ルームは終了しました" }),
   ).toBeVisible();
   await expect(secondVoteForm).toHaveCount(0);
+  expect(participantRoomRequestCount).toBe(participantRoomRequestsAfterVote);
 
   await participantPage.close();
 });

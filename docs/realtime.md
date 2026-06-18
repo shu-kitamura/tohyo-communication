@@ -36,6 +36,8 @@ GET /api/rooms/:roomId/events
 
 Workerは接続時にD1から最新snapshotを取得し、DOへ投入してからSSE streamを返します。これにより、DOがevictされていても次の接続で復元できます。
 
+参加者接続では、Workerが匿名セッションCookieから回答済み質問IDをD1で取得し、DOへ接続ごとの公開範囲として渡します。回答済み質問が増えた投票成功後だけブラウザがSSE接続を張り直します。
+
 ## Snapshot形式
 
 実装上の型は [`src/shared/room-snapshot.ts`](../src/shared/room-snapshot.ts) にあります。
@@ -62,6 +64,7 @@ DOは接続時のaudienceに応じてpayloadを分けます。
 | `participant` | 回答済み質問の結果だけ含む |
 
 ゲストが未回答の質問については、結果を配信しません。投票後は該当質問の結果が見えるようになります。
+参加者はSSE payloadを直接画面へ反映するため、通知ごとにルームAPIを再取得しません。
 
 ## stateVersion
 

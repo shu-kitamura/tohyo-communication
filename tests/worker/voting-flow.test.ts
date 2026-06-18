@@ -2,6 +2,7 @@ import { applyD1Migrations, env, SELF } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { mutationRequestHeaderName, mutationRequestHeaderValue } from "../../src/shared/api";
+import { roomSnapshotSchema, type RoomSnapshot } from "../../src/shared/room-snapshot";
 
 interface TestEnv extends Env {
   TEST_MIGRATIONS: Array<{
@@ -202,6 +203,54 @@ describe("voting flow", () => {
       },
     });
 
+    const participantEventsResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/events`,
+      {
+        headers: { Cookie: participantCookie },
+      },
+    );
+    expect(participantEventsResponse.status).toBe(200);
+    const participantEvents = createRoomSnapshotReader(participantEventsResponse);
+    const initialParticipantEvent = await participantEvents.readSnapshot();
+
+    expect(Object.keys(initialParticipantEvent.resultsByQuestion)).toEqual([firstQuestion.id]);
+    expect(initialParticipantEvent.resultsByQuestion[firstQuestion.id]?.voterCount).toBe(1);
+
+    const hostEventsResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/events`,
+      {
+        headers: { Cookie: hostCookie },
+      },
+    );
+    expect(hostEventsResponse.status).toBe(200);
+    const hostEvents = createRoomSnapshotReader(hostEventsResponse);
+    const initialHostEvent = await hostEvents.readSnapshot();
+
+    expect(Object.keys(initialHostEvent.resultsByQuestion)).toEqual([
+      firstQuestion.id,
+      secondQuestion.id,
+    ]);
+    await hostEvents.cancel();
+
+    const secondParticipantRoomResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}`,
+    );
+    const secondParticipantCookie = readCookie(secondParticipantRoomResponse);
+    const secondParticipantVoteResponse = await SELF.fetch(firstVoteUrl, {
+      body: firstVoteBody,
+      headers: mutationHeaders({
+        "Content-Type": "application/json",
+        Cookie: secondParticipantCookie,
+      }),
+      method: "POST",
+    });
+
+    expect(secondParticipantVoteResponse.status).toBe(201);
+    const updatedParticipantEvent = await participantEvents.readSnapshot();
+    expect(Object.keys(updatedParticipantEvent.resultsByQuestion)).toEqual([firstQuestion.id]);
+    expect(updatedParticipantEvent.resultsByQuestion[firstQuestion.id]?.voterCount).toBe(2);
+    await participantEvents.cancel();
+
     const duplicateVoteResponse = await SELF.fetch(firstVoteUrl, {
       body: firstVoteBody,
       headers: mutationHeaders({
@@ -235,7 +284,7 @@ describe("voting flow", () => {
       expect.objectContaining({ id: firstQuestion.id, status: "closed" }),
       expect.objectContaining({ id: secondQuestion.id, status: "active" }),
     ]);
-    expect(closedQuestionResult.snapshot.resultsByQuestion[firstQuestion.id]?.voterCount).toBe(1);
+    expect(closedQuestionResult.snapshot.resultsByQuestion[firstQuestion.id]?.voterCount).toBe(2);
 
     const voteAfterCloseResponse = await SELF.fetch(firstVoteUrl, {
       body: firstVoteBody,
@@ -275,7 +324,7 @@ describe("voting flow", () => {
     const storedVotes = await testEnv.DB.prepare(
       "SELECT COUNT(*) AS voteCount FROM votes WHERE voter_key_hash IS NOT NULL",
     ).first<{ voteCount: number }>();
-    expect(storedVotes?.voteCount).toBe(2);
+    expect(storedVotes?.voteCount).toBe(3);
 
     const closeRoomResponse = await SELF.fetch(
       `https://example.com/api/rooms/${room.roomId}/close`,
@@ -465,4 +514,54 @@ function readCookie(response: Response): string {
   }
 
   return setCookie.split(";", 1)[0];
+}
+
+function createRoomSnapshotReader(response: Response): {
+  cancel: () => Promise<void>;
+  readSnapshot: () => Promise<RoomSnapshot>;
+} {
+  if (!response.body) {
+    throw new Error("SSE response body was not returned");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  return {
+    cancel: () => reader.cancel(),
+    readSnapshot: async () => {
+      while (true) {
+        const eventBoundary = buffer.indexOf("\n\n");
+
+        if (eventBoundary >= 0) {
+          const event = buffer.slice(0, eventBoundary);
+          buffer = buffer.slice(eventBoundary + 2);
+
+          if (event.includes("event: room.snapshot")) {
+            const data = event
+              .split("\n")
+              .find((line) => line.startsWith("data: "))
+              ?.slice("data: ".length);
+
+            if (!data) {
+              throw new Error("SSE snapshot data was not returned");
+            }
+
+            return roomSnapshotSchema.parse(JSON.parse(data));
+          }
+
+          continue;
+        }
+
+        const chunk = await reader.read();
+
+        if (chunk.done) {
+          throw new Error("SSE stream ended before a snapshot was received");
+        }
+
+        buffer += decoder.decode(chunk.value, { stream: true });
+      }
+    },
+  };
 }

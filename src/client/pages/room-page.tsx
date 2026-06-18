@@ -31,11 +31,11 @@ export function RoomPage({ onHostAuthenticated }: RoomPageProps = {}) {
   const [isHostAuthenticating, setIsHostAuthenticating] = useState(false);
   const [isHostAccessOpen, setIsHostAccessOpen] = useState(false);
   const [error, setError] = useState("");
-  const votedQuestionIdsRef = useRef<string[]>([]);
+  const eventSourceRef = useRef<EventSource | undefined>(undefined);
+  const reconnectEventSourceRef = useRef<() => void>(() => undefined);
 
   useEffect(() => {
     let isCancelled = false;
-    let eventSource: EventSource | undefined;
 
     const refreshRoom = async () => {
       try {
@@ -48,7 +48,6 @@ export function RoomPage({ onHostAuthenticated }: RoomPageProps = {}) {
 
         setRoomTitle(parsed.title);
         setVotedQuestionIds(parsed.votedQuestionIds);
-        votedQuestionIdsRef.current = parsed.votedQuestionIds;
         setSnapshot(parsed.snapshot);
       } catch (loadError) {
         if (!isCancelled) {
@@ -60,30 +59,51 @@ export function RoomPage({ onHostAuthenticated }: RoomPageProps = {}) {
       }
     };
 
+    const connectEventSource = () => {
+      const previousEventSource = eventSourceRef.current;
+      const eventSource = new EventSource(`/api/rooms/${roomId}/events`);
+      eventSourceRef.current = eventSource;
+      previousEventSource?.close();
+      setConnectionStatus("connecting");
+
+      eventSource.onopen = () => {
+        if (eventSourceRef.current === eventSource) {
+          setConnectionStatus("connected");
+        }
+      };
+      eventSource.onerror = () => {
+        if (eventSourceRef.current === eventSource) {
+          setConnectionStatus("disconnected");
+        }
+      };
+      eventSource.addEventListener("room.snapshot", (event) => {
+        if (eventSourceRef.current !== eventSource) {
+          return;
+        }
+
+        const message = event as MessageEvent<string>;
+
+        try {
+          const snapshotResult = roomSnapshotSchema.safeParse(JSON.parse(message.data));
+
+          if (snapshotResult.success) {
+            setSnapshot(snapshotResult.data);
+          }
+        } catch {
+          setConnectionStatus("disconnected");
+        }
+      });
+    };
+
+    reconnectEventSourceRef.current = connectEventSource;
+
     const connect = async () => {
       try {
         await refreshRoom();
 
-        eventSource = new EventSource(`/api/rooms/${roomId}/events`);
-        eventSource.onopen = () => setConnectionStatus("connected");
-        eventSource.onerror = () => setConnectionStatus("disconnected");
-        eventSource.addEventListener("room.snapshot", (event) => {
-          const message = event as MessageEvent<string>;
-
-          try {
-            const snapshotResult = roomSnapshotSchema.safeParse(JSON.parse(message.data));
-
-            if (snapshotResult.success) {
-              if (votedQuestionIdsRef.current.length > 0) {
-                void refreshRoom();
-              } else {
-                setSnapshot(snapshotResult.data);
-              }
-            }
-          } catch {
-            setConnectionStatus("disconnected");
-          }
-        });
+        if (!isCancelled) {
+          connectEventSource();
+        }
       } finally {
         if (!isCancelled) {
           setIsLoading(false);
@@ -95,7 +115,9 @@ export function RoomPage({ onHostAuthenticated }: RoomPageProps = {}) {
 
     return () => {
       isCancelled = true;
-      eventSource?.close();
+      reconnectEventSourceRef.current = () => undefined;
+      eventSourceRef.current?.close();
+      eventSourceRef.current = undefined;
     };
   }, [roomId]);
 
@@ -146,16 +168,16 @@ export function RoomPage({ onHostAuthenticated }: RoomPageProps = {}) {
       });
       const votedSnapshot = roomSnapshotSchema.parse(response.snapshot);
 
+      reconnectEventSourceRef.current();
       setVotedQuestionIds(response.votedQuestionIds);
-      votedQuestionIdsRef.current = response.votedQuestionIds;
       setSnapshot(votedSnapshot);
     } catch (submissionError) {
       if (submissionError instanceof ApiRequestError && submissionError.code === "already_voted") {
         try {
           const response = await requestJson<unknown>(`/api/rooms/${roomId}`);
           const parsed = participantRoomResponseSchema.parse(response);
+          reconnectEventSourceRef.current();
           setVotedQuestionIds(parsed.votedQuestionIds);
-          votedQuestionIdsRef.current = parsed.votedQuestionIds;
           setSnapshot(parsed.snapshot);
         } catch {
           setError("投票結果を取得できませんでした。");
