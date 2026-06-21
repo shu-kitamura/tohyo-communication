@@ -394,6 +394,60 @@ describe("voting flow", () => {
     });
   });
 
+  it("closes host SSE streams when the host session expires", async () => {
+    const createRoomResponse = await SELF.fetch("https://example.com/api/rooms", {
+      body: JSON.stringify({
+        title: "SSE期限テスト",
+        adminPassword: "password123",
+        turnstileToken: "test-token",
+      }),
+      headers: mutationHeaders({ "Content-Type": "application/json" }),
+      method: "POST",
+    });
+
+    expect(createRoomResponse.status).toBe(201);
+    const room = await createRoomResponse.json<{ roomId: string }>();
+    const hostCookie = readCookie(createRoomResponse);
+    const question = await createQuestion(room.roomId, hostCookie, {
+      title: "期限後に見えてはいけない結果",
+      questionType: "single",
+      options: ["A", "B"],
+    });
+    const startResponse = await startQuestion(room.roomId, question.id, hostCookie);
+    expect(startResponse.status).toBe(200);
+
+    const expiresAt = new Date(Date.now() + 1000).toISOString();
+    await testEnv.DB.prepare("UPDATE host_sessions SET expires_at = ? WHERE room_id = ?")
+      .bind(expiresAt, room.roomId)
+      .run();
+
+    const hostEventsResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/events`,
+      {
+        headers: { Cookie: hostCookie },
+      },
+    );
+    expect(hostEventsResponse.status).toBe(200);
+    const hostEvents = createRoomSnapshotReader(hostEventsResponse);
+    const initialHostEvent = await hostEvents.readSnapshot();
+
+    expect(Object.keys(initialHostEvent.resultsByQuestion)).toEqual([question.id]);
+    await hostEvents.waitForClosed();
+
+    const reconnectedResponse = await SELF.fetch(
+      `https://example.com/api/rooms/${room.roomId}/events`,
+      {
+        headers: { Cookie: hostCookie },
+      },
+    );
+    expect(reconnectedResponse.status).toBe(200);
+    const reconnectedEvents = createRoomSnapshotReader(reconnectedResponse);
+    const reconnectedEvent = await reconnectedEvents.readSnapshot();
+
+    expect(reconnectedEvent.resultsByQuestion).toEqual({});
+    await reconnectedEvents.cancel();
+  });
+
   it("rejects unsafe requests without valid same-origin headers", async () => {
     const requestBody = JSON.stringify({
       title: "不正リクエスト",
@@ -519,6 +573,7 @@ function readCookie(response: Response): string {
 function createRoomSnapshotReader(response: Response): {
   cancel: () => Promise<void>;
   readSnapshot: () => Promise<RoomSnapshot>;
+  waitForClosed: () => Promise<void>;
 } {
   if (!response.body) {
     throw new Error("SSE response body was not returned");
@@ -562,6 +617,24 @@ function createRoomSnapshotReader(response: Response): {
 
         buffer += decoder.decode(chunk.value, { stream: true });
       }
+    },
+    waitForClosed: async () => {
+      await Promise.race([
+        (async () => {
+          while (true) {
+            const chunk = await reader.read();
+
+            if (chunk.done) {
+              return;
+            }
+          }
+        })(),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error("SSE stream did not close before timeout"));
+          }, 3000);
+        }),
+      ]);
     },
   };
 }

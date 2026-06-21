@@ -897,12 +897,17 @@ app.get(
 
     await notifyRoomSnapshot(c.env, roomState.snapshot);
 
-    const audience = (await isAuthorizedHost(c, roomId)) ? "host" : "participant";
+    const hostSession = await getAuthorizedHostSession(c, roomId);
+    const audience = hostSession ? "host" : "participant";
     const visibleResultQuestionIds =
       audience === "participant" ? await getParticipantVotedQuestionIds(c, roomId) : [];
     const roomEvents = c.env.ROOM_EVENTS.getByName(roomId);
     const eventsUrl = new URL("https://room-events/events");
     eventsUrl.searchParams.set("audience", audience);
+
+    if (hostSession) {
+      eventsUrl.searchParams.set("hostSessionExpiresAt", hostSession.expiresAt);
+    }
 
     for (const questionId of visibleResultQuestionIds) {
       eventsUrl.searchParams.append("visibleResultQuestionId", questionId);
@@ -925,15 +930,22 @@ app.onError((error, c) => {
 });
 
 async function isAuthorizedHost(c: AppContext, roomId: string): Promise<boolean> {
+  return Boolean(await getAuthorizedHostSession(c, roomId));
+}
+
+async function getAuthorizedHostSession(
+  c: AppContext,
+  roomId: string,
+): Promise<{ id: string; expiresAt: string } | null> {
   const token = getHostSessionToken(c, roomId);
 
   if (!token) {
-    return false;
+    return null;
   }
 
   const tokenHash = await sha256(token);
   const session = await c.env.DB.prepare(
-    `SELECT id
+    `SELECT id, expires_at AS expiresAt
      FROM host_sessions
      WHERE room_id = ?
        AND token_hash = ?
@@ -942,9 +954,9 @@ async function isAuthorizedHost(c: AppContext, roomId: string): Promise<boolean>
      LIMIT 1`,
   )
     .bind(roomId, tokenHash, new Date().toISOString())
-    .first<{ id: string }>();
+    .first<{ id: string; expiresAt: string }>();
 
-  return Boolean(session);
+  return session ?? null;
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
