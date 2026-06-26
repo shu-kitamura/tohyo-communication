@@ -1,74 +1,69 @@
-# 実装計画: Issue要件定義ワークフロー
+# 実装計画: ホストSSEのセッション期限終了
 
 ## 概要
 
-Issue #47では、実装前にIssueの要件と受入条件を整理する自動処理を追加する。既存の`codex-autofix`による実装PR作成とは別の`codex-plan`トリガーを用意し、要件定義と実装開始の責務を分離する。
+Issue #39では、接続開始後にホストセッション期限をまたいだSSE接続がホスト向けsnapshotを受け続ける問題を修正する。今回は第一対応として、接続開始時に検証済みホストセッションの`expires_at`をDurable Objectへ渡し、期限到達時にホストSSEストリームを終了する。
 
 ## 要件
 
-- Issue作成時、または`codex-plan`ラベル付与時に要件定義処理を起動する。
-- 対象Issueの番号、URL、タイトル、本文をCodex処理へ渡す。
-- 整理された要件、受入条件、不足点をIssueコメントとして残す。
-- `codex-autofix`の実装PR作成フローとトリガーを混同しない。
-- 不十分なIssue本文で`codex-autofix`が不用意に実装へ進まないようにする。
+- SSE接続開始時にWorkerで検証したホストセッションの`expires_at`をDOへ渡す。
+- DOはホスト接続だけ期限タイマーを持ち、期限到達時にストリームを閉じる。
+- ストリーム終了後の再接続ではWorkerがCookieを再検証し、期限切れなら参加者として接続する。
+- 有効なホストと参加者向けの既存SSE配信は維持する。
+- 期限切れ後にホスト向けsnapshotが配信されないことをWorker/APIレベルで確認する。
 
 ## アーキテクチャ変更
 
-- `.github/workflows/issue-requirements-plan.yaml`: `opened`または`codex-plan`ラベルを契機に、要件定義専用のCodex実行とIssueコメント投稿を行う。
-- `.github/workflows/issue-driven-pr.yaml`: 実装前にIssue本文が要件・受入条件を含むか確認し、不足時はコメントして実装をスキップする。
+- `src/server/index.ts`: SSEルートでホスト認証結果の`expires_at`を取得し、ホスト接続時だけDOのURLへ渡す。
+- `src/durable-objects/room-events.ts`: `SseClient`に期限タイマーを保持し、ホストセッション期限到達時にストリームを閉じる。
+- `tests/worker/voting-flow.test.ts`: 期限が近いホストセッションでSSE接続し、期限後にストリームが閉じ、再接続が参加者snapshotになることを確認する。
 
 ## 実装手順
 
-### フェーズ1: 要件定義ワークフロー追加
+### フェーズ1: Workerの認証情報拡張
 
-1. **専用Workflowの作成** (File: `.github/workflows/issue-requirements-plan.yaml`)
-   - Action: `issues.opened`と`issues.labeled`を監視し、`opened`または`codex-plan`ラベル時だけ実行する。
-   - Why: Issue作成と要件定義ラベルの両方を入口にできるようにするため。
+1. **認証ヘルパー追加** (File: `src/server/index.ts`)
+   - Action: `getAuthorizedHostSession()`を追加し、既存の`isAuthorizedHost()`はそのbooleanラッパーにする。
+   - Why: 既存のホスト権限チェック呼び出しを保ちながら、SSEルートだけ期限情報を使えるようにするため。
    - Dependencies: なし
    - Risk: 低
 
-2. **Codex入力の明示化** (File: `.github/workflows/issue-requirements-plan.yaml`)
-   - Action: Issue番号、URL、タイトル、本文を環境変数経由でプロンプトに含める。
-   - Why: 処理対象をWorkflowログとCodex入力の両方で明確にするため。
+2. **SSE URLへ期限を追加** (File: `src/server/index.ts`)
+   - Action: ホストとして認証された場合に`hostSessionExpiresAt`クエリをDOへ渡す。
+   - Why: DOがD1へアクセスせずに期限到達を判断できるようにするため。
    - Dependencies: ステップ1
    - Risk: 低
 
-3. **Issueコメント投稿** (File: `.github/workflows/issue-requirements-plan.yaml`)
-   - Action: Codexの最終出力をIssueコメントへ投稿する。
-   - Why: 要件と受入条件の整理結果をIssue上に残すため。
-   - Dependencies: ステップ2
-   - Risk: 低
+### フェーズ2: DOの接続終了制御
 
-### フェーズ2: 実装PRフローの事前確認
-
-1. **Issue本文チェックの追加** (File: `.github/workflows/issue-driven-pr.yaml`)
-   - Action: `codex-autofix`実行前に要件・受入条件の見出しがあるか確認する。
-   - Why: 不十分なIssue本文を前提に実装PR作成へ進ませないため。
-   - Dependencies: なし
+1. **期限タイマー管理** (File: `src/durable-objects/room-events.ts`)
+   - Action: ホスト接続だけ`setTimeout`を設定し、期限到達時に`controller.close()`してクライアントを削除する。
+   - Why: 期限切れ後のbroadcast対象からホスト接続を外すため。
+   - Dependencies: フェーズ1
    - Risk: 中
 
-2. **不足時コメント** (File: `.github/workflows/issue-driven-pr.yaml`)
-   - Action: 不足している見出しと`codex-plan`ラベル利用をIssueコメントで案内する。
-   - Why: 次に必要な作業をメンテナーが判断できるようにするため。
+2. **後始末の一元化** (File: `src/durable-objects/room-events.ts`)
+   - Action: abort/cancel/enqueue失敗/期限到達の全経路でタイマーを解除する。
+   - Why: 接続終了後に不要なタイマーが残らないようにするため。
    - Dependencies: ステップ1
    - Risk: 低
 
 ## テスト戦略
 
+- ユニット/Workerテスト: `tests/worker/voting-flow.test.ts`に期限到達後のホストSSE終了と再接続時の参加者snapshotを追加する。
 - 静的検証: `pnpm check`
-- ユニットテスト: `pnpm test`
-- ビルド: `pnpm build`
-- 手動確認: Workflow YAMLのトリガー、条件分岐、Issueコンテキスト参照を確認する。
+- 全体検証: `pnpm test`、`pnpm test:e2e`、`pnpm build`
 
 ## リスクと対策
 
-- **Risk**: `codex-autofix`の既存運用で要件・受入条件見出しがないIssueが止まる。
-  - Mitigation: 不足時コメントで`codex-plan`ラベル付与を案内し、実装前の要件整理に誘導する。
+- **Risk**: 期限到達と初期snapshot送信の境界で期限切れホストへsnapshotが送られる。
+  - Mitigation: DO側で期限が過去または無効な場合は即時終了し、Worker側でも期限切れセッションはホスト扱いしない。
+- **Risk**: タイマー終了後もclient集合に残りbroadcastされる。
+  - Mitigation: `closeClient()`経由でcontroller close、タイマー解除、集合削除をまとめる。
 
 ## 成功基準
 
-- [x] `codex-plan`ラベル付与で要件定義Workflowが起動する。
-- [x] Issue番号、URL、タイトル、本文が処理へ渡る。
-- [x] 整理結果がIssueコメントに残る。
-- [x] `codex-autofix`と`codex-plan`の責務が分離される。
-- [x] 要件・受入条件が不足するIssueでは`codex-autofix`が実装へ進まない。
+- [ ] ホストSSE接続が`expires_at`到達時に終了する。
+- [ ] 期限終了後の同じCookieでの再接続は参加者向けsnapshotになる。
+- [ ] 参加者SSEと有効なホストSSEの既存挙動が維持される。
+- [ ] 自動テストとビルドが通る。

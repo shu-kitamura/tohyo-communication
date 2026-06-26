@@ -11,6 +11,7 @@ const HEARTBEAT_INTERVAL_MS = 15_000;
 interface SseClient {
   audience: SnapshotAudience;
   controller: ReadableStreamDefaultController<Uint8Array>;
+  expiryTimer?: ReturnType<typeof setTimeout>;
   visibleResultQuestionIds: string[];
 }
 
@@ -34,6 +35,7 @@ export class RoomEventsDO implements DurableObject {
       return this.createEventStream(
         request,
         this.readAudience(url),
+        url.searchParams.get("hostSessionExpiresAt"),
         url.searchParams.getAll("visibleResultQuestionId"),
       );
     }
@@ -52,6 +54,7 @@ export class RoomEventsDO implements DurableObject {
   private createEventStream(
     request: Request,
     audience: SnapshotAudience,
+    hostSessionExpiresAt: string | null,
     visibleResultQuestionIds: string[],
   ): Response {
     let client: SseClient | undefined;
@@ -60,6 +63,12 @@ export class RoomEventsDO implements DurableObject {
       start: (controller) => {
         client = { audience, controller, visibleResultQuestionIds };
         this.clients.add(client);
+
+        if (!this.startHostSessionExpiryTimer(client, hostSessionExpiresAt)) {
+          this.closeClient(client);
+          return;
+        }
+
         this.startHeartbeat();
 
         this.enqueue(controller, "retry: 3000\n\n");
@@ -151,6 +160,34 @@ export class RoomEventsDO implements DurableObject {
     }
   }
 
+  private startHostSessionExpiryTimer(client: SseClient, expiresAt: string | null): boolean {
+    if (client.audience !== "host") {
+      return true;
+    }
+
+    if (!expiresAt) {
+      return false;
+    }
+
+    const expiresAtTime = Date.parse(expiresAt);
+
+    if (Number.isNaN(expiresAtTime)) {
+      return false;
+    }
+
+    const delayMs = expiresAtTime - Date.now();
+
+    if (delayMs <= 0) {
+      return false;
+    }
+
+    client.expiryTimer = setTimeout(() => {
+      this.closeClient(client);
+    }, delayMs);
+
+    return true;
+  }
+
   private startHeartbeat(): void {
     if (this.heartbeatTimer) {
       return;
@@ -165,7 +202,22 @@ export class RoomEventsDO implements DurableObject {
     }, HEARTBEAT_INTERVAL_MS);
   }
 
+  private closeClient(client: SseClient): void {
+    try {
+      client.controller.close();
+    } catch {
+      // The stream may already be closed by the peer.
+    }
+
+    this.removeClient(client);
+  }
+
   private removeClient(client: SseClient): void {
+    if (client.expiryTimer) {
+      clearTimeout(client.expiryTimer);
+      client.expiryTimer = undefined;
+    }
+
     this.clients.delete(client);
 
     if (this.clients.size === 0 && this.heartbeatTimer) {
