@@ -1,11 +1,12 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import type { RoomCreationNavigationState } from "../types/room";
+
 import { publicConfigResponseSchema } from "../../shared/api";
 import { requestJson } from "../api";
 import { SiteHeader } from "../components/site-header";
 import { TurnstileWidget } from "../components/turnstile-widget";
-import type { RoomCreationNavigationState } from "../types/room";
 
 export function CreateRoomPage() {
   const navigate = useNavigate();

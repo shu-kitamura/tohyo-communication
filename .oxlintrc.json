@@ -1,8 +1,24 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": null,
+  "plugins": ["vitest"],
   "categories": {},
-  "rules": {},
+  "rules": {
+    // Correctness Rules
+    "vitest/valid-expect": "error",
+    "vitest/no-focused-tests": "error",
+    "vitest/hoisted-apis-on-top": "error",
+    "vitest/valid-title": "error",
+    "vitest/expect-expect": "error",
+    "vitest/no-conditional-tests": "error",
+    "vitest/no-disabled-tests": "error",
+    "vitest/no-standalone-expect": "error",
+    "vitest/require-awaited-expect-poll": "error",
+    "vitest/require-local-test-context-for-concurrent-snapshots": "error",
+    "vitest/require-mock-type-parameters": "error",
+    "vitest/require-to-throw-message": "error",
+    "vitest/valid-expect-in-promise": "error",
+    "vitest/warn-todo": "error"
+  },
   "settings": {
     "jsx-a11y": {
       "polymorphicPropName": null,

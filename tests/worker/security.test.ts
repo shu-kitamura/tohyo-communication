@@ -6,7 +6,7 @@ import { enforceRateLimit } from "../../src/server/security";
 describe("rate limit", () => {
   it("returns 429 with Retry-After when the limit is exceeded", async () => {
     const limiter = {
-      limit: vi.fn().mockResolvedValue({ success: false }),
+      limit: vi.fn<RateLimit["limit"]>().mockResolvedValue({ success: false }),
     } satisfies RateLimit;
     const app = new Hono();
 
@@ -27,7 +27,7 @@ describe("rate limit", () => {
 
   it("fails open when the limiter is unavailable", async () => {
     const limiter = {
-      limit: vi.fn().mockRejectedValue(new Error("unavailable")),
+      limit: vi.fn<RateLimit["limit"]>().mockRejectedValue(new Error("unavailable")),
     } satisfies RateLimit;
     const app = new Hono();
 
