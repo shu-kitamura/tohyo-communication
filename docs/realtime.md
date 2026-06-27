@@ -2,6 +2,8 @@
 
 リアルタイム更新はServer-Sent EventsとDurable Objectsで実現しています。
 
+図解: [`docs/figure/voting-realtime-sequence.md`](./figure/voting-realtime-sequence.md)
+
 ## 役割分担
 
 | コンポーネント | 役割 |

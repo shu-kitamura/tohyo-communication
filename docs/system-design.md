@@ -6,6 +6,14 @@ TOHYO通信は、イベントやワークショップ向けのリアルタイム
 
 ## 構成
 
+図解: [`docs/figure/system-architecture.md`](./figure/system-architecture.md)
+
+投票からリアルタイム更新までの流れは [`docs/figure/voting-realtime-sequence.md`](./figure/voting-realtime-sequence.md) を参照してください。
+
+画面遷移は [`docs/figure/screen-flow.md`](./figure/screen-flow.md) を参照してください。
+
+Issue作成からデプロイまでの開発フローは [`docs/figure/development-flow.md`](./figure/development-flow.md) を参照してください。
+
 | 領域 | 技術 | 役割 |
 | --- | --- | --- |
 | フロントエンド | React / Vite / React Router / Tailwind CSS | ルーム作成、ホスト画面、ゲスト画面 |
@@ -117,7 +125,12 @@ type RoomSnapshot = {
 
 ## 関連ドキュメント
 
+- [`docs/figure/system-architecture.md`](./figure/system-architecture.md)
+- [`docs/figure/voting-realtime-sequence.md`](./figure/voting-realtime-sequence.md)
+- [`docs/figure/screen-flow.md`](./figure/screen-flow.md)
+- [`docs/figure/development-flow.md`](./figure/development-flow.md)
 - [`docs/api.md`](./api.md)
 - [`docs/auth-and-sessions.md`](./auth-and-sessions.md)
 - [`docs/database-design.md`](./database-design.md)
+- [`docs/figure/database-er.md`](./figure/database-er.md)
 - [`docs/realtime.md`](./realtime.md)

@@ -16,9 +16,14 @@ Cloudflare Workers + Hono + React/Vite + D1 + Durable Objects で構成してい
 設計の詳細は以下を参照してください。
 
 - [`docs/system-design.md`](./docs/system-design.md): 全体構成
+- [`docs/figure/system-architecture.md`](./docs/figure/system-architecture.md): システム構成図
+- [`docs/figure/voting-realtime-sequence.md`](./docs/figure/voting-realtime-sequence.md): 投票・リアルタイム更新シーケンス図
+- [`docs/figure/screen-flow.md`](./docs/figure/screen-flow.md): 画面遷移図
+- [`docs/figure/development-flow.md`](./docs/figure/development-flow.md): 開発フロー図
 - [`docs/api.md`](./docs/api.md): API
 - [`docs/auth-and-sessions.md`](./docs/auth-and-sessions.md): 認証とセッション
 - [`docs/database-design.md`](./docs/database-design.md): D1 schema
+- [`docs/figure/database-er.md`](./docs/figure/database-er.md): ER図
 - [`docs/realtime.md`](./docs/realtime.md): SSE / Durable Objects
 
 ## 技術スタック
