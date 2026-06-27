@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+
 import { getCookie, setCookie } from "hono/cookie";
 
 const HOST_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;

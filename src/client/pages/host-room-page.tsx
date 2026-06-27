@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 
+import type { QuestionDraft, RoomCreationNavigationState } from "../types/room";
+
 import { hostRoomResponseSchema, type RoomQuestion } from "../../shared/api";
 import {
   roomSnapshotSchema,
@@ -10,7 +12,6 @@ import {
 import { requestJson } from "../api";
 import { QuestionDialog } from "../components/question-dialog";
 import { SiteHeader } from "../components/site-header";
-import type { QuestionDraft, RoomCreationNavigationState } from "../types/room";
 
 export function HostRoomPage() {
   const { roomId = "" } = useParams();

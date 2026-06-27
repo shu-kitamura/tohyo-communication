@@ -17,7 +17,7 @@
     "vitest/require-mock-type-parameters": "error",
     "vitest/require-to-throw-message": "error",
     "vitest/valid-expect-in-promise": "error",
-    "vitest/warn-todo": "error",
+    "vitest/warn-todo": "error"
   },
   "settings": {
     "jsx-a11y": {
