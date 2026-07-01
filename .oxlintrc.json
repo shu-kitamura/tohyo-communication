@@ -3,7 +3,6 @@
   "plugins": ["vitest"],
   "categories": {},
   "rules": {
-    // Correctness Rules
     "vitest/valid-expect": "error",
     "vitest/no-focused-tests": "error",
     "vitest/hoisted-apis-on-top": "error",
