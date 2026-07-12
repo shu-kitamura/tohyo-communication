@@ -20,6 +20,13 @@ export default defineConfig({
     }),
   ],
   test: {
+    coverage: {
+      exclude: ["**/*.d.ts"],
+      include: ["src/**/*.{ts,tsx}"],
+      provider: "istanbul",
+      reporter: ["text", "lcov"],
+      reportsDirectory: "coverage",
+    },
     include: ["tests/**/*.test.ts"],
   },
 });
